@@ -23,3 +23,14 @@ model Project {
   name      String
   createdAt DateTime @default(now())
 }
+
+// Single-row app settings (single-user). Enforced via fixed id + upsert.
+// Null fields fall back to env/defaults in lib/config.ts.
+model Settings {
+  id          String   @id @default("singleton")
+  model       String?
+  temperature Float?
+  baseUrl     String?
+  theme       String?  @default("system")
+  updatedAt   DateTime @updatedAt
+}

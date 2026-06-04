@@ -4,27 +4,102 @@ const MODEL = process.env.OLLAMA_MODEL ?? "gemma4:12b-mlx";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
+export type ChatOptions = {
+  temperature?: number;
+  /** Override the configured model (e.g. from app settings). */
+  model?: string;
+  /** Override the configured OpenAI-compatible base URL. */
+  baseUrl?: string;
+  /** Allow cancellation from the caller. */
+  signal?: AbortSignal;
+};
+
+function completionsUrl(baseUrl?: string) {
+  return `${baseUrl ?? BASE}/chat/completions`;
+}
+
+function body(messages: ChatMessage[], opts: ChatOptions, stream: boolean) {
+  return JSON.stringify({
+    model: opts.model ?? MODEL,
+    messages,
+    temperature: opts.temperature ?? 0.4,
+    stream,
+  });
+}
+
+const HEADERS = {
+  "Content-Type": "application/json",
+  Authorization: "Bearer ollama", // required by the protocol but unused by Ollama
+};
+
+/** One-shot, non-streaming completion. Returns the full message text. */
 export async function chat(
   messages: ChatMessage[],
-  opts: { temperature?: number } = {}
+  opts: ChatOptions = {}
 ): Promise<string> {
-  const res = await fetch(`${BASE}/chat/completions`, {
+  const res = await fetch(completionsUrl(opts.baseUrl), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer ollama", // required but unused by Ollama
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      temperature: opts.temperature ?? 0.4,
-      stream: false,
-    }),
+    headers: HEADERS,
+    body: body(messages, opts, false),
     cache: "no-store",
+    signal: opts.signal,
   });
   if (!res.ok) {
-    throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
+    throw new Error(`Ollama error ${res.status}: ${await res.text().catch(() => "")}`);
   }
   const data = await res.json();
   return data?.choices?.[0]?.message?.content ?? "";
+}
+
+/**
+ * Streaming completion. Yields content deltas as they arrive.
+ * SSE framing (the `data:` lines, buffering across network reads, the
+ * `[DONE]` terminator) is handled here so callers just `for await` tokens.
+ */
+export async function* streamChat(
+  messages: ChatMessage[],
+  opts: ChatOptions = {}
+): AsyncGenerator<string, void, unknown> {
+  const res = await fetch(completionsUrl(opts.baseUrl), {
+    method: "POST",
+    headers: HEADERS,
+    body: body(messages, opts, true),
+    cache: "no-store",
+    signal: opts.signal,
+  });
+  if (!res.ok || !res.body) {
+    throw new Error(`Ollama error ${res.status}: ${await res.text().catch(() => "")}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE lines are newline-delimited; a single `data:` line can straddle
+      // two reads, so only consume complete lines from the buffer.
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) !== -1) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line || !line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") return;
+        try {
+          const json = JSON.parse(payload);
+          const delta: string = json?.choices?.[0]?.delta?.content ?? "";
+          if (delta) yield delta;
+        } catch {
+          // Ignore malformed partial frames defensively.
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
