@@ -15,6 +15,12 @@ model Prompt {
   optimized String?
   tags      String?
   createdAt DateTime @default(now())
+
+  // Optional project link (light grouping now; full hub later).
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
 }
 
 // Lightweight grouping used across tools; grows in later phases.
@@ -22,6 +28,8 @@ model Project {
   id        String   @id @default(cuid())
   name      String
   createdAt DateTime @default(now())
+
+  prompts Prompt[]
 }
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
