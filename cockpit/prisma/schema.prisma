@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Phase 1: prompt optimizer + library
+model Prompt {
+  id        String   @id @default(cuid())
+  title     String
+  original  String
+  optimized String?
+  tags      String?
+  createdAt DateTime @default(now())
+}
+
+// Lightweight grouping used across tools; grows in later phases.
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+}

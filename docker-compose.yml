@@ -1,0 +1,40 @@
+# Swiss Knife — local AI daily runner
+# NOTE: Ollama runs NATIVELY on the host (for Apple GPU/Metal acceleration).
+# Docker Desktop on macOS cannot pass the Apple GPU into a container, so a
+# containerized Ollama would be ~5-6x slower. These containers reach the host
+# Ollama via host.docker.internal.
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: swissknife-openwebui
+    ports:
+      - "3001:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_AUTH=False          # single-user local; set True before sharing externally
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - openwebui-data:/app/backend/data
+    restart: unless-stopped
+
+  cockpit:
+    build: ./cockpit
+    container_name: swissknife-cockpit
+    ports:
+      - "3000:3000"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+      - OLLAMA_MODEL=gemma4:12b-mlx
+      - DATABASE_URL=file:/data/cockpit.db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - cockpit-data:/data
+    depends_on:
+      - open-webui
+    restart: unless-stopped
+
+volumes:
+  openwebui-data:
+  cockpit-data:

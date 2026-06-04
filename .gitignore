@@ -1,0 +1,32 @@
+# deps
+node_modules/
+**/node_modules/
+
+# next
+.next/
+out/
+next-env.d.ts
+
+# prisma / sqlite (local data — never commit)
+*.db
+*.db-journal
+**/data/
+
+# env & secrets
+.env
+.env.local
+*.local
+
+# os / editor
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# build
+dist/
+build/
+
+# test artifacts
+playwright-report/
+test-results/
