@@ -2,6 +2,7 @@ import { assertOllamaReady } from "@/lib/health";
 import { streamTextResponse } from "@/lib/ai/streamRoute";
 import { prisma } from "@/lib/db";
 import { renderTemplate } from "@/lib/templates";
+import { getActiveProjectId } from "@/lib/project";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,12 +35,14 @@ export async function POST(req: Request) {
     return Response.json({ error: "Fill in the fields before running." }, { status: 400 });
   }
 
+  const effectiveProjectId = projectId || (await getActiveProjectId());
   const subject =
     (values?.topic ?? values?.text ?? "").toString().trim() || rendered.slice(0, 60);
   const title = `${template.name}${subject ? `: ${subject.slice(0, 50)}` : ""}`;
 
   return streamTextResponse({
     injectMemory: true,
+    memoryProjectId: effectiveProjectId,
     messages: [{ role: "user", content: rendered }],
     onComplete: save
       ? async (full) => {
@@ -51,7 +54,7 @@ export async function POST(req: Request) {
                 content: full,
                 techniqueId: template.id,
                 techniqueKind: template.category,
-                projectId: projectId || null,
+                projectId: effectiveProjectId,
               },
             });
           } else {
@@ -62,7 +65,7 @@ export async function POST(req: Request) {
                 optimized: full,
                 source: "library",
                 templateId: template.id,
-                projectId: projectId || null,
+                projectId: effectiveProjectId,
               },
             });
           }

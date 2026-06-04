@@ -1,5 +1,9 @@
 import Link from "next/link";
+
+import { prisma } from "@/lib/db";
+import { getActiveProjectId } from "@/lib/project";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ProjectSwitcher } from "@/components/ProjectSwitcher";
 
 const tools = [
   { href: "/", label: "Dashboard" },
@@ -10,16 +14,33 @@ const tools = [
   { href: "/tools/image", label: "Image" },
   { href: "/tools/tasks", label: "Tasks" },
   { href: "/tools/memory", label: "Memory" },
+  { href: "/tools/projects", label: "Projects" },
   { href: "/settings", label: "Settings" },
 ];
 
-export default function Sidebar() {
+export default async function Sidebar() {
+  const [projects, activeId] = await Promise.all([
+    prisma.project
+      .findMany({
+        where: { archived: false },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, name: true },
+      })
+      .catch(() => [] as { id: string; name: string }[]),
+    getActiveProjectId(),
+  ]);
+
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-card p-4">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <span className="text-lg font-semibold">🔧 Swiss Knife</span>
         <ThemeToggle />
       </div>
+
+      <div className="mb-4">
+        <ProjectSwitcher projects={projects} activeId={activeId} />
+      </div>
+
       <nav className="flex flex-col gap-1">
         {tools.map((t) => (
           <Link
@@ -39,9 +60,8 @@ export default function Sidebar() {
           Open WebUI ↗
         </a>
       </nav>
-      <div className="mt-auto pt-8 text-xs text-muted-foreground">
-        Powered by local Gemma 4 12B
-      </div>
+
+      <div className="mt-auto pt-8 text-xs text-muted-foreground">Powered by local Gemma 4 12B</div>
     </aside>
   );
 }

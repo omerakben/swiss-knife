@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getActiveProjectId } from "@/lib/project";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
   }
 
   const status = STATUSES.includes(body.status ?? "") ? (body.status as string) : "todo";
+  const projectId = await getActiveProjectId();
   const max = await prisma.task.aggregate({ where: { status }, _max: { order: true } });
 
   const task = await prisma.task.create({
@@ -38,6 +40,7 @@ export async function POST(req: Request) {
       notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
       order: (max._max.order ?? 0) + 1,
       completedAt: status === "done" ? new Date() : null,
+      projectId,
     },
   });
 

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getActiveProjectId } from "@/lib/project";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,12 +16,14 @@ export async function POST(req: Request) {
   if (!value || typeof value !== "string" || !value.trim()) {
     return Response.json({ error: "A fact needs a value." }, { status: 400 });
   }
+  const projectId = await getActiveProjectId();
   const fact = await prisma.memoryFact.create({
     data: {
       key: typeof key === "string" && key.trim() ? key.trim() : null,
       value: value.trim(),
       source: "manual",
       status: "active",
+      projectId,
     },
   });
   return Response.json({ fact });

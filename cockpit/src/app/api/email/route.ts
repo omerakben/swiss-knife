@@ -1,6 +1,7 @@
 import { assertOllamaReady } from "@/lib/health";
 import { streamTextResponse } from "@/lib/ai/streamRoute";
 import { prisma } from "@/lib/db";
+import { getActiveProjectId } from "@/lib/project";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
   const t = TONES.includes(tone ?? "") ? (tone as string) : "neutral";
   const lenKey: LengthKey = length === "short" || length === "long" ? length : "medium";
   const isReply = mode === "reply";
+  const projectId = await getActiveProjectId();
 
   const system = `You write clear, effective emails. Write a ${t} email that is ${LENGTHS[lenKey]}. Return ONLY the email itself — you may start with a "Subject:" line. No preamble, no commentary, and avoid bracketed placeholders unless truly necessary.`;
 
@@ -43,6 +45,7 @@ export async function POST(req: Request) {
 
   return streamTextResponse({
     injectMemory: true,
+    memoryProjectId: projectId,
     messages: [
       { role: "system", content: system },
       { role: "user", content: parts.join("\n") },
@@ -58,6 +61,7 @@ export async function POST(req: Request) {
               body,
               tone: t,
               length: lenKey,
+              projectId,
             },
           });
         }

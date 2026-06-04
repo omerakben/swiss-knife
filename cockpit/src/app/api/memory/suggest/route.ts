@@ -1,6 +1,7 @@
 import { assertOllamaReady } from "@/lib/health";
 import { chat } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
+import { getActiveProjectId } from "@/lib/project";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -38,11 +39,12 @@ export async function POST(req: Request) {
     return Response.json({ error: "No facts found in that text." }, { status: 422 });
   }
 
+  const projectId = await getActiveProjectId();
   const created = [];
   for (const value of values) {
     created.push(
       await prisma.memoryFact.create({
-        data: { value: value.slice(0, 300), source: "ai", status: "pending" },
+        data: { value: value.slice(0, 300), source: "ai", status: "pending", projectId },
       })
     );
   }

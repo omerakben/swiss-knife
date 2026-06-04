@@ -13,18 +13,16 @@ type StreamTextArgs = {
   onComplete?: (fullText: string) => Promise<void> | void;
   /** Prepend active memory facts as a leading system message. */
   injectMemory?: boolean;
+  /** Scope injected memory to this project's facts (plus global). Resolve in handler scope. */
+  memoryProjectId?: string | null;
 };
 
-/**
- * The shared streaming-route helper. Every AI tool route returns this:
- * it streams tokens to the client as plain text and runs onComplete (save)
- * after the full response is assembled server-side.
- */
 export function streamTextResponse({
   messages,
   temperature,
   onComplete,
   injectMemory,
+  memoryProjectId,
 }: StreamTextArgs): Response {
   const encoder = new TextEncoder();
 
@@ -35,7 +33,7 @@ export function streamTextResponse({
         const cfg = await getEffectiveConfig();
         let msgs = messages;
         if (injectMemory) {
-          const mem = await getMemoryContext();
+          const mem = await getMemoryContext({ projectId: memoryProjectId ?? null });
           if (mem) msgs = [{ role: "system", content: mem }, ...messages];
         }
         for await (const token of streamChat(msgs, {

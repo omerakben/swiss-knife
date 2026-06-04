@@ -2,6 +2,7 @@ import { assertOllamaReady } from "@/lib/health";
 import { chat } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
 import { getMemoryContext } from "@/lib/memory";
+import { getActiveProjectId } from "@/lib/project";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -17,7 +18,9 @@ export async function POST(req: Request) {
   }
 
   const cfg = await getEffectiveConfig();
-  const memory = await getMemoryContext();
+  const projectId = await getActiveProjectId();
+  const memory = await getMemoryContext({ projectId });
+
   const text = await chat(
     [
       {
@@ -47,7 +50,7 @@ export async function POST(req: Request) {
   for (const title of titles) {
     created.push(
       await prisma.task.create({
-        data: { title: title.slice(0, 200), status: "todo", order: order++ },
+        data: { title: title.slice(0, 200), status: "todo", order: order++, projectId },
       })
     );
   }

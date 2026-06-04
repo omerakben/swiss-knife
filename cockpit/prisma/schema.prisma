@@ -137,9 +137,13 @@ model MemoryFact {
 
 // Hub entity; grows across phases. Content optionally links here (onDelete: SetNull).
 model Project {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  owuiUrl     String? // deep-link to this project's Open WebUI knowledge base
+  archived    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   prompts   Prompt[]
   templates Template[]
@@ -151,10 +155,11 @@ model Project {
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
 model Settings {
-  id          String   @id @default("singleton")
-  model       String?
-  temperature Float?
-  baseUrl     String?
-  theme       String?  @default("system")
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default("singleton")
+  model        String?
+  temperature  Float?
+  baseUrl      String?
+  theme        String?  @default("system")
+  captureToken String? // shared secret for the quick-capture endpoint
+  updatedAt    DateTime @updatedAt
 }
