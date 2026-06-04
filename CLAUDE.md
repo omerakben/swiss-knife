@@ -51,7 +51,7 @@ The tag is **`gemma4:12b-mlx`** (MLX build, Apple-Silicon native; dense 12B with
 - ✅ Foundation: model-tag fix, git, shadcn + dark mode, streaming AI-tool kit, settings + health, ESLint + Playwright.
 - ✅ Phase 2: shared template engine + seed (`prisma/seed.mjs`, `npm run db:seed`); Prompt Library (CRUD, search, favorite, variable templates, export/import); Email Writer; Brainstorming (technique modes). Open WebUI prompt sync still deferred until OWUI runs.
 - ✅ Phase 3: tasks — one `Task` model as a list + dnd-kit Kanban board; AI assists (goal→tasks, daily standup).
-- ⬜ Phase 4: knowledge base (Open WebUI RAG, deep-link) · memory facts · PDF (Open WebUI) · image input (Gemma vision)
+- 🟡 Phase 4: ✅ memory facts (manual + AI-suggested, injected into email/brainstorm/tasks via `lib/memory.ts` + `streamTextResponse({injectMemory})`); ✅ image input (Gemma vision, `api/vision` + `tools/image`, multimodal `ChatMessage`). ⬜ knowledge base / RAG + PDF lean on Open WebUI; the per-project deep-link lands with the Phase 5 hub.
 - ⬜ Phase 5: clipboard quick-capture (macOS Shortcut) · screenshots · project hub
 
 ## Working agreements for the agent

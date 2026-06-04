@@ -11,7 +11,9 @@ const TOOLS = [
   { href: "/tools/prompt-library", title: "📚 Prompt Library", desc: "Saved prompts + variable templates." },
   { href: "/tools/email-writer", title: "✉️ Email Writer", desc: "Compose and reply with the right tone." },
   { href: "/tools/brainstorm", title: "💡 Brainstorming", desc: "Structured thinking techniques." },
+  { href: "/tools/image", title: "🖼️ Image", desc: "Ask Gemma about an image." },
   { href: "/tools/tasks", title: "✅ Tasks", desc: "List + Kanban with AI assists." },
+  { href: "/tools/memory", title: "🧠 Memory", desc: "Facts woven into your tools." },
 ];
 
 export default async function Dashboard() {

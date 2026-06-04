@@ -64,6 +64,9 @@ Stop everything: `docker compose down`
   pros/cons, SCAMPER, a Socratic sharpen pass); results save as ideas.
 - **Tasks** — a todo list and a drag-and-drop Kanban board on one model, with AI
   assists (turn a goal into tasks, generate a daily summary).
+- **Memory** — facts about you and your work (manual or AI-suggested), woven into
+  the email, brainstorming, and task tools.
+- **Image** — ask local Gemma about an uploaded image (vision).
 - **Dashboard** — entry point, recent prompts, and a live engine-health banner.
 - **Settings** — set the model, base URL, and temperature in-app.
 - **Dark mode** — light / dark / system.
@@ -99,7 +102,7 @@ Stop everything: `docker compose down`
 
 - **Phase 2 (done):** prompt library + variable templates · email writer · brainstorming. (Open WebUI prompt sync still to come.)
 - **Phase 3 (done):** tasks — list + dnd-kit Kanban board, AI generate-from-goal + daily summary
-- **Phase 4:** Project knowledge base (Open WebUI RAG) · memory facts · PDF ingest · image input (Gemma vision)
+- **Phase 4 (in progress):** memory facts (done) · image input via Gemma vision (done) · knowledge base / RAG + PDF via Open WebUI (lands with the Phase 5 hub)
 - **Phase 5:** Clipboard quick-capture (macOS Shortcut) · screenshots · project hub linking
 
 ## Notes for sharing with colleagues
