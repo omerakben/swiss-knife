@@ -7,33 +7,109 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Phase 1: prompt optimizer + library
+// ── Prompts (Phase 1 optimizer + Phase 2 library) ───────────────────────────
 model Prompt {
   id        String   @id @default(cuid())
   title     String
   original  String
   optimized String?
-  tags      String?
+  tags      String? // comma-separated
+  favorite  Boolean  @default(false)
+  source    String   @default("optimizer") // optimizer | library | import
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Optional project link (light grouping now; full hub later).
+  templateId String?
+  template   Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  projectId  String?
+  project    Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([favorite])
+}
+
+// Shared engine: prompt-library variable templates (kind="prompt") AND
+// brainstorming technique modes (kind="technique"). Same shape: a body with
+// {{variables}} plus a JSON variable declaration.
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  kind        String   @default("prompt") // prompt | technique
+  category    String? // technique sub-type, or a free group for prompts
+  body        String // text with {{variable}} placeholders
+  variables   String   @default("[]") // JSON string: array of VarDef
+  builtin     Boolean  @default(false)
+  slug        String?  @unique // stable key for idempotent seeding
+  tags        String?
+  favorite    Boolean  @default(false)
+  archived    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  prompts Prompt[]
+  ideas   Idea[]
+
+  @@index([kind])
+  @@index([projectId])
+}
+
+// Phase 2: email writer (compose + reply, tone, length).
+model EmailDraft {
+  id         String   @id @default(cuid())
+  title      String?
+  mode       String   @default("compose") // compose | reply
+  sourceText String? // the email being replied to (reply mode)
+  brief      String? // the user's intent / notes
+  body       String // generated draft
+  tone       String   @default("neutral") // neutral | formal | friendly | direct | warm | apologetic
+  length     String   @default("medium") // short | medium | long
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([projectId])
 }
 
-// Lightweight grouping used across tools; grows in later phases.
+// Phase 2: brainstorming output, produced by a technique Template.
+model Idea {
+  id            String    @id @default(cuid())
+  title         String?
+  topic         String
+  content       String
+  techniqueId   String?
+  technique     Template? @relation(fields: [techniqueId], references: [id], onDelete: SetNull)
+  techniqueKind String? // denormalized technique category, for legibility
+  tags          String?
+  favorite      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([techniqueId])
+}
+
+// Hub entity; grows across phases. Content optionally links here (onDelete: SetNull).
 model Project {
   id        String   @id @default(cuid())
   name      String
   createdAt DateTime @default(now())
 
-  prompts Prompt[]
+  prompts   Prompt[]
+  templates Template[]
+  emails    EmailDraft[]
+  ideas     Idea[]
 }
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
-// Null fields fall back to env/defaults in lib/config.ts.
 model Settings {
   id          String   @id @default("singleton")
   model       String?

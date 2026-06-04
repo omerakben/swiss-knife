@@ -8,7 +8,8 @@
     "start": "next start",
     "db:push": "prisma db push",
     "lint": "eslint .",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:seed": "node --env-file=.env prisma/seed.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
