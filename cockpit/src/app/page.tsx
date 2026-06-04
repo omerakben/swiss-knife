@@ -3,7 +3,15 @@ import { prisma } from "@/lib/db";
 import { HealthBanner } from "@/components/HealthBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const TOOLS = [
+  { href: "/tools/prompt-optimizer", title: "✨ Prompt Optimizer", desc: "Sharpen a rough prompt." },
+  { href: "/tools/prompt-library", title: "📚 Prompt Library", desc: "Saved prompts + variable templates." },
+  { href: "/tools/email-writer", title: "✉️ Email Writer", desc: "Compose and reply with the right tone." },
+  { href: "/tools/brainstorm", title: "💡 Brainstorming", desc: "Structured thinking techniques." },
+];
 
 export default async function Dashboard() {
   let recent: { id: string; title: string }[] = [];
@@ -29,22 +37,22 @@ export default async function Dashboard() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Link href="/tools/prompt-optimizer">
-          <Card className="h-full transition-shadow hover:shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">✨ Prompt Optimizer</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Clean up and save reusable prompts.
-            </CardContent>
-          </Card>
-        </Link>
+        {TOOLS.map((t) => (
+          <Link key={t.href} href={t.href}>
+            <Card className="h-full transition-shadow hover:shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{t.desc}</CardContent>
+            </Card>
+          </Link>
+        ))}
         <Card className="h-full border-dashed">
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base text-muted-foreground">📥 Coming next</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Email writer · Todo · Kanban · Knowledge base
+            Todo · Kanban · Knowledge base
           </CardContent>
         </Card>
       </div>

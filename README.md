@@ -57,6 +57,11 @@ Stop everything: `docker compose down`
 - **Prompt Optimizer** — rewrite a rough prompt into a sharp one using local Gemma,
   streamed token by token, with an option to **save it to your prompt library**
   (SQLite, on-disk).
+- **Prompt Library** — manage saved prompts (search, favorite, edit, delete, copy,
+  export/import) and run reusable **variable templates** ({{placeholders}} you fill in).
+- **Email Writer** — compose or reply with tone and length controls.
+- **Brainstorming** — structured thinking techniques (expand, alternatives, premortem,
+  pros/cons, SCAMPER, a Socratic sharpen pass); results save as ideas.
 - **Dashboard** — entry point, recent prompts, and a live engine-health banner.
 - **Settings** — set the model, base URL, and temperature in-app.
 - **Dark mode** — light / dark / system.
@@ -90,7 +95,7 @@ Stop everything: `docker compose down`
 
 ## Roadmap (next phases)
 
-- **Phase 2:** Prompt library UI (variable templates, export / Open WebUI sync) · email writer · brainstorming (technique modes)
+- **Phase 2 (done):** prompt library + variable templates · email writer · brainstorming. (Open WebUI prompt sync still to come.)
 - **Phase 3:** Todo + Kanban (one Task model: list + dnd-kit board)
 - **Phase 4:** Project knowledge base (Open WebUI RAG) · memory facts · PDF ingest · image input (Gemma vision)
 - **Phase 5:** Clipboard quick-capture (macOS Shortcut) · screenshots · project hub linking
