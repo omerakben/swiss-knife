@@ -42,6 +42,7 @@ export async function POST(req: Request) {
   }
 
   return streamTextResponse({
+    injectMemory: true,
     messages: [
       { role: "system", content: system },
       { role: "user", content: parts.join("\n") },

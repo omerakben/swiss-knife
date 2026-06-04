@@ -39,6 +39,7 @@ export async function POST(req: Request) {
   const title = `${template.name}${subject ? `: ${subject.slice(0, 50)}` : ""}`;
 
   return streamTextResponse({
+    injectMemory: true,
     messages: [{ role: "user", content: rendered }],
     onComplete: save
       ? async (full) => {

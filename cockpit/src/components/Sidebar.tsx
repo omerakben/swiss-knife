@@ -7,7 +7,9 @@ const tools = [
   { href: "/tools/prompt-library", label: "Prompt Library" },
   { href: "/tools/email-writer", label: "Email Writer" },
   { href: "/tools/brainstorm", label: "Brainstorming" },
+  { href: "/tools/image", label: "Image" },
   { href: "/tools/tasks", label: "Tasks" },
+  { href: "/tools/memory", label: "Memory" },
   { href: "/settings", label: "Settings" },
 ];
 

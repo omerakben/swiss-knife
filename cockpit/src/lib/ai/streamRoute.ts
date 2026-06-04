@@ -1,5 +1,6 @@
 import { streamChat, type ChatMessage } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
+import { getMemoryContext } from "@/lib/memory";
 import { ERROR_SENTINEL } from "@/lib/ai/sentinel";
 
 export { ERROR_SENTINEL };
@@ -10,6 +11,8 @@ type StreamTextArgs = {
   temperature?: number;
   /** Called once with the full assembled text after the stream completes (e.g. to save). */
   onComplete?: (fullText: string) => Promise<void> | void;
+  /** Prepend active memory facts as a leading system message. */
+  injectMemory?: boolean;
 };
 
 /**
@@ -17,7 +20,12 @@ type StreamTextArgs = {
  * it streams tokens to the client as plain text and runs onComplete (save)
  * after the full response is assembled server-side.
  */
-export function streamTextResponse({ messages, temperature, onComplete }: StreamTextArgs): Response {
+export function streamTextResponse({
+  messages,
+  temperature,
+  onComplete,
+  injectMemory,
+}: StreamTextArgs): Response {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -25,7 +33,12 @@ export function streamTextResponse({ messages, temperature, onComplete }: Stream
       let full = "";
       try {
         const cfg = await getEffectiveConfig();
-        for await (const token of streamChat(messages, {
+        let msgs = messages;
+        if (injectMemory) {
+          const mem = await getMemoryContext();
+          if (mem) msgs = [{ role: "system", content: mem }, ...messages];
+        }
+        for await (const token of streamChat(msgs, {
           temperature: temperature ?? cfg.temperature,
           model: cfg.model,
           baseUrl: cfg.baseUrl,

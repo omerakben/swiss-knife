@@ -1,6 +1,7 @@
 import { assertOllamaReady } from "@/lib/health";
 import { chat } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
+import { getMemoryContext } from "@/lib/memory";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
   }
 
   const cfg = await getEffectiveConfig();
+  const memory = await getMemoryContext();
   const text = await chat(
     [
       {
@@ -23,6 +25,7 @@ export async function POST(req: Request) {
         content:
           "You break a goal into concrete, actionable tasks. Return ONLY a plain list, one task per line, 3-7 tasks, no numbering, no headers, no commentary. Each line is a short imperative task.",
       },
+      ...(memory ? [{ role: "system" as const, content: memory }] : []),
       { role: "user", content: goal.trim() },
     ],
     { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0.4 }

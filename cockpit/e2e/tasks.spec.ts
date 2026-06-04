@@ -8,10 +8,11 @@ test.describe("tasks", () => {
     await expect(page.getByText("Doing")).toBeVisible();
     await expect(page.getByText("Done", { exact: true })).toBeVisible();
 
+    const title = `Smoke task ${Date.now()}`;
     const input = page.getByPlaceholder(/add a task/i);
-    await input.fill("Playwright smoke task");
+    await input.fill(title);
     await page.getByRole("button", { name: /^add$/i }).click();
-    await expect(page.getByText("Playwright smoke task")).toBeVisible();
+    await expect(page.getByText(title)).toBeVisible();
   });
 
   test("list view is reachable", async ({ page }) => {

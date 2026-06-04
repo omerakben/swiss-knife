@@ -117,6 +117,24 @@ model Task {
   @@index([projectId])
 }
 
+// Phase 4: lightweight memory facts (manual + AI-suggested), injected into prompts.
+model MemoryFact {
+  id        String   @id @default(cuid())
+  key       String?
+  value     String
+  source    String   @default("manual") // manual | ai
+  status    String   @default("active") // active | pending | dismissed
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([status])
+}
+
 // Hub entity; grows across phases. Content optionally links here (onDelete: SetNull).
 model Project {
   id        String   @id @default(cuid())
@@ -128,6 +146,7 @@ model Project {
   emails    EmailDraft[]
   ideas     Idea[]
   tasks     Task[]
+  facts     MemoryFact[]
 }
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
