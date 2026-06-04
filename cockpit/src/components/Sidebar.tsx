@@ -5,6 +5,8 @@ const tools = [
   { href: "/", label: "Dashboard" },
   { href: "/tools/prompt-optimizer", label: "Prompt Optimizer" },
   { href: "/tools/prompt-library", label: "Prompt Library" },
+  { href: "/tools/email-writer", label: "Email Writer" },
+  { href: "/tools/brainstorm", label: "Brainstorming" },
   { href: "/settings", label: "Settings" },
 ];
 
