@@ -14,6 +14,7 @@ const TOOLS = [
   { href: "/tools/image", title: "🖼️ Image", desc: "Ask Gemma about an image." },
   { href: "/tools/tasks", title: "✅ Tasks", desc: "List + Kanban with AI assists." },
   { href: "/tools/memory", title: "🧠 Memory", desc: "Facts woven into your tools." },
+  { href: "/tools/projects", title: "📂 Projects", desc: "Group work; deep-link to Open WebUI." },
 ];
 
 export default async function Dashboard() {
@@ -52,10 +53,10 @@ export default async function Dashboard() {
         ))}
         <Card className="h-full border-dashed">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base text-muted-foreground">📥 Coming next</CardTitle>
+            <CardTitle className="text-base text-muted-foreground">💬 Open WebUI</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Knowledge base · Project hub
+            Chat, documents &amp; RAG — open it from the sidebar.
           </CardContent>
         </Card>
       </div>

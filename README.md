@@ -67,6 +67,10 @@ Stop everything: `docker compose down`
 - **Memory** — facts about you and your work (manual or AI-suggested), woven into
   the email, brainstorming, and task tools.
 - **Image** — ask local Gemma about an uploaded image (vision).
+- **Projects** — group prompts/tasks/ideas/drafts/memory by project; the sidebar's active
+  project files new work automatically, and each project deep-links to its Open WebUI knowledge base.
+- **Quick capture** — a token-authed endpoint (wire a macOS Shortcut or hotkey) to file text as a
+  task, fact, prompt, or idea from any app.
 - **Dashboard** — entry point, recent prompts, and a live engine-health banner.
 - **Settings** — set the model, base URL, and temperature in-app.
 - **Dark mode** — light / dark / system.
@@ -103,7 +107,7 @@ Stop everything: `docker compose down`
 - **Phase 2 (done):** prompt library + variable templates · email writer · brainstorming. (Open WebUI prompt sync still to come.)
 - **Phase 3 (done):** tasks — list + dnd-kit Kanban board, AI generate-from-goal + daily summary
 - **Phase 4 (in progress):** memory facts (done) · image input via Gemma vision (done) · knowledge base / RAG + PDF via Open WebUI (lands with the Phase 5 hub)
-- **Phase 5:** Clipboard quick-capture (macOS Shortcut) · screenshots · project hub linking
+- **Phase 5 (done):** project hub + active-project switcher · quick-capture (macOS Shortcut) · Open WebUI RAG deep-link + prompt sync
 
 ## Notes for sharing with colleagues
 
