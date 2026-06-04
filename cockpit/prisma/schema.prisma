@@ -97,6 +97,26 @@ model Idea {
   @@index([techniqueId])
 }
 
+// Phase 3: tasks, shown as both a list and a dnd-kit Kanban board.
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  notes       String?
+  status      String    @default("todo") // todo | doing | done
+  priority    String    @default("medium") // low | medium | high
+  dueDate     DateTime?
+  order       Float     @default(0) // fractional ordering within a column
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([projectId])
+}
+
 // Hub entity; grows across phases. Content optionally links here (onDelete: SetNull).
 model Project {
   id        String   @id @default(cuid())
@@ -107,6 +127,7 @@ model Project {
   templates Template[]
   emails    EmailDraft[]
   ideas     Idea[]
+  tasks     Task[]
 }
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.

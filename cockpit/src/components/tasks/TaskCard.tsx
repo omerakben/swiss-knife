@@ -1,0 +1,67 @@
+"use client";
+
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Trash2, GripVertical } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { Task } from "./TasksView";
+
+const PRIORITY_VARIANT = {
+  low: "secondary",
+  medium: "outline",
+  high: "destructive",
+} as const;
+
+export function TaskCard({ task, onDelete }: { task: Task; onDelete: (id: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="rounded-md border border-border bg-background p-2.5 shadow-sm"
+    >
+      <div className="flex items-start gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="mt-0.5 cursor-grab text-muted-foreground"
+          aria-label="Drag handle"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm">{task.title}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <Badge variant={PRIORITY_VARIANT[task.priority]} className="text-[10px]">
+              {task.priority}
+            </Badge>
+            {task.dueDate && (
+              <span className="text-[11px] text-muted-foreground">
+                due {new Date(task.dueDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0"
+          aria-label="Delete task"
+          onClick={() => onDelete(task.id)}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
