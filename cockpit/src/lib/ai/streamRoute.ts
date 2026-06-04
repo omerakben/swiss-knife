@@ -1,8 +1,8 @@
 import { streamChat, type ChatMessage } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
+import { ERROR_SENTINEL } from "@/lib/ai/sentinel";
 
-/** In-band marker so the client can surface a mid-stream error. */
-export const ERROR_SENTINEL = "\n[[ERROR]] ";
+export { ERROR_SENTINEL };
 
 type StreamTextArgs = {
   messages: ChatMessage[];
@@ -37,7 +37,7 @@ export function streamTextResponse({ messages, temperature, onComplete }: Stream
         controller.close();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "stream failed";
-        controller.enqueue(encoder.encode(ERROR_SENTINEL + msg));
+        controller.enqueue(encoder.encode(`\n${ERROR_SENTINEL} ${msg}`));
         controller.close();
       }
     },
