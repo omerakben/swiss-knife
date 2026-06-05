@@ -26,12 +26,23 @@ export default async function BrainstormPage() {
     title: i.title || i.topic || "Idea",
     badges: i.techniqueKind ? [i.techniqueKind] : [],
     body: i.content,
+    editValues: { title: i.title ?? "", content: i.content, tags: i.tags ?? "" },
   }));
 
   return (
     <div className="max-w-3xl">
       <Brainstorm techniques={techniques} />
-      <RecentItems heading="Recent ideas" items={ideas} deleteBase="/api/ideas" />
+      <RecentItems
+        heading="Recent ideas"
+        items={ideas}
+        deleteBase="/api/ideas"
+        editBase="/api/ideas"
+        editFields={[
+          { key: "title", label: "Title" },
+          { key: "content", label: "Content", multiline: true },
+          { key: "tags", label: "Tags (comma-separated)" },
+        ]}
+      />
     </div>
   );
 }

@@ -10,6 +10,20 @@ test.describe("phase 2 tools", () => {
     await expect(page.getByText(/summarize to bullets/i)).toBeVisible();
   });
 
+  test("create a custom template", async ({ page }) => {
+    await page.goto("/tools/prompt-library");
+    await page.getByRole("tab", { name: /templates/i }).click();
+    await page.getByRole("button", { name: /new template/i }).click();
+
+    const dialog = page.getByRole("dialog");
+    const name = `E2E tmpl ${Date.now()}`;
+    await dialog.getByLabel("Name").fill(name);
+    await dialog.getByLabel("Body").fill("Summarize {{text}} in {{count}} bullets.");
+    await dialog.getByRole("button", { name: /^save$/i }).click();
+
+    await expect(page.getByText(name)).toBeVisible();
+  });
+
   test("email writer shows its controls", async ({ page }) => {
     await page.goto("/tools/email-writer");
     await expect(page.getByRole("heading", { name: /email writer/i })).toBeVisible();

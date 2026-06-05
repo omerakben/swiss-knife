@@ -2,12 +2,13 @@
 
 import { useMemo, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Star, Pencil, Trash2, Download, Upload, Sparkles } from "lucide-react";
+import { Copy, Star, Pencil, Trash2, Download, Upload, Sparkles, Plus, Files } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TemplateRunner } from "@/components/library/TemplateRunner";
+import { templateVariableNames } from "@/lib/templates";
 
 export type LibPrompt = {
   id: string;
@@ -36,6 +38,18 @@ export type LibTemplate = {
   name: string;
   description: string | null;
   category: string | null;
+  variables: string;
+  body: string;
+  builtin: boolean;
+};
+
+/** Seed for the create/edit template dialog. No id => create. */
+type TemplateSeed = {
+  id?: string;
+  name: string;
+  description: string;
+  category: string;
+  body: string;
   variables: string;
 };
 
@@ -57,6 +71,7 @@ export function PromptLibrary({
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<LibPrompt | null>(null);
   const [useTemplate, setUseTemplate] = useState<LibTemplate | null>(null);
+  const [tmplSeed, setTmplSeed] = useState<TemplateSeed | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -91,6 +106,43 @@ export function PromptLibrary({
     }
     toast.success("Deleted");
     router.refresh();
+  }
+
+  async function removeTemplate(id: string) {
+    const res = await fetch(`/api/templates/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || "Delete failed");
+      return;
+    }
+    toast.success("Template deleted");
+    router.refresh();
+  }
+
+  function newTemplate() {
+    setTmplSeed({ name: "", description: "", category: "", body: "", variables: "" });
+  }
+
+  function editTemplate(t: LibTemplate) {
+    setTmplSeed({
+      id: t.id,
+      name: t.name,
+      description: t.description ?? "",
+      category: t.category ?? "",
+      body: t.body,
+      variables: t.variables,
+    });
+  }
+
+  function duplicateTemplate(t: LibTemplate) {
+    // No id => creates a new custom template; variables re-derived from the body.
+    setTmplSeed({
+      name: `Copy of ${t.name}`,
+      description: t.description ?? "",
+      category: t.category ?? "",
+      body: t.body,
+      variables: "",
+    });
   }
 
   async function onImportFile(e: ChangeEvent<HTMLInputElement>) {
@@ -251,17 +303,67 @@ export function PromptLibrary({
         </TabsContent>
 
         <TabsContent value="templates" className="mt-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              Reusable prompts with {"{{variables}}"}. Built-ins can be duplicated to customize.
+            </p>
+            <Button size="sm" onClick={newTemplate}>
+              <Plus className="mr-1 h-4 w-4" /> New template
+            </Button>
+          </div>
+
           {templates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No templates.</p>
+            <p className="mt-6 text-sm text-muted-foreground">
+              No templates yet. Create one to get started.
+            </p>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {templates.map((t) => (
                 <Card key={t.id}>
-                  <CardHeader className="py-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
+                  <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 py-3">
+                    <CardTitle className="flex flex-wrap items-center gap-2 text-base">
                       {t.name}
                       {t.category && <Badge variant="outline">{t.category}</Badge>}
+                      {t.builtin && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          built-in
+                        </Badge>
+                      )}
                     </CardTitle>
+                    <div className="flex shrink-0 gap-1">
+                      {t.builtin ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Duplicate template"
+                          onClick={() => duplicateTemplate(t)}
+                        >
+                          <Files className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label="Edit template"
+                            onClick={() => editTemplate(t)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label="Delete template"
+                            onClick={() => removeTemplate(t.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {t.description && (
@@ -312,6 +414,151 @@ export function PromptLibrary({
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!tmplSeed} onOpenChange={(o) => !o && setTmplSeed(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{tmplSeed?.id ? "Edit template" : "New template"}</DialogTitle>
+            <DialogDescription>
+              Use {"{{variables}}"} in the body; they become fill-in fields when you run it.
+            </DialogDescription>
+          </DialogHeader>
+          {tmplSeed && (
+            <TemplateForm
+              key={tmplSeed.id ?? "new"}
+              seed={tmplSeed}
+              onSave={async (vals) => {
+                const isEdit = !!tmplSeed.id;
+                const res = await fetch(
+                  isEdit ? `/api/templates/${tmplSeed.id}` : "/api/templates",
+                  {
+                    method: isEdit ? "PATCH" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...vals, kind: "prompt" }),
+                  }
+                );
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                  toast.error(data.error || "Save failed");
+                  return;
+                }
+                toast.success(isEdit ? "Template updated" : "Template created");
+                setTmplSeed(null);
+                router.refresh();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function TemplateForm({
+  seed,
+  onSave,
+}: {
+  seed: TemplateSeed;
+  onSave: (vals: {
+    name: string;
+    description: string;
+    category: string;
+    body: string;
+    variables: string;
+  }) => Promise<void>;
+}) {
+  const [name, setName] = useState(seed.name);
+  const [description, setDescription] = useState(seed.description);
+  const [category, setCategory] = useState(seed.category);
+  const [body, setBody] = useState(seed.body);
+  const [variables, setVariables] = useState(seed.variables);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const derived = templateVariableNames(body);
+  const valid = name.trim().length > 0 && body.trim().length > 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="tmpl-name">Name</Label>
+        <Input id="tmpl-name" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="tmpl-desc">Description</Label>
+        <Input
+          id="tmpl-desc"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="tmpl-category">Category</Label>
+        <Input
+          id="tmpl-category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          placeholder="Optional group"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="tmpl-body">Body</Label>
+        <Textarea
+          id="tmpl-body"
+          rows={6}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="e.g. Summarize {{text}} into {{count}} bullet points."
+        />
+        <p className="text-xs text-muted-foreground">
+          {derived.length > 0
+            ? `Variables: ${derived.map((n) => `{{${n}}}`).join(", ")}`
+            : "Add {{variables}} to create fill-in fields."}
+        </p>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+          onClick={() => setShowAdvanced((s) => !s)}
+        >
+          {showAdvanced ? "Hide" : "Advanced"}: variable definitions (JSON)
+        </button>
+        {showAdvanced && (
+          <Textarea
+            className="mt-2 font-mono text-xs"
+            rows={4}
+            value={variables}
+            onChange={(e) => setVariables(e.target.value)}
+            placeholder='[{"name":"text","type":"textarea","required":true}]'
+          />
+        )}
+      </div>
+
+      <DialogFooter>
+        <Button
+          disabled={!valid || saving}
+          onClick={async () => {
+            setSaving(true);
+            await onSave({
+              name: name.trim(),
+              description: description.trim(),
+              category: category.trim(),
+              body,
+              // Advanced JSON overrides; otherwise the server derives from the body.
+              variables: showAdvanced ? variables : "",
+            });
+            setSaving(false);
+          }}
+        >
+          {saving ? "Saving…" : "Save"}
+        </Button>
+      </DialogFooter>
     </div>
   );
 }

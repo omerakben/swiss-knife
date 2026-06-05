@@ -15,12 +15,22 @@ export default async function EmailWriterPage() {
     title: d.title || "Untitled draft",
     badges: [d.mode, d.tone, d.length],
     body: d.body,
+    editValues: { title: d.title ?? "", body: d.body },
   }));
 
   return (
     <div className="max-w-3xl">
       <EmailWriter />
-      <RecentItems heading="Recent drafts" items={drafts} deleteBase="/api/email" />
+      <RecentItems
+        heading="Recent drafts"
+        items={drafts}
+        deleteBase="/api/email"
+        editBase="/api/email"
+        editFields={[
+          { key: "title", label: "Title" },
+          { key: "body", label: "Body", multiline: true },
+        ]}
+      />
     </div>
   );
 }

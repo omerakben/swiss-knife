@@ -30,6 +30,8 @@ export default async function PromptLibraryPage() {
     description: t.description,
     category: t.category,
     variables: t.variables,
+    body: t.body,
+    builtin: t.builtin,
   }));
 
   return <PromptLibrary prompts={prompts} templates={templates} />;

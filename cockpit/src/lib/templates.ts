@@ -40,3 +40,20 @@ export function templateVariableNames(body: string): string[] {
 export function missingRequired(vars: VarDef[], values: Record<string, string>): string[] {
   return vars.filter((v) => v.required && !values[v.name]?.trim()).map((v) => v.name);
 }
+
+/**
+ * Build a Template.variables JSON string when saving a custom template: use the
+ * caller's advanced JSON if it's a valid array, otherwise derive [{name}] from
+ * the {{placeholders}} in the body.
+ */
+export function buildVariablesJson(json: string | null | undefined, body: string): string {
+  if (json && json.trim()) {
+    try {
+      const parsed = JSON.parse(json);
+      if (Array.isArray(parsed)) return JSON.stringify(parsed);
+    } catch {
+      // fall through to derived
+    }
+  }
+  return JSON.stringify(templateVariableNames(body).map((name) => ({ name })));
+}
