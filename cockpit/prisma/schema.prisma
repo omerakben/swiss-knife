@@ -141,6 +141,25 @@ model MemoryFact {
   @@index([status])
 }
 
+// Phase 6: project-scoped QA pipeline runs (Story → Gherkin → lint → rubric).
+// One row per run: the input story, the drafted .feature, the deterministic lint
+// outcome, and the rubric score (raw text + parsed verdict) as JSON.
+model QaRun {
+  id           String   @id @default(cuid())
+  input        String // the pasted user story / requirement
+  draftFeature String // the AI-drafted .feature
+  lintOk       Boolean  @default(false) // deterministic lintGherkin() gate
+  errors       Int      @default(0)
+  warnings     Int      @default(0)
+  score        Json? // rubric result: { raw, verdict }
+  createdAt    DateTime @default(now())
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+}
+
 // Hub entity; grows across phases. Content optionally links here (onDelete: SetNull).
 model Project {
   id          String   @id @default(cuid())
@@ -157,6 +176,7 @@ model Project {
   ideas     Idea[]
   tasks     Task[]
   facts     MemoryFact[]
+  qaRuns    QaRun[]
 }
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
