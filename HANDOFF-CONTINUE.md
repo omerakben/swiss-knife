@@ -22,7 +22,7 @@ What changed:
 - Fix 4, OWUI sync: re-sync UPDATES existing prompts instead of skipping, and fails loudly (502) when Open WebUI is unreachable or the key is rejected. Endpoints checked against the Open WebUI API docs (context7).
 
 Remaining human steps:
-1. Open WebUI prompt sync, end-to-end. Bring up OWUI (`docker compose up -d open-webui`), onboard it in the browser at `:3001` (you own the admin), Settings → Account → API Keys → create a key, paste it into cockpit Settings → Open WebUI sync, then click "Sync to Open WebUI" in the Prompt Library. Verify with `curl -H "Authorization: Bearer <key>" http://localhost:3001/api/v1/prompts/`. The code is done; only this live check is left.
+1. ✅ DONE (2026-06-05): Open WebUI fully verified end-to-end. Prompt sync (create + update-not-duplicate), OWUI chat with the local models, and RAG (doc upload → embeddinggemma embeddings → answer from the doc). Required enabling `ENABLE_API_KEYS=True` (baked into `docker-compose.yml`) and fixing `api/prompts/sync` for OWUI's current API (`name` field, update-by-id). A key is saved in the cockpit; OWUI embedding is set to `ollama`/`embeddinggemma`. Note: with `WEBUI_AUTH=False`, only browsers with a saved token stay auto-logged-in; a fresh browser hits `/auth`.
 2. The macOS capture Shortcut is documented, not built. Settings → Quick capture has copy-paste recipes for both text and screenshot capture. Building it is a ~5-minute manual step left to you because it needs your token and hotkey choices, and driving the Shortcuts GUI unattended is unreliable.
 
 Notes:
