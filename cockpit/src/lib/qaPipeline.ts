@@ -1,9 +1,10 @@
 // Project-scoped QA pipeline: a user story → drafted .feature → deterministic
-// lint → rubric score. This orchestrates EXISTING primitives — it does not
-// reimplement them. The Gherkin-authoring and eval-rubric instructions come from
-// the active project's seeded templates (resolved by slug), so all LBMH/Spruce
-// specifics stay in the gitignored project pack (prisma/seed-lbmh.mjs), never
-// hardcoded here. Glossary/vocabulary is injected via the project's memory facts.
+// lint → rubric score, refined across iterations. This orchestrates EXISTING
+// primitives — it does not reimplement them. The Gherkin-authoring and
+// eval-rubric instructions come from the active project's seeded templates
+// (resolved by slug), so all LBMH/Spruce specifics stay in the gitignored
+// project pack (prisma/seed-lbmh.mjs), never hardcoded here. Glossary/vocabulary
+// is injected via the project's memory facts.
 
 import { prisma } from "@/lib/db";
 import { chat, type ChatMessage } from "@/lib/ollama";
@@ -30,7 +31,7 @@ export type QaContext = {
 
 export type RubricScore = { raw: string; verdict: "PASS" | "BLOCK" | "UNKNOWN" };
 
-export type QaPipelineResult = {
+export type IterationResult = {
   draftFeature: string;
   lint: GherkinLintResult;
   rubric: RubricScore;
@@ -66,7 +67,7 @@ export async function loadProjectQaContext(projectId: string | null): Promise<Qa
 }
 
 // Gemma tends to wrap output in ```gherkin fences; the linter wants raw text.
-function stripFences(s: string): string {
+export function stripFences(s: string): string {
   return s.replace(/^\s*```[\w-]*\s*$/gm, "").trim();
 }
 
@@ -76,47 +77,176 @@ function parseVerdict(raw: string): RubricScore["verdict"] {
   return "UNKNOWN";
 }
 
-/**
- * Run the full pipeline against a pre-loaded context (caller checks ctx.hasPack
- * and health-gates first). Draft and score both go through the one-shot chat()
- * with the project's memory injected as a leading system message.
- */
-export async function runQaPipeline(
-  input: string,
+async function chatOpts() {
+  const cfg = await getEffectiveConfig();
+  return { model: cfg.model, baseUrl: cfg.baseUrl, temperature: cfg.temperature };
+}
+
+function withMemory(memory: string, instruction: string): ChatMessage[] {
+  return memory
+    ? [{ role: "system", content: memory }, { role: "user", content: instruction }]
+    : [{ role: "user", content: instruction }];
+}
+
+/** Deterministic, model-independent BDD lint (reuse — never reimplement). */
+export function lintFeature(draftFeature: string): GherkinLintResult {
+  return lintGherkin(draftFeature);
+}
+
+/** Draft a fresh .feature from a story, using the project's Gherkin template. */
+export async function draftFromStory(
+  story: string,
   projectId: string | null,
   ctx: QaContext
-): Promise<QaPipelineResult> {
-  if (!ctx.gherkinTemplate || !ctx.rubricTemplate) {
-    throw new Error("QA pack not loaded for this project.");
-  }
-
-  const cfg = await getEffectiveConfig();
+): Promise<string> {
+  if (!ctx.gherkinTemplate) throw new Error("QA pack not loaded for this project.");
   const memory = await getMemoryContext({ projectId });
-  const chatOpts = { model: cfg.model, baseUrl: cfg.baseUrl, temperature: cfg.temperature };
+  // The story drives the template's `behavior`; module/examples map to "".
+  const instruction = renderTemplate(ctx.gherkinTemplate.body, { behavior: story });
+  const raw = await chat(withMemory(memory, instruction), await chatOpts());
+  return stripFences(raw);
+}
 
-  const withMemory = (instruction: string): ChatMessage[] =>
-    memory
-      ? [{ role: "system", content: memory }, { role: "user", content: instruction }]
-      : [{ role: "user", content: instruction }];
+/**
+ * Revise a previous draft against a follow-up instruction, keeping the project's
+ * Gherkin standards (the template body) in front of the model.
+ */
+export async function draftFromFollowUp(
+  story: string,
+  previousDraft: string,
+  instruction: string,
+  projectId: string | null,
+  ctx: QaContext
+): Promise<string> {
+  if (!ctx.gherkinTemplate) throw new Error("QA pack not loaded for this project.");
+  const memory = await getMemoryContext({ projectId });
+  const standards = renderTemplate(ctx.gherkinTemplate.body, { behavior: story });
+  const prompt = `${standards}
 
-  // A) Draft — the story drives the template's `behavior`; module/examples are
-  // left empty (renderTemplate maps missing vars to ""). The project's glossary
-  // rides in via the injected memory so Spruce vocabulary shows up in the draft.
-  const draftInstruction = renderTemplate(ctx.gherkinTemplate.body, {
-    behavior: input,
-  });
-  const draftRaw = await chat(withMemory(draftInstruction), chatOpts);
-  const draftFeature = stripFences(draftRaw);
+You previously produced this .feature:
+---
+${previousDraft}
+---
 
-  // B) Lint — deterministic, model-independent (reuse, never reimplement).
-  const lint = lintGherkin(draftFeature);
+Revise it to address this follow-up, keeping every standard above and not dropping
+scenarios that already work: ${instruction}
 
-  // C) Rubric — score the drafted feature against the project's eval rubric.
-  const rubricInstruction = renderTemplate(ctx.rubricTemplate.body, {
-    artifact: draftFeature,
-  });
-  const rubricRaw = await chat(withMemory(rubricInstruction), chatOpts);
-  const rubric: RubricScore = { raw: rubricRaw.trim(), verdict: parseVerdict(rubricRaw) };
+Return only the revised .feature content.`;
+  const raw = await chat(withMemory(memory, prompt), await chatOpts());
+  return stripFences(raw);
+}
 
+/** Score a .feature against the project's eval rubric. */
+export async function scoreFeature(
+  draftFeature: string,
+  projectId: string | null,
+  ctx: QaContext
+): Promise<RubricScore> {
+  if (!ctx.rubricTemplate) throw new Error("QA pack not loaded for this project.");
+  const memory = await getMemoryContext({ projectId });
+  const instruction = renderTemplate(ctx.rubricTemplate.body, { artifact: draftFeature });
+  const raw = await chat(withMemory(memory, instruction), await chatOpts());
+  return { raw: raw.trim(), verdict: parseVerdict(raw) };
+}
+
+/** Full first iteration: draft from the story, then lint + score. */
+export async function runFreshIteration(
+  story: string,
+  projectId: string | null,
+  ctx: QaContext
+): Promise<IterationResult> {
+  const draftFeature = await draftFromStory(story, projectId, ctx);
+  const lint = lintFeature(draftFeature);
+  const rubric = await scoreFeature(draftFeature, projectId, ctx);
   return { draftFeature, lint, rubric };
+}
+
+/** Full follow-up iteration: revise from the previous draft, then lint + score. */
+export async function runFollowUpIteration(
+  story: string,
+  previousDraft: string,
+  instruction: string,
+  projectId: string | null,
+  ctx: QaContext
+): Promise<IterationResult> {
+  const draftFeature = await draftFromFollowUp(story, previousDraft, instruction, projectId, ctx);
+  const lint = lintFeature(draftFeature);
+  const rubric = await scoreFeature(draftFeature, projectId, ctx);
+  return { draftFeature, lint, rubric };
+}
+
+// ── Serialization (Prisma rows → client DTOs) ────────────────────────────────
+// Lint is recomputed on read (deterministic + free) so the client always gets a
+// fresh issue list without us storing it; the stored counts are a denormalized
+// cache for the session-list summary only.
+
+export type IterationDTO = {
+  id: string;
+  order: number;
+  instruction: string | null;
+  draftFeature: string;
+  lint: GherkinLintResult;
+  rubric: RubricScore | null;
+  edited: boolean;
+  createdAt: string;
+};
+
+export type SessionDTO = {
+  id: string;
+  title: string;
+  story: string;
+  projectId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  iterations: IterationDTO[];
+};
+
+type IterationRow = {
+  id: string;
+  order: number;
+  instruction: string | null;
+  draftFeature: string;
+  score: unknown;
+  edited: boolean;
+  createdAt: Date;
+};
+
+export function serializeIteration(it: IterationRow): IterationDTO {
+  return {
+    id: it.id,
+    order: it.order,
+    instruction: it.instruction,
+    draftFeature: it.draftFeature,
+    lint: lintFeature(it.draftFeature),
+    rubric: (it.score as RubricScore | null) ?? null,
+    edited: it.edited,
+    createdAt: it.createdAt.toISOString(),
+  };
+}
+
+export function serializeSession(s: {
+  id: string;
+  title: string;
+  story: string;
+  projectId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  iterations: IterationRow[];
+}): SessionDTO {
+  return {
+    id: s.id,
+    title: s.title,
+    story: s.story,
+    projectId: s.projectId,
+    createdAt: s.createdAt.toISOString(),
+    updatedAt: s.updatedAt.toISOString(),
+    iterations: s.iterations.map(serializeIteration),
+  };
+}
+
+/** A short, human label for a session, from the first line of its story. */
+export function deriveTitle(story: string): string {
+  const firstLine = story.trim().split(/\r?\n/)[0].trim();
+  if (!firstLine) return "Untitled story";
+  return firstLine.length > 70 ? firstLine.slice(0, 67) + "…" : firstLine;
 }

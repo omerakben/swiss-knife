@@ -1,72 +1,227 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-type Issue = { severity: "ERROR" | "WARN"; line: number; message: string };
-type Lint = {
-  issues: Issue[];
-  summary: { errors: number; warnings: number; scenarios: number };
-  ok: boolean;
-};
-type Rubric = { raw: string; verdict: "PASS" | "BLOCK" | "UNKNOWN" };
-type RunResult = {
-  projectId: string | null;
-  draftFeature: string;
-  lint: Lint;
-  rubric: Rubric;
-  savedRunId: string;
-};
+import { QaSessionView } from "@/components/qa/QaSessionView";
+import type { Iteration, Session, SessionSummary } from "@/components/qa/types";
 
 const EXAMPLE = `As a cashier, I want to make a walk-in cash sale of in-stock items tax-exempt at the point of sale, so a tax-exempt customer is charged correctly.
 The sale must record the tax-exemption reason, and an over-tender must return the right change.`;
 
+async function jsonFetch(url: string, init?: RequestInit) {
+  const res = await fetch(url, init);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
 export function QaPipeline() {
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [active, setActive] = useState<Session | null>(null);
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<RunResult | null>(null);
+  const [busyNew, setBusyNew] = useState(false);
   const [needsPack, setNeedsPack] = useState(false);
 
-  async function run() {
+  const loadList = useCallback(async () => {
+    try {
+      const data = await jsonFetch("/api/qa-pipeline");
+      setSessions(data.sessions as SessionSummary[]);
+    } catch {
+      // A failed list load is non-fatal; leave whatever we have.
+    }
+  }, []);
+
+  // Initial load (inlined per the repo pattern: async + cancellation guard, so
+  // no setState runs synchronously in the effect body).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const data = await jsonFetch("/api/qa-pipeline");
+        if (active) setSessions(data.sessions as SessionSummary[]);
+      } catch {
+        /* non-fatal */
+      } finally {
+        if (active) setLoadingList(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Replace one iteration inside the active session.
+  const replaceIteration = (it: Iteration) =>
+    setActive((s) =>
+      s ? { ...s, iterations: s.iterations.map((x) => (x.id === it.id ? it : x)) } : s
+    );
+
+  async function startRun() {
     if (!input.trim()) return;
-    setBusy(true);
-    setResult(null);
+    setBusyNew(true);
     setNeedsPack(false);
     try {
-      const res = await fetch("/api/qa-pipeline", {
+      const data = await jsonFetch("/api/qa-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Run failed");
       if (data.needsPack) {
         setNeedsPack(true);
         return;
       }
-      setResult(data as RunResult);
+      setActive(data.session as Session);
+      setInput("");
+      loadList();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Run failed");
     } finally {
-      setBusy(false);
+      setBusyNew(false);
     }
   }
 
-  const lint = result?.lint;
-  const rubric = result?.rubric;
+  async function openSession(id: string) {
+    try {
+      const data = await jsonFetch(`/api/qa-pipeline/${id}`);
+      setActive(data.session as Session);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't open session");
+    }
+  }
+
+  async function deleteSessionById(id: string) {
+    try {
+      await jsonFetch(`/api/qa-pipeline/${id}`, { method: "DELETE" });
+      setSessions((list) => list.filter((s) => s.id !== id));
+      setActive((s) => (s?.id === id ? null : s));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
+  }
+
+  // ── Session-view callbacks (operate on `active`) ──────────────────────────
+  async function refine(instruction: string) {
+    if (!active) return;
+    try {
+      const data = await jsonFetch(`/api/qa-pipeline/${active.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction }),
+      });
+      if (data.needsPack) {
+        toast.error("This project no longer has a QA pack.");
+        return;
+      }
+      const it = data.iteration as Iteration;
+      setActive((s) => (s ? { ...s, iterations: [...s.iterations, it] } : s));
+      loadList();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Refine failed");
+      throw e;
+    }
+  }
+
+  async function editDraft(id: string, draftFeature: string) {
+    try {
+      const data = await jsonFetch(`/api/qa-pipeline/iteration/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draftFeature }),
+      });
+      replaceIteration(data.iteration as Iteration);
+      loadList();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Edit failed");
+      throw e;
+    }
+  }
+
+  async function rescore(id: string) {
+    try {
+      const data = await jsonFetch(`/api/qa-pipeline/iteration/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rescore: true }),
+      });
+      if (data.needsPack) {
+        toast.error("This project no longer has a QA pack.");
+        return;
+      }
+      replaceIteration(data.iteration as Iteration);
+      loadList();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Re-score failed");
+      throw e;
+    }
+  }
+
+  async function deleteIteration(id: string) {
+    try {
+      const data = await jsonFetch(`/api/qa-pipeline/iteration/${id}`, { method: "DELETE" });
+      if (data.sessionDeleted) {
+        const sid = active?.id;
+        setActive(null);
+        if (sid) setSessions((list) => list.filter((s) => s.id !== sid));
+        return;
+      }
+      setActive((s) => (s ? { ...s, iterations: s.iterations.filter((x) => x.id !== id) } : s));
+      loadList();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+      throw e;
+    }
+  }
+
+  async function rename(title: string) {
+    if (!active) return;
+    try {
+      await jsonFetch(`/api/qa-pipeline/${active.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      setActive((s) => (s ? { ...s, title } : s));
+      setSessions((list) => list.map((s) => (s.id === active.id ? { ...s, title } : s)));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Rename failed");
+      throw e;
+    }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  if (active) {
+    return (
+      <div className="max-w-3xl">
+        <QaSessionView
+          session={active}
+          onBack={() => {
+            setActive(null);
+            loadList();
+          }}
+          onRefine={refine}
+          onEditDraft={editDraft}
+          onRescore={rescore}
+          onDeleteIteration={deleteIteration}
+          onRename={rename}
+          onDeleteSession={() => deleteSessionById(active.id)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-semibold">🧪 QA Pipeline</h1>
       <p className="mt-1 text-muted-foreground">
-        Paste a user story or requirement. The active project supplies the QA context (Gherkin
-        standards, eval rubric, and glossary), then this drafts a <code>.feature</code>, runs the
-        deterministic BDD lint, and scores it against the rubric — all locally.
+        Paste a user story. The active project supplies the QA context (Gherkin standards, eval
+        rubric, glossary); this drafts a <code>.feature</code>, runs the deterministic lint, and
+        scores it. Then refine it across iterations — by follow-up or by hand — and the run is saved.
       </p>
 
       <div className="mt-6">
@@ -75,20 +230,19 @@ export function QaPipeline() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Paste a user story / requirement…"
-          disabled={busy}
+          disabled={busyNew}
         />
         <div className="mt-2 flex gap-2">
-          <Button onClick={run} disabled={busy || !input.trim()}>
-            {busy ? "Running…" : "Run"}
+          <Button onClick={startRun} disabled={busyNew || !input.trim()}>
+            {busyNew ? "Running…" : "Run"}
           </Button>
           <Button
             variant="outline"
             onClick={() => {
               setInput(EXAMPLE);
-              setResult(null);
               setNeedsPack(false);
             }}
-            disabled={busy}
+            disabled={busyNew}
           >
             Load example
           </Button>
@@ -112,81 +266,49 @@ export function QaPipeline() {
         </Card>
       )}
 
-      {result && lint && rubric && (
-        <div className="mt-6 space-y-4">
-          {/* A) Draft */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Drafted .feature</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-muted p-3 font-mono text-xs text-foreground">
-                {result.draftFeature}
-              </pre>
-            </CardContent>
-          </Card>
-
-          {/* B) Lint */}
-          <Card>
-            <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-base">Lint</CardTitle>
-              <Badge variant={lint.ok ? "secondary" : "destructive"}>
-                {lint.ok ? "PASS" : "BLOCK"}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                {lint.summary.errors} error{lint.summary.errors === 1 ? "" : "s"},{" "}
-                {lint.summary.warnings} warning{lint.summary.warnings === 1 ? "" : "s"} ·{" "}
-                {lint.summary.scenarios} scenario{lint.summary.scenarios === 1 ? "" : "s"}
-              </p>
-              {lint.issues.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">Clean — no issues found.</p>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  {lint.issues.map((it, i) => (
-                    <div key={i} className="flex items-start gap-3 rounded-md border border-border p-2">
-                      <Badge
-                        variant={it.severity === "ERROR" ? "destructive" : "outline"}
-                        className="mt-0.5 text-[10px]"
-                      >
-                        {it.severity}
-                      </Badge>
-                      <span className="mt-0.5 text-xs tabular-nums text-muted-foreground">
-                        L{it.line}
+      <div className="mt-8">
+        <h2 className="text-sm font-medium text-muted-foreground">Saved sessions</h2>
+        {loadingList ? (
+          <p className="mt-2 text-sm text-muted-foreground">Loading…</p>
+        ) : sessions.length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            No saved sessions yet. Run a story above to start one.
+          </p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {sessions.map((s) => (
+              <Card key={s.id} className="transition-colors hover:border-foreground/30">
+                <CardContent className="flex items-center gap-3 py-3">
+                  <button onClick={() => openSession(s.id)} className="flex-1 text-left">
+                    <div className="font-medium">{s.title}</div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>
+                        {s.iterationCount} iteration{s.iterationCount === 1 ? "" : "s"}
                       </span>
-                      <span className="flex-1 text-sm">{it.message}</span>
+                      {s.latest && (
+                        <Badge variant={s.latest.lintOk ? "secondary" : "destructive"} className="text-[10px]">
+                          lint {s.latest.lintOk ? "PASS" : "BLOCK"}
+                        </Badge>
+                      )}
+                      {s.latest?.verdict && (
+                        <Badge
+                          variant={s.latest.verdict === "PASS" ? "secondary" : s.latest.verdict === "BLOCK" ? "destructive" : "outline"}
+                          className="text-[10px]"
+                        >
+                          rubric {s.latest.verdict}
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* C) Rubric */}
-          <Card>
-            <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-base">Rubric score</CardTitle>
-              <Badge
-                variant={
-                  rubric.verdict === "PASS"
-                    ? "secondary"
-                    : rubric.verdict === "BLOCK"
-                      ? "destructive"
-                      : "outline"
-                }
-              >
-                {rubric.verdict}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <pre className="overflow-x-auto whitespace-pre-wrap text-sm text-foreground">
-                {rubric.raw}
-              </pre>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                  </button>
+                  <Button size="sm" variant="ghost" onClick={() => deleteSessionById(s.id)}>
+                    Delete
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

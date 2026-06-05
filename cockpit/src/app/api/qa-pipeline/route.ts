@@ -1,21 +1,76 @@
 import { prisma } from "@/lib/db";
 import { assertOllamaReady } from "@/lib/health";
 import { getActiveProjectId } from "@/lib/project";
-import { loadProjectQaContext, runQaPipeline } from "@/lib/qaPipeline";
+import {
+  loadProjectQaContext,
+  runFreshIteration,
+  serializeSession,
+  deriveTitle,
+  type RubricScore,
+} from "@/lib/qaPipeline";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Story → Gherkin → lint → rubric, scoped to the active project. One-shot JSON
-// (no SSE) for v1. The active project supplies the QA templates + glossary; a
-// project without them returns { needsPack: true } (a 200, not a degraded run).
+const ITERATION_SELECT = {
+  id: true,
+  order: true,
+  instruction: true,
+  draftFeature: true,
+  score: true,
+  edited: true,
+  createdAt: true,
+} as const;
+
+// GET — list saved sessions for the active project (summary only; the detail
+// route returns full iterations).
+export async function GET() {
+  const projectId = await getActiveProjectId();
+  const rows = await prisma.qaSession.findMany({
+    where: { projectId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: { select: { iterations: true } },
+      iterations: {
+        orderBy: { order: "desc" },
+        take: 1,
+        select: { order: true, lintOk: true, errors: true, warnings: true, score: true },
+      },
+    },
+  });
+
+  const sessions = rows.map((s) => {
+    const latest = s.iterations[0];
+    const verdict = (latest?.score as RubricScore | null)?.verdict ?? null;
+    return {
+      id: s.id,
+      title: s.title,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+      iterationCount: s._count.iterations,
+      latest: latest
+        ? { order: latest.order, lintOk: latest.lintOk, errors: latest.errors, warnings: latest.warnings, verdict }
+        : null,
+    };
+  });
+
+  return Response.json({ projectId, sessions });
+}
+
+// POST — start a NEW session from a story: draft → lint → score → save as
+// iteration 1. A project with no QA pack returns { needsPack: true } (a 200,
+// not a degraded run).
 export async function POST(req: Request) {
   const { input } = (await req.json().catch(() => ({}))) as { input?: string };
   if (!input || typeof input !== "string" || !input.trim()) {
     return Response.json({ error: "Paste a user story to run." }, { status: 400 });
   }
 
-  // cookies()/params are async in Next 15; resolve in handler scope.
+  // cookies() is async in Next 15; resolve in handler scope.
   const projectId = await getActiveProjectId();
 
   // Pack check is DB-only (no model) — do it before the health gate so a no-pack
@@ -28,20 +83,34 @@ export async function POST(req: Request) {
   const notReady = await assertOllamaReady();
   if (notReady) return notReady;
 
-  const { draftFeature, lint, rubric } = await runQaPipeline(input, projectId, ctx);
+  const { draftFeature, lint, rubric } = await runFreshIteration(input, projectId, ctx);
 
-  const run = await prisma.qaRun.create({
+  const session = await prisma.qaSession.create({
     data: {
-      input,
-      draftFeature,
-      lintOk: lint.ok,
-      errors: lint.summary.errors,
-      warnings: lint.summary.warnings,
-      score: rubric,
+      title: deriveTitle(input),
+      story: input,
       projectId,
+      iterations: {
+        create: {
+          order: 1,
+          draftFeature,
+          lintOk: lint.ok,
+          errors: lint.summary.errors,
+          warnings: lint.summary.warnings,
+          score: rubric,
+        },
+      },
     },
-    select: { id: true },
+    select: {
+      id: true,
+      title: true,
+      story: true,
+      projectId: true,
+      createdAt: true,
+      updatedAt: true,
+      iterations: { orderBy: { order: "asc" }, select: ITERATION_SELECT },
+    },
   });
 
-  return Response.json({ projectId, draftFeature, lint, rubric, savedRunId: run.id });
+  return Response.json({ projectId, needsPack: false, session: serializeSession(session) });
 }

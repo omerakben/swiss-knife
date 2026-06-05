@@ -141,23 +141,44 @@ model MemoryFact {
   @@index([status])
 }
 
-// Phase 6: project-scoped QA pipeline runs (Story → Gherkin → lint → rubric).
-// One row per run: the input story, the drafted .feature, the deterministic lint
-// outcome, and the rubric score (raw text + parsed verdict) as JSON.
-model QaRun {
-  id           String   @id @default(cuid())
-  input        String // the pasted user story / requirement
-  draftFeature String // the AI-drafted .feature
-  lintOk       Boolean  @default(false) // deterministic lintGherkin() gate
-  errors       Int      @default(0)
-  warnings     Int      @default(0)
-  score        Json? // rubric result: { raw, verdict }
-  createdAt    DateTime @default(now())
+// Phase 6: project-scoped QA pipeline (Story → Gherkin → lint → rubric).
+// A QaSession is one story being worked; it holds an ordered timeline of
+// QaIterations (each = a drafted .feature + its deterministic lint + its rubric
+// score). Iterations come from a model follow-up ("what's missing") or a manual
+// draft edit, so a session captures the refine loop, not just a single run.
+model QaSession {
+  id        String   @id @default(cuid())
+  title     String // short label (derived from the story, user-editable)
+  story     String // the original user story / requirement
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
+  iterations QaIteration[]
+
   @@index([projectId])
+}
+
+model QaIteration {
+  id           String  @id @default(cuid())
+  order        Int // 1-based position in the session timeline
+  instruction  String? // the follow-up note that produced this iteration (null on the first)
+  draftFeature String // the .feature for this iteration
+  lintOk       Boolean @default(false) // deterministic lintGherkin() gate
+  errors       Int     @default(0)
+  warnings     Int     @default(0)
+  score        Json? // rubric result { raw, verdict }; null when not (re)scored after an edit
+  edited       Boolean @default(false) // true once the draft was hand-edited
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessionId String
+  session   QaSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 // Hub entity; grows across phases. Content optionally links here (onDelete: SetNull).
@@ -176,7 +197,7 @@ model Project {
   ideas     Idea[]
   tasks     Task[]
   facts     MemoryFact[]
-  qaRuns    QaRun[]
+  qaSessions QaSession[]
 }
 
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
