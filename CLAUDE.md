@@ -24,6 +24,8 @@ Two chat tiers, switchable live in **Settings → Model** (a picker that lists i
 
 `scripts/pull-models.sh` pulls **both** tiers plus `embeddinggemma`. The Settings row overrides env at runtime via `getEffectiveConfig()`.
 
+**Vision:** image input (the Image tool `api/vision` + image quick-capture `api/capture`) uses `getEffectiveConfig().visionModel` (= `OLLAMA_VISION_MODEL`, default `gemma4:12b-mlx`), independent of the chat default — the light e4b is **text-only** (a GGUF build with no image support). `streamTextResponse({ model })` and `lib/vision.describeImage` route there. A vision call briefly loads 12B alongside e4b.
+
 **Runtime requirement (important):** Ollama must be the official macOS **app** (`brew install --cask ollama-app`), not the Homebrew CLI formula (`brew install ollama`). The formula's bottle ships without the `llama-server` runner, so GGUF models — `gemma4:e4b` and anything you `ollama pull` from the library — fail with "llama-server binary not found". The app bundles all runners (GGUF + MLX). Models live in `~/.ollama` and are shared between them.
 
 ## Architecture (3 layers)

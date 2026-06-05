@@ -19,8 +19,8 @@ export function visionMessages(dataUrl: string, prompt?: string): ChatMessage[] 
   ];
 }
 
-/** One-shot description of an image (data URL), honoring the effective config. */
+/** One-shot description of an image (data URL) using a vision-capable model. */
 export async function describeImage(dataUrl: string, prompt?: string): Promise<string> {
-  const { model, baseUrl, temperature } = await getEffectiveConfig();
-  return chat(visionMessages(dataUrl, prompt), { model, baseUrl, temperature });
+  const { baseUrl, temperature, visionModel } = await getEffectiveConfig();
+  return chat(visionMessages(dataUrl, prompt), { model: visionModel, baseUrl, temperature });
 }

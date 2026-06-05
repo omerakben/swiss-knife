@@ -7,6 +7,8 @@ export { ERROR_SENTINEL };
 
 type StreamTextArgs = {
   messages: ChatMessage[];
+  /** Override the chat model (e.g. a vision-capable model for image input). */
+  model?: string;
   /** Per-call override; defaults to the effective settings temperature. */
   temperature?: number;
   /** Called once with the full assembled text after the stream completes (e.g. to save). */
@@ -19,6 +21,7 @@ type StreamTextArgs = {
 
 export function streamTextResponse({
   messages,
+  model,
   temperature,
   onComplete,
   injectMemory,
@@ -38,7 +41,7 @@ export function streamTextResponse({
         }
         for await (const token of streamChat(msgs, {
           temperature: temperature ?? cfg.temperature,
-          model: cfg.model,
+          model: model ?? cfg.model,
           baseUrl: cfg.baseUrl,
         })) {
           full += token;
