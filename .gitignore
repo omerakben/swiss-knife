@@ -12,6 +12,10 @@ next-env.d.ts
 *.db-journal
 **/data/
 
+# quick-capture image uploads (local data — never commit)
+cockpit/uploads/
+uploads/
+
 # env & secrets
 .env
 .env.local

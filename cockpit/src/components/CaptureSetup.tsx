@@ -38,8 +38,12 @@ export function CaptureSetup() {
     <div className="space-y-3">
       <h2 className="text-lg font-medium">Quick capture</h2>
       <p className="text-sm text-muted-foreground">
-        POST text to the capture endpoint to file it as a task, fact, prompt, or idea. Wire this
-        token into a macOS Shortcut, Raycast, or a hotkey to capture from anywhere.
+        POST to the capture endpoint to file something from anywhere. Send{" "}
+        <code className="rounded bg-muted px-1">text</code> to file a task, fact, prompt, or idea,
+        or send an <code className="rounded bg-muted px-1">image</code> (a base64{" "}
+        <code className="rounded bg-muted px-1">data:image/…</code> URL, e.g. a screenshot) to
+        save it as an Idea with an auto Gemma-vision description. Wire this token into a macOS
+        Shortcut, Raycast, or a hotkey.
       </p>
 
       <div className="space-y-1.5">
@@ -69,7 +73,7 @@ export function CaptureSetup() {
       </div>
 
       <details className="text-sm text-muted-foreground">
-        <summary className="cursor-pointer">macOS Shortcut setup</summary>
+        <summary className="cursor-pointer">macOS Shortcut — capture selected text</summary>
         <ol className="ml-4 mt-2 list-decimal space-y-1">
           <li>Open Shortcuts and create a new shortcut (or Quick Action that receives text).</li>
           <li>
@@ -82,6 +86,27 @@ export function CaptureSetup() {
             Shortcut Input (the selected text).
           </li>
           <li>Assign a keyboard shortcut so you can capture selected text from any app.</li>
+        </ol>
+      </details>
+
+      <details className="text-sm text-muted-foreground">
+        <summary className="cursor-pointer">macOS Shortcut — capture a screenshot</summary>
+        <ol className="ml-4 mt-2 list-decimal space-y-1">
+          <li>New shortcut. Add “Take Screenshot” (interactive selection works well).</li>
+          <li>
+            Add “Base64 Encode” on the screenshot, then a “Text” action containing{" "}
+            <code className="rounded bg-muted px-1">data:image/png;base64,</code> immediately
+            followed by the encoded result.
+          </li>
+          <li>
+            Add “Get Contents of URL” → POST to http://localhost:3000/api/capture, header
+            x-capture-token = your token, Request Body JSON with{" "}
+            <code className="rounded bg-muted px-1">image</code> set to that Text.
+          </li>
+          <li>
+            It saves as an Idea (visible in Brainstorming) with a Gemma description. Assign a
+            hotkey to grab any screen region into Swiss Knife.
+          </li>
         </ol>
       </details>
     </div>

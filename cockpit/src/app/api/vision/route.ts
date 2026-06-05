@@ -1,5 +1,6 @@
 import { assertOllamaReady } from "@/lib/health";
 import { streamTextResponse } from "@/lib/ai/streamRoute";
+import { visionMessages } from "@/lib/vision";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,17 +18,5 @@ export async function POST(req: Request) {
     return Response.json({ error: "Attach an image first." }, { status: 400 });
   }
 
-  const text = typeof prompt === "string" && prompt.trim() ? prompt.trim() : "Describe this image in detail.";
-
-  return streamTextResponse({
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text },
-          { type: "image_url", image_url: { url: image } },
-        ],
-      },
-    ],
-  });
+  return streamTextResponse({ messages: visionMessages(image, prompt) });
 }

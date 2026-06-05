@@ -82,6 +82,7 @@ model Idea {
   title         String?
   topic         String
   content       String
+  imagePath     String? // relative path under cockpit/uploads/ for image captures
   techniqueId   String?
   technique     Template? @relation(fields: [techniqueId], references: [id], onDelete: SetNull)
   techniqueKind String? // denormalized technique category, for legibility

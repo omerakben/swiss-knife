@@ -1,4 +1,9 @@
+import { mkdir, writeFile } from "fs/promises";
+import { join } from "path";
+import { randomUUID } from "crypto";
+
 import { prisma } from "@/lib/db";
+import { describeImage } from "@/lib/vision";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,9 +13,24 @@ async function getToken(): Promise<string | null> {
   return s?.captureToken || null;
 }
 
+/** Persist a data:image/* URL under cockpit/uploads/, returning its relative path. */
+async function saveCaptureImage(dataUrl: string): Promise<string | null> {
+  const m = dataUrl.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,(.+)$/s);
+  if (!m) return null;
+  const ext = m[1].toLowerCase() === "jpeg" ? "jpg" : m[1].toLowerCase();
+  const buf = Buffer.from(m[2], "base64");
+  const dir = join(process.cwd(), "uploads");
+  await mkdir(dir, { recursive: true });
+  const file = `${randomUUID()}.${ext}`;
+  await writeFile(join(dir, file), buf);
+  return `uploads/${file}`;
+}
+
 /**
  * Quick-capture endpoint for a macOS Shortcut / hotkey. Token-authed via the
- * x-capture-token header (or ?token=). Files the text into the chosen table.
+ * x-capture-token header (or ?token=). Files text into the chosen table, or —
+ * when an `image` data URL is sent — saves the image and a Gemma-vision
+ * description as an Idea (resilient: the capture is kept even if vision fails).
  */
 export async function POST(req: Request) {
   const token = await getToken();
@@ -26,18 +46,48 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid capture token." }, { status: 401 });
   }
 
-  const { target, text, title, projectId } = (await req.json().catch(() => ({}))) as {
+  const { target, text, title, projectId, image } = (await req.json().catch(() => ({}))) as {
     target?: string;
     text?: string;
     title?: string;
     projectId?: string;
+    image?: string;
   };
-  if (!text || typeof text !== "string" || !text.trim()) {
+
+  const hasImage = typeof image === "string" && image.startsWith("data:image");
+  const t = (text ?? "").trim();
+  if (!hasImage && !t) {
     return Response.json({ error: "Nothing to capture." }, { status: 400 });
   }
 
-  const t = text.trim();
   const pid = typeof projectId === "string" && projectId ? projectId : null;
+
+  // Image capture → Idea with a vision description + the saved file path.
+  if (hasImage) {
+    const imagePath = await saveCaptureImage(image as string);
+    if (!imagePath) {
+      return Response.json({ error: "Unsupported image format." }, { status: 400 });
+    }
+    let description = "";
+    try {
+      description = (await describeImage(image as string, t || undefined)).trim();
+    } catch {
+      description = ""; // engine down / error — keep the capture anyway
+    }
+    const content = description || t || "Captured image (auto-description unavailable).";
+    const idea = await prisma.idea.create({
+      data: {
+        title: (title || t.slice(0, 60) || "Captured image").trim(),
+        topic: (t || "image capture").slice(0, 200),
+        content,
+        imagePath,
+        projectId: pid,
+      },
+    });
+    return Response.json({ ok: true, target: "idea", id: idea.id, imagePath, described: !!description });
+  }
+
+  // Text capture → the chosen table.
   const tgt = ["task", "fact", "prompt", "idea"].includes(target ?? "") ? target : "task";
 
   let id: string;
