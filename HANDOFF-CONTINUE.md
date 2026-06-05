@@ -7,7 +7,26 @@ the whole 5-phase roadmap; an honest audit found a handful of gaps; a plan to cl
 ## TL;DR — how to continue
 1. Read this file + `CLAUDE.md` (repo root).
 2. Verify state (see "Run & verify"): git on `foundation`, clean tree; cockpit `:3000`, Ollama `:11434`, Open WebUI `:3001`.
-3. The likely next ask: execute "Fixes 1–4" (below), starting with Fix 1 (task priority/due/edit). Do NOT start unless the user confirms.
+3. As of the 2026-06-05 overnight session, Fixes 1–4 and the Gemma light-model request are DONE (see the update below). What is left is human-gated: Open WebUI onboarding and building the capture Shortcut.
+
+## Update — 2026-06-05 overnight (fixes landed)
+
+Worked autonomously off the audit below. All on branch `foundation`, one commit per feature, not pushed. Gates: lint clean, production build green, 21/21 Playwright (16 prior + 5 new). Six commits, `4688ed3`..`9e866c8` plus a docs commit.
+
+What changed:
+- Gemma light tier (the explicit request): RAM relief for the Docker stack. `gemma4:e4b` (~4 GB resident vs ~10–14 GB for 12B) is now a first-class choice. Settings has a model picker; `/api/models` lists installed models and `lib/models.ts` holds the tiers + RAM hints. `scripts/pull-models.sh` pulls both tiers; the Docker cockpit defaults to the light model (override via `OLLAMA_MODEL`), local dev default stays `gemma4:12b-mlx`. Both models are already pulled on this machine.
+- Fix 1, tasks: priority Select + due-date input on the add box; `EditTaskDialog` (title/notes/priority/dueDate) opens from a pencil on every board card and list row.
+- Fix 2, templates + edits: custom template CRUD (`api/templates`, `api/templates/[id]`; built-ins are immutable with duplicate-to-customize; variables derive from `{{placeholders}}`). Ideas and email drafts are editable now (`RecentItems` edit dialog + PATCH on `api/ideas/[id]` and `api/email/[id]`).
+- Fix 3, image capture: `api/capture` accepts an `image` data URL, saves it under `cockpit/uploads/` (gitignored), runs Gemma vision, and stores an Idea. Added `Idea.imagePath` via `db:push`. `lib/vision.ts` factored out and reused by `api/vision`.
+- Fix 4, OWUI sync: re-sync UPDATES existing prompts instead of skipping, and fails loudly (502) when Open WebUI is unreachable or the key is rejected. Endpoints checked against the Open WebUI API docs (context7).
+
+Remaining human steps:
+1. Open WebUI prompt sync, end-to-end. Bring up OWUI (`docker compose up -d open-webui`), onboard it in the browser at `:3001` (you own the admin), Settings → Account → API Keys → create a key, paste it into cockpit Settings → Open WebUI sync, then click "Sync to Open WebUI" in the Prompt Library. Verify with `curl -H "Authorization: Bearer <key>" http://localhost:3001/api/v1/prompts/`. The code is done; only this live check is left.
+2. The macOS capture Shortcut is documented, not built. Settings → Quick capture has copy-paste recipes for both text and screenshot capture. Building it is a ~5-minute manual step left to you because it needs your token and hotkey choices, and driving the Shortcuts GUI unattended is unreliable.
+
+Notes:
+- Git identity for this repo was set local-only to `me@omerakben.com` (personal-account boundary, per the handoff guidance). Revert with `git config user.email oakben@ecisolutions.com` if you prefer.
+- The dev DB has accumulated e2e/smoke rows (tasks named "Smoke task…", a couple "E2E tmpl…" templates, a test idea). Harmless. For a clean slate: `rm -f cockpit/prisma/dev.db && cd cockpit && npm run db:push && npm run db:seed`, then restart dev.
 
 ## Hard constraints (do not violate)
 - **Do NOT publish / push.** The user wants everything kept LOCAL. No `git push`, no `gh repo create`. No remote exists; keep it that way unless explicitly told.
@@ -65,6 +84,8 @@ npm run lint && npm run test:e2e                     # 16 tests; reuses a runnin
 - Per-chunk commit; `.gitignore` already covers `node_modules`, `.next`, `*.db`, `.env`, `.playwright-mcp/`, `*.tsbuildinfo`, `playwright-report/`, `test-results/`.
 
 ## Audit — the record (gaps, honest)
+NOTE (2026-06-05): gaps 1–5 are now CLOSED in code; see the "Update" section near the top. Gap 5 and the Shortcut part of gap 4 have human-gated live verification left. Kept below as the original record.
+
 Most planned scope is built and verified live. Open gaps (UI-completeness, not infra):
 1. **Tasks (material):** no UI to set **priority** or **due date**, and no **edit** dialog. Model + `api/tasks/[id]` PATCH support them; `TasksView.tsx` only adds a title, toggles done, drags, deletes (priority/due are display-only).
 2. **Prompt Library:** no UI to **create/edit custom templates** (only the seeded builtins are usable; no `api/templates` CRUD, only `api/templates/run`).
@@ -74,7 +95,9 @@ Most planned scope is built and verified live. Open gaps (UI-completeness, not i
 6. Minor: saved items don't show a project badge; memory has no per-project filter view.
 Roughly 80–85% of planned scope; core workflows all work. Earlier wrap-up wording ("fully shipped") overstated it — this audit supersedes it.
 
-## Task plan — Fixes 1–4 (execute on request; order 1→2→3→4)
+## Task plan — Fixes 1–4 (DONE 2026-06-05 — kept for reference)
+This plan was executed in the overnight session; see the "Update" section near the top for what shipped. The workflow below is still the right recipe for future changes.
+
 Per fix: schema (if any) → db:push → build → stop-dev → lint+build → restart-dev → live verify → e2e smoke → one commit.
 
 **Fix 1 — Task priority + due date + edit (UI only; PATCH already supports it).** Risk: low.

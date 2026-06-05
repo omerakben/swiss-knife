@@ -58,6 +58,8 @@ Two chat tiers, switchable live in **Settings → Model** (a picker that lists i
 - ✅ Phase 3: tasks — one `Task` model as a list + dnd-kit Kanban board; AI assists (goal→tasks, daily standup).
 - ✅ Phase 4: memory facts (injected via `lib/memory.ts`) + image input (Gemma vision, `api/vision`). Knowledge base / RAG + PDF live in Open WebUI, deep-linked per project from the hub (`Project.owuiUrl`).
 - ✅ Phase 5: project hub + active-project switcher (cookie via `lib/project.ts`, threaded into create routes); quick-capture (`api/capture` token + macOS Shortcut); Open WebUI integration (RAG deep-link + key-configurable prompt sync `api/prompts/sync`).
+- ✅ Audit fixes (2026-06-05): (1) task priority/due/edit UI + `EditTaskDialog`; (2) custom template CRUD (`api/templates`, `api/templates/[id]`) + edit ideas/email (`RecentItems` edit dialog, PATCH on `api/ideas|email/[id]`); (3) image/screenshot capture → Idea w/ vision (`Idea.imagePath`, `lib/vision.ts`, `uploads/`); (4) OWUI sync update-or-create + loud failure. Plus the **light Gemma tier** (`gemma4:e4b`) + Settings model picker (`api/models`, `lib/models.ts`). 21/21 e2e, lint + build green.
+- ⏳ Human steps remaining: onboard Open WebUI once + create an API key to verify prompt sync end-to-end; build the actual macOS capture Shortcut from the documented recipe (Settings → Quick capture). See `HANDOFF-CONTINUE.md`.
 
 ## Working agreements for the agent
 
