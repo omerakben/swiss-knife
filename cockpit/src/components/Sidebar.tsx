@@ -13,6 +13,7 @@ const tools = [
   { href: "/tools/brainstorm", label: "Brainstorming" },
   { href: "/tools/image", label: "Image" },
   { href: "/tools/tasks", label: "Tasks" },
+  { href: "/tools/gherkin-lint", label: "Gherkin Lint" },
   { href: "/tools/memory", label: "Memory" },
   { href: "/tools/projects", label: "Projects" },
   { href: "/settings", label: "Settings" },

@@ -13,6 +13,7 @@ const TOOLS = [
   { href: "/tools/brainstorm", title: "💡 Brainstorming", desc: "Structured thinking techniques." },
   { href: "/tools/image", title: "🖼️ Image", desc: "Ask Gemma about an image." },
   { href: "/tools/tasks", title: "✅ Tasks", desc: "List + Kanban with AI assists." },
+  { href: "/tools/gherkin-lint", title: "🧪 Gherkin Lint", desc: "Check .feature files for BDD hygiene." },
   { href: "/tools/memory", title: "🧠 Memory", desc: "Facts woven into your tools." },
   { href: "/tools/projects", title: "📂 Projects", desc: "Group work; deep-link to Open WebUI." },
 ];
