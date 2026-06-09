@@ -217,6 +217,23 @@ model Project {
   qaSessions QaSession[]
 }
 
+// Structured bug report, drafted from a rough note (chatJson) and gated on
+// field completeness before saving — the QA chore of writing the same six fields.
+model BugReport {
+  id          String   @id @default(cuid())
+  title       String
+  repro       String // reproduction steps (newline-joined)
+  expected    String
+  actual      String
+  severity    String // low | medium | high | critical
+  environment String?
+  note        String? // the original rough note
+  projectId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+}
+
 // A labeled golden QA case (a story + its expected verdict). The eval bench
 // re-runs the current rubric over these and reports agreement %, catching rubric
 // drift after a prompt or model change. The deterministic lint is ground truth.

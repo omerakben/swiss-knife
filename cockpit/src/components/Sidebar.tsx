@@ -16,6 +16,7 @@ const tools = [
   { href: "/tools/tasks", label: "Tasks" },
   { href: "/tools/gherkin-lint", label: "Gherkin Lint" },
   { href: "/tools/qa-pipeline", label: "QA Pipeline" },
+  { href: "/tools/bug-report", label: "Bug Report" },
   { href: "/tools/memory", label: "Memory" },
   { href: "/tools/activity", label: "Activity" },
   { href: "/tools/projects", label: "Projects" },
