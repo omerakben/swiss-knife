@@ -17,6 +17,9 @@ export async function POST(req: Request) {
   if (!markdown.trim()) {
     return Response.json({ error: "Nothing to save — draft an ADR first." }, { status: 400 });
   }
+  if (markdown.length > 80_000 || (typeof body.note === "string" && body.note.length > 80_000)) {
+    return Response.json({ error: "That's too long — save one focused ADR." }, { status: 413 });
+  }
 
   const projectId = await getActiveProjectId();
   const lint = lintAdr(markdown);

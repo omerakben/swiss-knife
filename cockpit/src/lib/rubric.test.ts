@@ -145,6 +145,17 @@ describe("renderRubricBody", () => {
   });
 });
 
+describe("isRubricSpec", () => {
+  it("accepts a well-formed spec and rejects malformed ones", async () => {
+    const { isRubricSpec } = await import("./rubric");
+    expect(isRubricSpec(GOOD)).toBe(true);
+    expect(isRubricSpec({})).toBe(false);
+    expect(isRubricSpec({ ...GOOD, criteria: "nope" })).toBe(false);
+    expect(isRubricSpec({ ...GOOD, title: 5 })).toBe(false);
+    expect(isRubricSpec({ ...GOOD, bands: [{ label: "x", min: 0, max: 100, verdict: "MAYBE" }] })).toBe(false);
+  });
+});
+
 describe("projectRubricSlug", () => {
   it("is stable per project and global without one", () => {
     expect(projectRubricSlug("p1")).toBe("qa-eval-rubric:p1");

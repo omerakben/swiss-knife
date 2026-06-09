@@ -5,6 +5,7 @@ import { getEffectiveConfig } from "@/lib/config";
 import { getActiveProjectId } from "@/lib/project";
 import { logActivity } from "@/lib/activity";
 import {
+  isRubricSpec,
   lintRubric,
   normalizeRubric,
   projectRubricSlug,
@@ -95,6 +96,10 @@ export async function POST(req: Request) {
 
   // ── Save path: deterministic only (the human just reviewed the design). ──
   if (body.save && body.spec) {
+    // lintRubric assumes arrays/strings; malformed client JSON must 400, not 500.
+    if (!isRubricSpec(body.spec)) {
+      return Response.json({ error: "Malformed rubric spec." }, { status: 400 });
+    }
     const lint = lintRubric(body.spec);
     if (!lint.ok) {
       return Response.json({ error: "This rubric doesn't pass the gate — fix the errors first.", lint }, { status: 400 });

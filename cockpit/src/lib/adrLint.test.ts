@@ -139,6 +139,16 @@ describe("lintAdr", () => {
     expect(r.ok).toBe(true);
     expect(r.summary.options).toBe(3);
   });
+
+  it("ignores headings and list items inside fenced code blocks", () => {
+    const doc = GOOD.replace(
+      "## Considered Options",
+      "## Considered Options\n```yaml\n# options:\n- not_a_real_option\n```"
+    );
+    const r = lintAdr(doc);
+    expect(r.ok).toBe(true);
+    expect(r.summary.options).toBe(3); // the fenced `- not_a_real_option` doesn't count
+  });
 });
 
 describe("stripOuterFences", () => {

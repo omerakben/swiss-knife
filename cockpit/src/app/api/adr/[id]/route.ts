@@ -11,6 +11,9 @@ const STATUSES = ["proposed", "accepted", "rejected", "deprecated", "superseded"
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as { status?: string; markdown?: string };
+  if (typeof body.markdown === "string" && body.markdown.length > 80_000) {
+    return Response.json({ error: "That's too long — save one focused ADR." }, { status: 413 });
+  }
 
   const data: Record<string, unknown> = {};
   if (typeof body.status === "string" && STATUSES.includes(body.status)) data.status = body.status;

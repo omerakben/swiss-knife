@@ -43,7 +43,8 @@ const NEGATIVE_ITEM = /^(?:\*\*)?(bad|negative|con|risk|cost|downside|trade[- ]?
 const POSITIVE_ITEM = /^(?:\*\*)?(good|positive|pro|benefit)\b/i;
 const CHOSEN = /chosen option:?\s*(.*)/i;
 
-type Section = { canonical: string; line: number; lines: { line: number; text: string }[] };
+type SectionLine = { line: number; text: string; fenced?: boolean };
+type Section = { canonical: string; line: number; lines: SectionLine[] };
 
 /**
  * If the entire document is wrapped in a single fence pair (```...```), unwrap
@@ -73,9 +74,21 @@ function parseAdr(text: string) {
   const sections = new Map<string, Section>();
   let title: { line: number; text: string } | null = null;
   let current: Section | null = null;
+  let inFence = false;
 
   lines.forEach((raw, idx) => {
     const line = idx + 1;
+    // Lines inside ``` fences are content, never headings or list items — a
+    // `# comment` in a code sample must not end the section it lives in.
+    if (/^\s*(```|~~~)/.test(raw)) {
+      inFence = !inFence;
+      if (current) current.lines.push({ line, text: raw, fenced: true });
+      return;
+    }
+    if (inFence) {
+      if (current && raw.trim()) current.lines.push({ line, text: raw, fenced: true });
+      return;
+    }
     const m = HEADING.exec(raw);
     if (m) {
       const [, hashes, headingText] = m;
@@ -98,6 +111,7 @@ function parseAdr(text: string) {
 function listItems(section: Section): { line: number; text: string }[] {
   const items: { line: number; text: string }[] = [];
   for (const l of section.lines) {
+    if (l.fenced) continue; // a `- foo` inside a code sample isn't an option
     const m = LIST_ITEM.exec(l.text);
     if (m) items.push({ line: l.line, text: m[1].trim() });
   }

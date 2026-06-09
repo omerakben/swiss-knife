@@ -169,7 +169,9 @@ export function AdrWriter() {
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={handleRun} disabled={isRunning || !note.trim()}>
+        {/* also disabled while saving: a save landing after a new draft started
+            would mark the NEW draft as already saved */}
+        <Button onClick={handleRun} disabled={isRunning || saving || !note.trim()}>
           {isRunning ? `Running… ${secs}s` : "Draft ADR"}
         </Button>
         {isRunning && (

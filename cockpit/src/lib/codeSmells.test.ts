@@ -45,6 +45,15 @@ describe("stripCode", () => {
     expect(out).toContain("/ 2");
     expect(out).toMatch(/\bif\b/);
   });
+
+  it("handles a regex literal at statement start after a comment line", () => {
+    // The quote inside the regex must not open a string that swallows code.
+    const src = `// strip quotes\n/['"]/.test(s);\nconst y = 777;`;
+    const out = stripCode(src);
+    expect(out).toContain("777");
+    expect(out).toContain(".test(s);");
+    expect(out).not.toContain("'");
+  });
 });
 
 describe("findFunctions", () => {
@@ -191,5 +200,32 @@ describe("scanCode — diff mode", () => {
     expect(magic!.line).toBe(11); // 5000 sits on new-file line 11
     // nothing reported for the context-only function header
     expect(r.issues.every((i) => [11, 12].includes(i.line))).toBe(true);
+  });
+
+  it("ignores '\\ No newline at end of file' markers instead of ending the hunk", () => {
+    const D = `--- a/f.ts
++++ b/f.ts
+@@ -1,2 +1,2 @@
+ const keep = 1;
+-const old = 9;
+\\ No newline at end of file
++const fresh = 8888;
+`;
+    const r = scanCode(D);
+    expect(r.issues.some((i) => i.rule === "magic-number" && i.message.includes("8888"))).toBe(true);
+  });
+
+  it("duplicate messages reference new-file line numbers in diff mode", () => {
+    const block = `  const user = getUser(input);\n  validate(user.name);\n  validate(user.email);\n  persist(user, options);`;
+    const body = `function a() {\n${block}\n}\nfunction b() {\n${block}\n}`;
+    const plus = body
+      .split("\n")
+      .map((l) => `+${l}`)
+      .join("\n");
+    const D = `--- a/f.ts\n+++ b/f.ts\n@@ -1,1 +100,12 @@\n${plus}\n`;
+    const r = scanCode(D);
+    const dup = r.issues.find((i) => i.rule === "duplicate");
+    expect(dup).toBeDefined();
+    expect(dup!.message).toMatch(/duplicate lines 101–104/);
   });
 });

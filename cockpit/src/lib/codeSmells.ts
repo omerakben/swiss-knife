@@ -31,8 +31,16 @@ const NOT_A_METHOD = new Set([
   "new", "in", "of", "case", "await", "yield", "delete", "void", "throw", "function",
 ]);
 
-// Characters after which a `/` starts a regex literal, not division.
-const REGEX_PRECEDERS = new Set(["=", "(", "[", "{", ",", ";", ":", "!", "&", "|", "?", "+", "-", "*", "%", "<", ">", "~", "^"]);
+/**
+ * Is a `/` at index i the start of a regex literal (vs division)? Division
+ * needs a LEFT OPERAND — an identifier, number, `)` or `]` — so anything else
+ * (including a statement start right after a comment line) begins a regex.
+ * Keyword operands (`return /…/`) are re-classified by the tail check.
+ */
+function canStartRegex(src: string, i: number, lastSig: string): boolean {
+  if (!/[\w$)\]]/.test(lastSig)) return true;
+  return /\b(return|case|typeof|in|of|do|else)$/.test(src.slice(Math.max(0, i - 8), i).trimEnd());
+}
 
 /**
  * Replace the contents of strings, template literals, comments, and regex
@@ -79,10 +87,7 @@ export function stripCode(src: string): string {
         tpl.push(-1);
         state = "template";
         blank(i);
-      } else if (
-        c === "/" &&
-        (lastSig === "" || REGEX_PRECEDERS.has(lastSig) || /\b(return|case|typeof)$/.test(src.slice(Math.max(0, i - 8), i).trimEnd()))
-      ) {
+      } else if (c === "/" && canStartRegex(src, i, lastSig)) {
         state = "regex";
         blank(i);
       } else if (tpl.length > 0 && tpl[tpl.length - 1] >= 0) {
@@ -331,9 +336,20 @@ function maxNesting(body: string): { depth: number; line: number } {
   return { depth: Math.max(0, max - 1), line: maxLine }; // -1: the body's own brace
 }
 
-/** Scan one code fragment, mapping reported lines (diff hunks drop non-added lines). */
-function scanFragment(code: string, issues: SmellIssue[], lineMap?: (l: number) => number | null): number {
+/**
+ * Scan one code fragment. `lineMap` decides whether an issue is reported and at
+ * what line (diff hunks drop non-added lines); `displayLine` maps line numbers
+ * EMBEDDED IN MESSAGE TEXT (e.g. "duplicates lines X–Y"), which must always map
+ * even when those lines are unreported context.
+ */
+function scanFragment(
+  code: string,
+  issues: SmellIssue[],
+  lineMap?: (l: number) => number | null,
+  displayLine?: (l: number) => number
+): number {
   const stripped = stripCode(code);
+  const show = (l: number) => (displayLine ? displayLine(l) : l);
   const push = (severity: SmellSeverity, line: number, rule: string, message: string) => {
     const mapped = lineMap ? lineMap(line) : line;
     if (mapped !== null) issues.push({ severity, line: mapped, rule, message });
@@ -390,8 +406,10 @@ function scanFragment(code: string, issues: SmellIssue[], lineMap?: (l: number) 
     windows.set(key, arr);
   }
   const reported: number[] = [];
-  for (const occurrences of [...windows.values()].sort((a, b) => a[1] - b[1])) {
-    if (occurrences.length < 2) continue;
+  // Filter BEFORE sorting: single-occurrence windows have no [1] and would feed
+  // NaN to the comparator, scrambling the order the overlap suppression assumes.
+  const dupWindows = [...windows.values()].filter((o) => o.length >= 2).sort((a, b) => a[1] - b[1]);
+  for (const occurrences of dupWindows) {
     const copy = occurrences[1];
     if (reported.some((s) => Math.abs(s - copy) < DUP_WINDOW)) continue; // overlapping run
     reported.push(copy);
@@ -399,7 +417,7 @@ function scanFragment(code: string, issues: SmellIssue[], lineMap?: (l: number) 
       "WARN",
       sig[copy].line,
       "duplicate",
-      `${DUP_WINDOW} similar lines duplicate lines ${sig[occurrences[0]].line}–${sig[occurrences[0] + DUP_WINDOW - 1].line} — extract a helper.`
+      `${DUP_WINDOW} similar lines duplicate lines ${show(sig[occurrences[0]].line)}–${show(sig[occurrences[0] + DUP_WINDOW - 1].line)} — extract a helper.`
     );
   }
 
@@ -451,8 +469,11 @@ export function parseDiffHunks(diff: string): DiffHunk[] {
       cur.lines.push(raw.slice(1));
       cur.map.push(cur.newLine);
       cur.newLine++;
+    } else if (raw.startsWith("\\")) {
+      // "\ No newline at end of file" — metadata about the PREVIOUS line, not
+      // content; flushing here would silently drop the rest of the hunk.
     } else if (!raw.startsWith("-")) {
-      flush(); // `diff --git`, index/mode lines, `\ No newline`, …
+      flush(); // `diff --git`, index/mode lines, …
     }
   }
   flush();
@@ -470,10 +491,15 @@ export function scanCode(input: string): SmellResult {
     const files = new Set(hunks.map((h) => h.file).filter(Boolean));
     for (const hunk of hunks) {
       const before = issues.length;
-      functions += scanFragment(hunk.fragment, issues, (l) => {
-        if (!hunk.added.has(l)) return null; // only review the change itself
-        return hunk.map[l - 1] ?? l;
-      });
+      functions += scanFragment(
+        hunk.fragment,
+        issues,
+        (l) => {
+          if (!hunk.added.has(l)) return null; // only review the change itself
+          return hunk.map[l - 1] ?? l;
+        },
+        (l) => hunk.map[l - 1] ?? l
+      );
       if (files.size > 1 && hunk.file) {
         for (let i = before; i < issues.length; i++) {
           issues[i] = { ...issues[i], message: `${issues[i].message} (in ${hunk.file})` };

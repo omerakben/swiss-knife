@@ -61,7 +61,7 @@ test.describe("prompt optimizer (mocked engine)", () => {
         status: 503,
         contentType: "application/json",
         body: JSON.stringify({
-          error: "Ollama isn't running. Start it (run `ollama serve`) and try again.",
+          error: "Ollama isn't running. Start the Ollama app (open -a Ollama) and try again.",
           reason: "ollama_down",
         }),
       })

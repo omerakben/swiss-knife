@@ -50,6 +50,9 @@ export async function POST(req: Request) {
   if (!note || typeof note !== "string" || !note.trim()) {
     return Response.json({ error: "Describe the decision to record." }, { status: 400 });
   }
+  if (note.length > 80_000) {
+    return Response.json({ error: "That's too long — paste a focused decision note." }, { status: 413 });
+  }
 
   const projectId = await getActiveProjectId();
   const messages: ChatMessage[] = [
@@ -61,6 +64,6 @@ export async function POST(req: Request) {
     messages,
     injectMemory: true,
     memoryProjectId: projectId,
-    memoryQuery: note.trim(),
+    memoryQuery: note.trim().slice(0, 800), // bounded embed anchor (matches code-review)
   });
 }

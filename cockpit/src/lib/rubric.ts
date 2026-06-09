@@ -28,6 +28,45 @@ export function projectRubricSlug(projectId: string | null): string {
   return `qa-eval-rubric:${projectId ?? "global"}`;
 }
 
+const isStr = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max;
+
+/**
+ * Structural guard for client-supplied specs (the save path) — lintRubric
+ * assumes arrays and strings, so malformed JSON must 400, not throw a 500.
+ * Length caps bound what can land in a Template row.
+ */
+export function isRubricSpec(s: unknown): s is RubricSpec {
+  if (!s || typeof s !== "object") return false;
+  const o = s as Record<string, unknown>;
+  return (
+    isStr(o.title, 200) &&
+    isStr(o.artifactType, 200) &&
+    Array.isArray(o.criteria) &&
+    o.criteria.length <= 20 &&
+    o.criteria.every(
+      (c) =>
+        !!c &&
+        typeof c === "object" &&
+        isStr((c as RubricCriterion).name, 200) &&
+        typeof (c as RubricCriterion).weight === "number" &&
+        isStr((c as RubricCriterion).guidance, 2000)
+    ) &&
+    Array.isArray(o.bands) &&
+    o.bands.length <= 10 &&
+    o.bands.every(
+      (b) =>
+        !!b &&
+        typeof b === "object" &&
+        isStr((b as RubricBand).label, 200) &&
+        typeof (b as RubricBand).min === "number" &&
+        typeof (b as RubricBand).max === "number" &&
+        ((b as RubricBand).verdict === "PASS" || (b as RubricBand).verdict === "BLOCK")
+    ) &&
+    isStr(o.passSample, 20_000) &&
+    isStr(o.blockSample, 20_000)
+  );
+}
+
 /**
  * Deterministic repair of near-miss model output (12B-appropriate: fix the
  * mechanical part, surface what changed). Sorts bands; closes off-by-one band
