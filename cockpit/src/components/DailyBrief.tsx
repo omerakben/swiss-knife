@@ -37,7 +37,7 @@ export async function DailyBrief() {
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  const [overdue, dueToday, doing, pendingFacts] = await Promise.all([
+  const [overdue, dueToday, doing, pending, pendingCount] = await Promise.all([
     prisma.task
       .findMany({
         where: { ...scope, status: { not: "done" }, dueDate: { lt: today } },
@@ -62,10 +62,18 @@ export async function DailyBrief() {
         select: { id: true, title: true },
       })
       .catch(() => [] as TaskLite[]),
+    prisma.memoryFact
+      .findMany({
+        where: { ...scope, status: "pending" },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: { id: true, key: true, value: true },
+      })
+      .catch(() => [] as { id: string; key: string | null; value: string }[]),
     prisma.memoryFact.count({ where: { ...scope, status: "pending" } }).catch(() => 0),
   ]);
 
-  const clear = overdue.length === 0 && dueToday.length === 0 && doing.length === 0 && pendingFacts === 0;
+  const clear = overdue.length === 0 && dueToday.length === 0 && doing.length === 0 && pendingCount === 0;
 
   return (
     <Card>
@@ -103,10 +111,20 @@ export async function DailyBrief() {
                 <TaskLines items={doing} />
               </div>
             )}
-            {pendingFacts > 0 && (
-              <Link href="/tools/memory" className="flex items-center gap-2 font-medium hover:underline">
-                <Brain className="h-4 w-4" /> {pendingFacts} memory suggestion{pendingFacts > 1 ? "s" : ""} to review
-              </Link>
+            {pendingCount > 0 && (
+              <div>
+                <Link href="/tools/memory" className="flex items-center gap-2 font-medium hover:underline">
+                  <Brain className="h-4 w-4" /> {pendingCount} memory suggestion{pendingCount > 1 ? "s" : ""} to review
+                </Link>
+                <ul className="ml-6 mt-1 space-y-0.5">
+                  {pending.map((f) => (
+                    <li key={f.id} className="truncate text-muted-foreground">
+                      {f.key ? `${f.key}: ` : ""}
+                      {f.value}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </>
         )}
