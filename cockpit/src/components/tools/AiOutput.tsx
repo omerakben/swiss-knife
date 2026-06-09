@@ -1,11 +1,12 @@
 "use client";
 
-import { Copy } from "lucide-react";
+import { Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Markdown } from "@/components/Markdown";
+import { downloadText } from "@/lib/download";
 import type { AiToolStatus } from "@/hooks/useAiTool";
 
 /** Shared streamed-output panel: renders markdown, copies raw text, shows a streaming indicator. */
@@ -30,17 +31,28 @@ export function AiOutput({
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
           )}
         </CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={!output}
-          onClick={() => {
-            navigator.clipboard.writeText(output);
-            toast.success("Copied");
-          }}
-        >
-          <Copy className="mr-1 h-4 w-4" /> Copy
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!output}
+            onClick={() => {
+              navigator.clipboard.writeText(output);
+              toast.success("Copied");
+            }}
+          >
+            <Copy className="mr-1 h-4 w-4" /> Copy
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!output}
+            onClick={() => downloadText(`${label.toLowerCase().replace(/\s+/g, "-")}.md`, output, "text/markdown")}
+            title="Download as Markdown"
+          >
+            <Download className="mr-1 h-4 w-4" /> Export
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {output ? (

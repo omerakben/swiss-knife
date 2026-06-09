@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { analyzeCoverage } from "@/lib/gherkinLint";
+import { downloadText } from "@/lib/download";
 import type { Iteration } from "@/components/qa/types";
 
 type Props = {
@@ -93,16 +94,26 @@ export function QaIterationCard({ iteration: it, onEditDraft, onRescore, onDelet
               Drafted .feature
             </h3>
             {!editing && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setDraft(it.draftFeature);
-                  setEditing(true);
-                }}
-              >
-                Edit
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => downloadText(`iteration-${it.order}.feature`, it.draftFeature, "text/plain")}
+                  title="Download as a .feature file"
+                >
+                  Export .feature
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setDraft(it.draftFeature);
+                    setEditing(true);
+                  }}
+                >
+                  Edit
+                </Button>
+              </div>
             )}
           </div>
           {editing ? (
