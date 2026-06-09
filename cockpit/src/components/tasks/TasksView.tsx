@@ -67,6 +67,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
   const [title, setTitle] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("medium");
   const [newDue, setNewDue] = useState("");
+  const [newModule, setNewModule] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
 
   // ---- search + filter (client-side, instant — like the Memory page) ----
@@ -115,12 +116,14 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
     if (!t) return;
     const priority = newPriority;
     const dueDate = newDue || null;
+    const taskModule = newModule.trim() || null;
     setTitle("");
     setNewDue("");
+    setNewModule("");
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: t, priority, dueDate }),
+      body: JSON.stringify({ title: t, priority, dueDate, module: taskModule }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -275,10 +278,27 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
           aria-label="Due date"
           className="w-40"
         />
+        <Input
+          value={newModule}
+          onChange={(e) => setNewModule(e.target.value)}
+          placeholder="Module (optional)"
+          aria-label="Module"
+          list="task-module-options"
+          className="w-44"
+        />
         <Button onClick={addTask} disabled={!title.trim()}>
           <Plus className="mr-1 h-4 w-4" /> Add
         </Button>
       </div>
+
+      {/* Shared module suggestions for the add box + edit dialog — existing
+          modules autocomplete, and you can type a new one (it then appears in
+          the filter). */}
+      <datalist id="task-module-options">
+        {modules.map((m) => (
+          <option key={m} value={m} />
+        ))}
+      </datalist>
 
       <div className="mt-3">
         <TaskAiTools
@@ -430,7 +450,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
         </TabsContent>
       </Tabs>
 
-      <EditTaskDialog task={editing} onClose={() => setEditing(null)} onSaved={replaceTask} />
+      <EditTaskDialog task={editing} modules={modules} onClose={() => setEditing(null)} onSaved={replaceTask} />
     </div>
   );
 }

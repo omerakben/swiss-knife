@@ -15,11 +15,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     status?: string;
     dueDate?: string | null;
     order?: number;
+    module?: string;
   };
 
   const data: Record<string, unknown> = {};
   if (typeof body.title === "string") data.title = body.title.trim();
   if (typeof body.notes === "string") data.notes = body.notes.trim() || null;
+  if (typeof body.module === "string") data.module = body.module.trim() || null;
   if (PRIORITIES.includes(body.priority ?? "")) data.priority = body.priority;
   if (STATUSES.includes(body.status ?? "")) {
     data.status = body.status;

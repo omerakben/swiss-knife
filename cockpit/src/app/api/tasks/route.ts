@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     priority?: string;
     dueDate?: string;
     notes?: string;
+    module?: string;
   };
 
   if (!body.title || typeof body.title !== "string" || !body.title.trim()) {
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
       title: body.title.trim(),
       status,
       priority: PRIORITIES.includes(body.priority ?? "") ? (body.priority as string) : "medium",
+      module: typeof body.module === "string" && body.module.trim() ? body.module.trim() : null,
       dueDate,
       notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
       order: (max._max.order ?? 0) + 1,

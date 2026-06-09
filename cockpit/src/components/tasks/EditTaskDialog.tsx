@@ -33,10 +33,12 @@ function toDateInput(iso: string | null): string {
 
 export function EditTaskDialog({
   task,
+  modules,
   onClose,
   onSaved,
 }: {
   task: Task | null;
+  modules: string[];
   onClose: () => void;
   onSaved: (task: Task) => void;
 }) {
@@ -45,10 +47,10 @@ export function EditTaskDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit task</DialogTitle>
-          <DialogDescription>Update title, notes, priority, and due date.</DialogDescription>
+          <DialogDescription>Update title, notes, priority, due date, and module.</DialogDescription>
         </DialogHeader>
         {/* Keyed so each opened task remounts with fresh initial state (no sync effect). */}
-        {task && <EditTaskForm key={task.id} task={task} onClose={onClose} onSaved={onSaved} />}
+        {task && <EditTaskForm key={task.id} task={task} modules={modules} onClose={onClose} onSaved={onSaved} />}
       </DialogContent>
     </Dialog>
   );
@@ -56,10 +58,12 @@ export function EditTaskDialog({
 
 function EditTaskForm({
   task,
+  modules,
   onClose,
   onSaved,
 }: {
   task: Task;
+  modules: string[];
   onClose: () => void;
   onSaved: (task: Task) => void;
 }) {
@@ -67,6 +71,7 @@ function EditTaskForm({
   const [notes, setNotes] = useState(task.notes ?? "");
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [due, setDue] = useState(toDateInput(task.dueDate));
+  const [moduleName, setModuleName] = useState(task.module ?? "");
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -80,7 +85,7 @@ function EditTaskForm({
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: t, notes, priority, dueDate: due || null }),
+        body: JSON.stringify({ title: t, notes, priority, dueDate: due || null, module: moduleName }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save");
@@ -139,6 +144,23 @@ function EditTaskForm({
               onChange={(e) => setDue(e.target.value)}
               className="w-44"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-module">Module</Label>
+            <Input
+              id="edit-module"
+              value={moduleName}
+              onChange={(e) => setModuleName(e.target.value)}
+              placeholder="Optional — pick or type"
+              list="edit-module-options"
+              className="w-44"
+            />
+            <datalist id="edit-module-options">
+              {modules.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
           </div>
         </div>
       </div>
