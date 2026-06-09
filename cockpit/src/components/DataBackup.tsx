@@ -26,8 +26,15 @@ export function DataBackup() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Import failed");
       const imported = (data.imported ?? {}) as Record<string, number>;
+      const skipped = (data.skipped ?? {}) as Record<string, number>;
       const total = Object.values(imported).reduce((a, b) => a + b, 0);
-      toast.success(`Imported ${total} record(s)`);
+      const skippedTotal = Object.values(skipped).reduce((a, b) => a + b, 0);
+      if (skippedTotal > 0) {
+        console.warn("Import skipped rows (per model):", skipped);
+        toast.warning(`Imported ${total}, skipped ${skippedTotal} (see console)`);
+      } else {
+        toast.success(`Imported ${total} record(s)`);
+      }
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Import failed");

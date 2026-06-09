@@ -15,7 +15,9 @@ export async function GET() {
       prisma.emailDraft.findMany(),
       prisma.idea.findMany(),
       prisma.task.findMany(),
-      prisma.memoryFact.findMany(),
+      // Trash (soft-deleted) facts are not part of a backup — match every other
+      // read site's deletedAt:null contract so deleted data doesn't resurface.
+      prisma.memoryFact.findMany({ where: { deletedAt: null } }),
       prisma.qaSession.findMany({ include: { iterations: true } }),
       prisma.project.findMany(),
       prisma.bugReport.findMany(),
