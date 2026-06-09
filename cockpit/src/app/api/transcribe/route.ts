@@ -3,9 +3,15 @@ import { writeFile, unlink, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Bound the subprocesses so a hung ffmpeg/whisper can't pin a request forever,
+// and cap the upload so a giant clip can't exhaust memory/disk.
+const SPAWN_TIMEOUT_MS = 60_000;
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
 // On-device speech-to-text. Needs whisper.cpp (whisper-cli) + ffmpeg installed
 // natively (no cloud). Binary paths and the model are configurable via env. If a
@@ -23,15 +29,29 @@ function run(cmd: string, args: string[]): Promise<RunResult> {
     const p = spawn(cmd, args);
     let stdout = "";
     let stderr = "";
-    p.on("error", reject); // ENOENT when the binary isn't installed
+    const timer = setTimeout(() => {
+      p.kill("SIGKILL");
+      reject(Object.assign(new Error(`${cmd} timed out after ${SPAWN_TIMEOUT_MS}ms`), { timedOut: true }));
+    }, SPAWN_TIMEOUT_MS);
+    p.on("error", (e) => {
+      clearTimeout(timer);
+      reject(e);
+    }); // ENOENT when the binary isn't installed
     p.stdout.on("data", (d) => (stdout += d.toString()));
     p.stderr.on("data", (d) => (stderr += d.toString()));
-    p.on("close", (code) => resolve({ code, stdout, stderr }));
+    p.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ code, stdout, stderr });
+    });
   });
 }
 
 function isMissing(e: unknown): boolean {
   return (e as NodeJS.ErrnoException)?.code === "ENOENT";
+}
+
+function isTimeout(e: unknown): boolean {
+  return (e as { timedOut?: boolean })?.timedOut === true;
 }
 
 export async function POST(req: Request) {
@@ -42,7 +62,13 @@ export async function POST(req: Request) {
   }
 
   const buf = Buffer.from(await (file as File).arrayBuffer());
-  const base = join(tmpdir(), `sk-voice-${process.pid}-${buf.length}`);
+  if (buf.length > MAX_AUDIO_BYTES) {
+    return Response.json({ error: "Audio too large (max 25 MB)." }, { status: 413 });
+  }
+  // A per-request unique base: process.pid is constant in a long-lived server and
+  // buf.length collides for two same-size clips, so two concurrent uploads would
+  // clobber each other's temp files. randomUUID() is unique per request.
+  const base = join(tmpdir(), `sk-voice-${randomUUID()}`);
   const inPath = `${base}.webm`;
   const wavPath = `${base}.wav`;
   const txtPath = `${base}.txt`;
@@ -62,6 +88,9 @@ export async function POST(req: Request) {
           { error: "ffmpeg isn't installed. Run: brew install ffmpeg", reason: "no-ffmpeg" },
           { status: 503 }
         );
+      }
+      if (isTimeout(e)) {
+        return Response.json({ error: "Audio decode timed out." }, { status: 504 });
       }
       throw e;
     }
@@ -85,6 +114,9 @@ export async function POST(req: Request) {
           { error: "whisper.cpp isn't installed. Run: brew install whisper-cpp", reason: "no-whisper" },
           { status: 503 }
         );
+      }
+      if (isTimeout(e)) {
+        return Response.json({ error: "Transcription timed out." }, { status: 504 });
       }
       throw e;
     }
