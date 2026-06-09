@@ -13,7 +13,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,16 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
   const [newDue, setNewDue] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
 
+  // ---- search + filter (client-side, instant — like the Memory page) ----
+  const [query, setQuery] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
+  const [moduleFilter, setModuleFilter] = useState<string>("all"); // "all" | "none" | <module>
+  const clearFilters = () => {
+    setQuery("");
+    setPriorityFilter("all");
+    setModuleFilter("all");
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -76,6 +86,28 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
 
   const allTasks = [...board.todo, ...board.doing, ...board.done];
   const activeTask = allTasks.find((t) => t.id === activeId) ?? null;
+
+  // Distinct modules present (e.g. LBMH training modules), for the module filter.
+  const modules = [...new Set(allTasks.filter((t) => t.module).map((t) => t.module as string))].sort();
+  const q = query.trim().toLowerCase();
+  const isFiltering = q !== "" || priorityFilter !== "all" || moduleFilter !== "all";
+  const matches = (t: Task): boolean => {
+    if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
+    if (moduleFilter === "none" && t.module) return false;
+    if (moduleFilter !== "all" && moduleFilter !== "none" && t.module !== moduleFilter) return false;
+    if (q && !(t.title.toLowerCase().includes(q) || (t.notes ?? "").toLowerCase().includes(q))) return false;
+    return true;
+  };
+  // A display-only filter: drag-and-drop still operates on the full `board`
+  // state, so reordering a visible card persists correctly against the whole
+  // column. Clearing the filter brings every task back.
+  const filtered: Board = {
+    todo: board.todo.filter(matches),
+    doing: board.doing.filter(matches),
+    done: board.done.filter(matches),
+  };
+  const totalCount = allTasks.length;
+  const filteredCount = filtered.todo.length + filtered.doing.length + filtered.done.length;
 
   // ---- mutations ----
   async function addTask() {
@@ -254,7 +286,56 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
         />
       </div>
 
-      <Tabs defaultValue="board" className="mt-6">
+      {/* Search + filters — narrow the board/list to find a task fast. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search title or notes…"
+            aria-label="Search tasks"
+            className="pl-8"
+          />
+        </div>
+        <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as "all" | Priority)}>
+          <SelectTrigger className="w-32" aria-label="Filter by priority">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any priority</SelectItem>
+            <SelectItem value="high">high</SelectItem>
+            <SelectItem value="medium">medium</SelectItem>
+            <SelectItem value="low">low</SelectItem>
+          </SelectContent>
+        </Select>
+        {modules.length > 0 && (
+          <Select value={moduleFilter} onValueChange={setModuleFilter}>
+            <SelectTrigger className="w-48" aria-label="Filter by module">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All modules</SelectItem>
+              <SelectItem value="none">No module</SelectItem>
+              {modules.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {isFiltering && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8">
+            <X className="mr-1 h-3.5 w-3.5" /> Clear
+          </Button>
+        )}
+        <span className="ml-auto text-xs text-muted-foreground">
+          {isFiltering ? `${filteredCount} of ${totalCount}` : `${totalCount} task${totalCount === 1 ? "" : "s"}`}
+        </span>
+      </div>
+
+      <Tabs defaultValue="board" className="mt-4">
         <TabsList>
           <TabsTrigger value="board">Board</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
@@ -274,7 +355,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
                   key={c.id}
                   id={c.id}
                   label={c.label}
-                  tasks={board[c.id]}
+                  tasks={filtered[c.id]}
                   onEdit={setEditing}
                   onDelete={deleteTask}
                 />
@@ -293,9 +374,11 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
         <TabsContent value="list" className="mt-4">
           {allTasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">No tasks yet. Add one above.</p>
+          ) : filteredCount === 0 ? (
+            <p className="text-sm text-muted-foreground">No tasks match your search or filters.</p>
           ) : (
             <div className="space-y-1.5">
-              {STATUSES.flatMap((s) => board[s]).map((t) => (
+              {STATUSES.flatMap((s) => filtered[s]).map((t) => (
                 <div key={t.id} className="flex items-center gap-3 rounded-md border border-border p-2.5">
                   <input
                     type="checkbox"

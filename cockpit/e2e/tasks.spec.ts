@@ -29,8 +29,16 @@ test.describe("tasks", () => {
 
   test("add box exposes priority and due-date controls", async ({ page }) => {
     await page.goto("/tools/tasks");
-    await expect(page.getByLabel("Priority")).toBeVisible();
+    // exact: the add box has a "Priority" control; the filter bar adds a
+    // separate "Filter by priority" control (substring match would hit both).
+    await expect(page.getByLabel("Priority", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Due date")).toBeVisible();
+  });
+
+  test("search + filter bar narrows the task list", async ({ page }) => {
+    await page.goto("/tools/tasks");
+    await expect(page.getByLabel("Search tasks")).toBeVisible();
+    await expect(page.getByLabel("Filter by priority")).toBeVisible();
   });
 
   test("edit dialog updates a task title", async ({ page }) => {
