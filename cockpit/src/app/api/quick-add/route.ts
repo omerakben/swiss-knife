@@ -3,6 +3,7 @@ import { getActiveProjectId } from "@/lib/project";
 import { chatJson } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
 import { prisma } from "@/lib/db";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
 
   const title = (parsed.title || text.trim()).slice(0, 200);
   const detail = parsed.detail?.trim() || null;
+  await logActivity({ entity: parsed.kind, action: "quick-added", summary: title, projectId });
 
   if (parsed.kind === "fact") {
     const f = await prisma.memoryFact.create({

@@ -1,6 +1,7 @@
 import { assertOllamaReady } from "@/lib/health";
 import { getActiveProjectId } from "@/lib/project";
 import { learnFromText } from "@/lib/memoryLoop";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,12 @@ export async function POST(req: Request) {
       const msg = result.skipped > 0 ? "Those facts are already in your queue." : "No new facts found in that text.";
       return Response.json({ error: msg }, { status: 422 });
     }
+    await logActivity({
+      entity: "fact",
+      action: "captured",
+      summary: `Captured ${result.created} new + ${result.merges} merge from text`,
+      projectId,
+    });
     return Response.json(result);
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Learn failed." }, { status: 500 });

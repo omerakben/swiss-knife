@@ -217,6 +217,20 @@ model Project {
   qaSessions QaSession[]
 }
 
+// Append-only activity log: a reverse-chron record of what happened (creates,
+// AI runs, deletes), surfaced as a timeline. Written best-effort via logActivity.
+model ActivityLog {
+  id        String   @id @default(cuid())
+  entity    String // task | fact | idea | prompt | email | qa | project
+  action    String // created | captured | deleted | ran | …
+  summary   String // human one-liner
+  projectId String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([projectId])
+}
+
 // Single-row app settings (single-user). Enforced via fixed id + upsert.
 model Settings {
   id           String   @id @default("singleton")

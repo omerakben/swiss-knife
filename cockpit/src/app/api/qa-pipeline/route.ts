@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { assertOllamaReady } from "@/lib/health";
 import { getActiveProjectId } from "@/lib/project";
+import { logActivity } from "@/lib/activity";
 import {
   loadProjectQaContext,
   runFreshIteration,
@@ -112,5 +113,11 @@ export async function POST(req: Request) {
     },
   });
 
+  await logActivity({
+    entity: "qa",
+    action: "ran",
+    summary: `QA session: ${session.title}`,
+    projectId,
+  });
   return Response.json({ projectId, needsPack: false, session: serializeSession(session) });
 }
