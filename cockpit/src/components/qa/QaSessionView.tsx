@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,33 @@ export function QaSessionView({
   const [titleDraft, setTitleDraft] = useState(session.title);
   const [removing, setRemoving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [savingGolden, setSavingGolden] = useState(false);
+
+  const latest = session.iterations[session.iterations.length - 1];
+  const latestVerdict =
+    latest?.rubric?.verdict === "PASS" || latest?.rubric?.verdict === "BLOCK" ? latest.rubric.verdict : null;
+
+  async function saveGolden() {
+    if (!latest || !latestVerdict) return;
+    setSavingGolden(true);
+    try {
+      const res = await fetch("/api/qa-pipeline/golden", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          story: session.story,
+          draftFeature: latest.draftFeature,
+          expectedVerdict: latestVerdict,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(`Saved to the eval bench (expected ${latestVerdict})`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setSavingGolden(false);
+    }
+  }
 
   async function refine() {
     if (!instruction.trim()) return;
@@ -126,6 +154,9 @@ export function QaSessionView({
             {session.title}
           </h2>
         )}
+        <Button size="sm" variant="ghost" onClick={saveGolden} disabled={!latestVerdict || savingGolden} title="Promote the latest draft + verdict to the eval bench">
+          {savingGolden ? "Saving…" : "Save as golden"}
+        </Button>
         <Button size="sm" variant="ghost" onClick={() => setConfirmOpen(true)} disabled={removing}>
           {removing ? "Deleting…" : "Delete session"}
         </Button>

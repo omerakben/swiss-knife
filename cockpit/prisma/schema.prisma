@@ -217,6 +217,20 @@ model Project {
   qaSessions QaSession[]
 }
 
+// A labeled golden QA case (a story + its expected verdict). The eval bench
+// re-runs the current rubric over these and reports agreement %, catching rubric
+// drift after a prompt or model change. The deterministic lint is ground truth.
+model GoldenCase {
+  id              String   @id @default(cuid())
+  story           String
+  draftFeature    String
+  expectedVerdict String // PASS | BLOCK
+  projectId       String?
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+}
+
 // Append-only activity log: a reverse-chron record of what happened (creates,
 // AI runs, deletes), surfaced as a timeline. Written best-effort via logActivity.
 model ActivityLog {

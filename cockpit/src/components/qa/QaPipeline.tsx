@@ -38,6 +38,29 @@ export function QaPipeline() {
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importBusy, setImportBusy] = useState(false);
+  const [benchBusy, setBenchBusy] = useState(false);
+  const [bench, setBench] = useState<{ total: number; agree: number; agreementPct: number | null } | null>(null);
+
+  async function runBench() {
+    setBenchBusy(true);
+    try {
+      const data = await jsonFetch("/api/qa-pipeline/bench", { method: "POST" });
+      if (data.needsPack) {
+        toast.error("This project has no QA pack.");
+        return;
+      }
+      setBench(data);
+      toast.success(
+        data.total === 0
+          ? "No golden cases yet — save one from a session first."
+          : `Bench: ${data.agree}/${data.total} agree (${data.agreementPct}%)`
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bench failed");
+    } finally {
+      setBenchBusy(false);
+    }
+  }
 
   const loadList = useCallback(async () => {
     try {
@@ -330,6 +353,25 @@ export function QaPipeline() {
           </CardContent>
         </Card>
       )}
+
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">Eval bench</h2>
+        <Button size="sm" variant="outline" onClick={runBench} disabled={benchBusy}>
+          {benchBusy ? "Running…" : "Run eval bench"}
+        </Button>
+        {bench && bench.agreementPct !== null && (
+          <span className="text-sm text-muted-foreground">
+            {bench.agree}/{bench.total} goldens agree ·{" "}
+            <span className={bench.agreementPct >= 80 ? "text-green-600" : "text-destructive"}>
+              {bench.agreementPct}%
+            </span>
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Save a session as a golden (story + verdict), then re-run the rubric over all goldens to catch
+        drift after a prompt or model change.
+      </p>
 
       <div className="mt-8">
         <h2 className="text-sm font-medium text-muted-foreground">Saved sessions</h2>
