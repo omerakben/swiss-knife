@@ -82,7 +82,7 @@ export function stripFences(s: string): string {
   return s.replace(/^\s*```[\w-]*\s*$/gm, "").trim();
 }
 
-function parseVerdict(raw: string): RubricScore["verdict"] {
+export function parseVerdict(raw: string): RubricScore["verdict"] {
   if (/verdict:\s*pass/i.test(raw)) return "PASS";
   if (/verdict:\s*block/i.test(raw)) return "BLOCK";
   return "UNKNOWN";

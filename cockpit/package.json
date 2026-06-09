@@ -8,6 +8,7 @@
     "start": "next start",
     "db:push": "prisma db push",
     "lint": "eslint .",
+    "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "seed:lbmh": "node --env-file=.env prisma/seed-lbmh.mjs"
@@ -50,6 +51,7 @@
     "prisma": "^6.5.0",
     "tailwindcss": "^3.4.13",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.8"
   }
 }

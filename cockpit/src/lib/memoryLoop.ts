@@ -48,7 +48,9 @@ export type LearnResult = {
 };
 
 // ── String similarity (cheap, embedding-independent) ─────────────────────────
-function tokenize(s: string): Set<string> {
+// Exported for unit tests — these are deterministic gates the dedupe path leans
+// on; they need direct coverage, not just integration through the loop.
+export function tokenize(s: string): Set<string> {
   return new Set(
     s
       .toLowerCase()
@@ -57,7 +59,7 @@ function tokenize(s: string): Set<string> {
       .filter((w) => w.length > 2)
   );
 }
-function jaccard(a: string, b: string): number {
+export function jaccard(a: string, b: string): number {
   const ta = tokenize(a);
   const tb = tokenize(b);
   if (ta.size === 0 || tb.size === 0) return 0;
@@ -108,8 +110,8 @@ const CLASSIFY_SCHEMA = {
   required: ["assignments"],
 };
 
-/** Dedupe by lowercased value, drop trivially short, cap at 8. */
-function dedupeCap(raw: { value: string; category: FactCategory }[]): { value: string; category: FactCategory }[] {
+/** Dedupe by lowercased value, drop trivially short, cap at 8. (Exported for tests.) */
+export function dedupeCap(raw: { value: string; category: FactCategory }[]): { value: string; category: FactCategory }[] {
   const seen = new Set<string>();
   const out: { value: string; category: FactCategory }[] = [];
   for (const f of raw) {

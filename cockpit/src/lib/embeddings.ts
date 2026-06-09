@@ -22,19 +22,27 @@ export function parseVector(s: string | null | undefined): number[] | null {
   if (!s) return null;
   try {
     const v = JSON.parse(s);
-    return Array.isArray(v) && v.length > 0 && typeof v[0] === "number" ? (v as number[]) : null;
+    if (!Array.isArray(v) || v.length === 0) return null;
+    // Every element must be a finite number — a mixed/NaN array would otherwise
+    // pass (only v[0] was checked) and poison cosine with NaN.
+    return v.every((n) => typeof n === "number" && Number.isFinite(n)) ? (v as number[]) : null;
   } catch {
     return null;
   }
 }
 
-/** Cosine similarity in [-1, 1]; 0 when either vector is degenerate. */
+/**
+ * Cosine similarity in [-1, 1]; 0 when either vector is degenerate. Vectors of
+ * different dimensionality aren't comparable (a truncated overlap is a
+ * meaningless score), so a length mismatch returns 0 rather than scoring the
+ * common prefix.
+ */
 export function cosine(a: number[], b: number[]): number {
-  const n = Math.min(a.length, b.length);
+  if (a.length !== b.length || a.length === 0) return 0;
   let dot = 0;
   let na = 0;
   let nb = 0;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     na += a[i] * a[i];
     nb += b[i] * b[i];
