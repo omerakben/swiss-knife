@@ -46,6 +46,21 @@ export function QaSessionView({
     }
   }
 
+  // One-click "you only tested the happy path" fix: append the missing
+  // unhappy-path scenarios through the same refine loop (re-linted on append).
+  const NEGATIVE_PATHS =
+    "Add the missing unhappy-path scenarios only: invalid inputs, security/permission failures, and boundary values. " +
+    "Keep every scenario that already passes; add one new Scenario per gap, each with a single When and the standard intent/suite/type tags.";
+
+  async function addNegativePaths() {
+    setRefining(true);
+    try {
+      await onRefine(NEGATIVE_PATHS);
+    } finally {
+      setRefining(false);
+    }
+  }
+
   async function saveTitle() {
     const t = titleDraft.trim();
     if (!t || t === session.title) {
@@ -145,9 +160,19 @@ export function QaSessionView({
           className="mt-2"
           disabled={refining}
         />
-        <Button className="mt-2" onClick={refine} disabled={refining || !instruction.trim()}>
-          {refining ? "Refining…" : "Refine"}
-        </Button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button onClick={refine} disabled={refining || !instruction.trim()}>
+            {refining ? "Refining…" : "Refine"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={addNegativePaths}
+            disabled={refining}
+            title="Append invalid / security / boundary scenarios via the same refine loop"
+          >
+            + Negative paths
+          </Button>
+        </div>
       </div>
     </div>
   );
