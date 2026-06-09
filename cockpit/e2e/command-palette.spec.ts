@@ -18,8 +18,27 @@ test.describe("command palette", () => {
     await page.getByRole("button", { name: /search/i }).first().click();
     const dialog = page.getByRole("dialog", { name: /command palette/i });
     await dialog.getByPlaceholder(/search prompts/i).fill("memory");
-    await expect(dialog.getByText("Memory")).toBeVisible();
+    await expect(dialog.getByText("Memory", { exact: true })).toBeVisible();
     await expect(dialog.getByText("Email Writer")).toHaveCount(0);
+  });
+
+  test("offers natural-language quick-add and creates the item (mocked)", async ({ page }) => {
+    await page.route("**/api/search*", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ results: [] }) })
+    );
+    await page.route("**/api/quick-add", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ kind: "task", id: "t9", title: "File the POS bug", href: "/tools/tasks", deleteUrl: "/api/tasks/t9" }),
+      })
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: /search/i }).first().click();
+    const dialog = page.getByRole("dialog", { name: /command palette/i });
+    await dialog.getByPlaceholder(/search prompts/i).fill("file the POS bug");
+    await expect(dialog.getByText(/Add/)).toBeVisible();
+    await dialog.getByText(/Add/).click();
+    await expect(page.getByText(/Added task: File the POS bug/i)).toBeVisible();
   });
 
   test("searches content across entities (mocked)", async ({ page }) => {

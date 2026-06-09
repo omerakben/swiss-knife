@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, CornerDownLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { SearchResult } from "@/app/api/search/route";
 
@@ -80,12 +81,19 @@ export function CommandPalette() {
   }, [q]);
 
   const items = useMemo(() => {
+    const term = q.trim();
     // Stale results stay in state but are hidden until the term is long enough.
-    const live = q.trim().length >= 2 ? results : [];
-    return [
+    const live = term.length >= 2 ? results : [];
+    const base = [
       ...navMatches.map((n) => ({ kind: "nav" as const, label: n.label, badge: "Go", href: n.href })),
       ...live.map((r) => ({ kind: "result" as const, label: r.title, sub: r.subtitle, badge: r.type, href: r.href })),
     ];
+    // Natural-language quick-add escape hatch: file any typed note as the right
+    // kind (task/fact/idea) via the model, from anywhere.
+    if (term.length >= 3) {
+      return [...base, { kind: "add" as const, label: `Add “${term}”…`, badge: "New", href: "" }];
+    }
+    return base;
   }, [navMatches, results, q]);
 
   useEffect(() => {
@@ -101,6 +109,40 @@ export function CommandPalette() {
     [router]
   );
 
+  const quickAdd = useCallback(
+    async (text: string) => {
+      setOpen(false);
+      setQ("");
+      try {
+        const res = await fetch("/api/quick-add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+        toast.success(`Added ${data.kind}: ${data.title}`, {
+          action: {
+            label: "Undo",
+            onClick: () => void fetch(data.deleteUrl, { method: "DELETE" }).then(() => router.refresh()),
+          },
+        });
+        router.refresh();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Couldn't add");
+      }
+    },
+    [router]
+  );
+
+  const run = useCallback(
+    (it: { kind: string; href: string }) => {
+      if (it.kind === "add") quickAdd(q.trim());
+      else go(it.href);
+    },
+    [go, quickAdd, q]
+  );
+
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -111,7 +153,7 @@ export function CommandPalette() {
     } else if (e.key === "Enter") {
       e.preventDefault();
       const it = items[active];
-      if (it) go(it.href);
+      if (it) run(it);
     }
   }
 
@@ -158,7 +200,7 @@ export function CommandPalette() {
               <button
                 key={`${it.kind}-${i}`}
                 data-i={i}
-                onClick={() => go(it.href)}
+                onClick={() => run(it)}
                 onMouseMove={() => setActive(i)}
                 className={
                   "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm " +
