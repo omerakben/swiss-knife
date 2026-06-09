@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { QaIterationCard } from "@/components/qa/QaIterationCard";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Session } from "@/components/qa/types";
 
 type Props = {
@@ -34,6 +35,7 @@ export function QaSessionView({
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(session.title);
   const [removing, setRemoving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function refine() {
     if (!instruction.trim()) return;
@@ -124,7 +126,7 @@ export function QaSessionView({
             {session.title}
           </h2>
         )}
-        <Button size="sm" variant="ghost" onClick={removeSession} disabled={removing}>
+        <Button size="sm" variant="ghost" onClick={() => setConfirmOpen(true)} disabled={removing}>
           {removing ? "Deleting…" : "Delete session"}
         </Button>
       </div>
@@ -174,6 +176,15 @@ export function QaSessionView({
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete this session?`}
+        description={`This deletes the story and all ${session.iterations.length} iteration${session.iterations.length === 1 ? "" : "s"}. This can't be undone.`}
+        confirmLabel="Delete session"
+        onConfirm={removeSession}
+      />
     </div>
   );
 }
