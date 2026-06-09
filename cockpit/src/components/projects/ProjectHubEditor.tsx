@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export type EditableProject = {
   id: string;
@@ -22,6 +23,7 @@ export function ProjectHubEditor({ project }: { project: EditableProject }) {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? "");
   const [owuiUrl, setOwuiUrl] = useState(project.owuiUrl ?? "");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function save() {
     const res = await fetch(`/api/projects/${project.id}`, {
@@ -59,11 +61,20 @@ export function ProjectHubEditor({ project }: { project: EditableProject }) {
               </a>
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={del}>
+          <Button variant="ghost" size="sm" onClick={() => setConfirmOpen(true)}>
             <Trash2 className="mr-1 h-4 w-4" /> Delete
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete "${project.name}"?`}
+        description="The project is removed. Its tasks, prompts, ideas, facts, and QA sessions are kept but unlinked from it (set to no project). This can't be undone."
+        confirmLabel="Delete project"
+        onConfirm={del}
+      />
 
       <div className="mt-4 grid gap-3">
         <div className="space-y-1.5">
