@@ -129,6 +129,9 @@ export function MemoryManager({
   const [filterProject, setFilterProject] = usePersisted("sk:memory:project", ALL);
   const [filterCategory, setFilterCategory] = usePersisted("sk:memory:category", ALLCAT);
   const [search, setSearch] = useState("");
+  // Bulk selection — ACTIVE facts only. Accepting pending/merge facts stays a
+  // per-fact human decision by design; bulk ops here are archive/trash only.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [reindexing, setReindexing] = useState(false);
   const [classifying, setClassifying] = useState(false);
   const [activityBusy, setActivityBusy] = useState(false);
@@ -205,6 +208,40 @@ export function MemoryManager({
       body: JSON.stringify(data),
     });
     if (!res.ok) return toast.error("Failed");
+    router.refresh();
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  /** Bulk archive / soft-delete over the per-row endpoints; ONE refresh at the end. */
+  async function bulkApply(action: "archive" | "trash") {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setSelected(new Set());
+    const results = await Promise.all(
+      ids.map((id) =>
+        (action === "archive"
+          ? fetch(`/api/memory/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "archived" }),
+            })
+          : fetch(`/api/memory/${id}`, { method: "DELETE" })
+        )
+          .then((r) => r.ok)
+          .catch(() => false)
+      )
+    );
+    const failed = results.filter((ok) => !ok).length;
+    if (failed) toast.error(`${failed} fact${failed === 1 ? "" : "s"} didn't update — reload to resync.`);
+    else toast.success(`${ids.length} fact${ids.length === 1 ? "" : "s"} ${action === "archive" ? "archived" : "moved to Trash"}.`);
     router.refresh();
   }
 
@@ -622,6 +659,20 @@ export function MemoryManager({
 
       <div className="mt-8">
         <h2 className="text-sm font-medium text-muted-foreground">Active facts ({active.length})</h2>
+        {selected.size > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+            <span className="text-sm">{selected.size} selected</span>
+            <Button size="sm" variant="outline" onClick={() => void bulkApply("archive")}>
+              Archive
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => void bulkApply("trash")}>
+              Move to Trash
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+              Clear
+            </Button>
+          </div>
+        )}
         {active.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             {facts.some((f) => f.status === "active")
@@ -648,6 +699,13 @@ export function MemoryManager({
                   {items.map((f) => (
                     <Card key={f.id}>
                       <CardContent className="flex items-center gap-3 py-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 shrink-0"
+                          checked={selected.has(f.id)}
+                          onChange={() => toggleSelect(f.id)}
+                          aria-label={`Select fact: ${f.value.slice(0, 40)}`}
+                        />
                         {f.key && (
                           <Badge variant="outline" className="text-[10px]">
                             {f.key}

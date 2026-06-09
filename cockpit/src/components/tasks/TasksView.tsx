@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePersisted } from "@/hooks/usePersisted";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { BoardColumn } from "./BoardColumn";
 import { TaskCard } from "./TaskCard";
 import { TaskAiTools } from "./TaskAiTools";
@@ -83,6 +84,10 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
     setPriorityFilter("all");
     setModuleFilter("all");
   };
+
+  // Bulk selection (list view): ops reuse the per-row PATCH/DELETE endpoints.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -183,6 +188,74 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
     } catch {
       toast.error("Couldn't update the task — reload to resync.");
     }
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  /** Bulk status/priority over the per-row PATCH; optimistic, failures surfaced. */
+  async function bulkPatch(data: { status?: Status; priority?: Priority }) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setSelected(new Set());
+    const idSet = new Set(ids);
+    setBoard((prev) => {
+      const all = [...prev.todo, ...prev.doing, ...prev.done];
+      const apply = (t: Task): Task => (idSet.has(t.id) ? { ...t, ...data } : t);
+      if (!data.status) {
+        return { todo: prev.todo.map(apply), doing: prev.doing.map(apply), done: prev.done.map(apply) };
+      }
+      const status = data.status;
+      const picked = all.filter((t) => idSet.has(t.id)).map((t) => ({ ...t, ...data, status }));
+      const next: Board = {
+        todo: prev.todo.filter((t) => !idSet.has(t.id)),
+        doing: prev.doing.filter((t) => !idSet.has(t.id)),
+        done: prev.done.filter((t) => !idSet.has(t.id)),
+      };
+      next[status] = [...next[status], ...picked];
+      return next;
+    });
+    const results = await Promise.all(
+      ids.map((id) =>
+        fetch(`/api/tasks/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+          .then((r) => r.ok)
+          .catch(() => false)
+      )
+    );
+    const failed = results.filter((ok) => !ok).length;
+    if (failed) toast.error(`${failed} task${failed === 1 ? "" : "s"} didn't update — reload to resync.`);
+  }
+
+  /** Bulk delete over the per-row DELETE; failures surfaced (unlike single delete). */
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setSelected(new Set());
+    const idSet = new Set(ids);
+    setBoard((prev) => ({
+      todo: prev.todo.filter((t) => !idSet.has(t.id)),
+      doing: prev.doing.filter((t) => !idSet.has(t.id)),
+      done: prev.done.filter((t) => !idSet.has(t.id)),
+    }));
+    const results = await Promise.all(
+      ids.map((id) =>
+        fetch(`/api/tasks/${id}`, { method: "DELETE" })
+          .then((r) => r.ok)
+          .catch(() => false)
+      )
+    );
+    const failed = results.filter((ok) => !ok).length;
+    if (failed) toast.error(`${failed} task${failed === 1 ? "" : "s"} didn't delete — reload to resync.`);
   }
 
   async function persist(next: Board) {
@@ -404,6 +477,42 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
         </TabsContent>
 
         <TabsContent value="list" className="mt-4">
+          {selected.size > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+              <span className="text-sm">{selected.size} selected</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSelected(new Set(STATUSES.flatMap((s) => filtered[s]).map((t) => t.id)))}
+              >
+                Select all {filteredCount}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                Clear
+              </Button>
+              <span className="mx-1 h-4 w-px bg-border" />
+              {STATUSES.map((s) => (
+                <Button key={s} size="sm" variant="outline" onClick={() => void bulkPatch({ status: s })}>
+                  → {s}
+                </Button>
+              ))}
+              <Select onValueChange={(v) => void bulkPatch({ priority: v as Priority })}>
+                <SelectTrigger className="h-8 w-32" aria-label="Bulk set priority">
+                  <SelectValue placeholder="Priority…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["low", "medium", "high"] as const).map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmBulkDelete(true)}>
+                Delete {selected.size}
+              </Button>
+            </div>
+          )}
           {allTasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">No tasks yet. Add one above.</p>
           ) : filteredCount === 0 ? (
@@ -412,6 +521,13 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
             <div className="space-y-1.5">
               {STATUSES.flatMap((s) => filtered[s]).map((t) => (
                 <div key={t.id} className="flex items-center gap-3 rounded-md border border-border p-2.5">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(t.id)}
+                    onChange={() => toggleSelect(t.id)}
+                    className="h-4 w-4"
+                    aria-label={`Select ${t.title}`}
+                  />
                   <input
                     type="checkbox"
                     checked={t.status === "done"}
@@ -468,6 +584,13 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
       </Tabs>
 
       <EditTaskDialog task={editing} modules={modules} onClose={() => setEditing(null)} onSaved={replaceTask} />
+      <ConfirmDialog
+        open={confirmBulkDelete}
+        onOpenChange={setConfirmBulkDelete}
+        title={`Delete ${selected.size} task${selected.size === 1 ? "" : "s"}?`}
+        description="This permanently deletes the selected tasks — there's no trash for tasks."
+        onConfirm={() => void bulkDelete()}
+      />
     </div>
   );
 }
