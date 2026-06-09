@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
 import { AiOutput } from "@/components/tools/AiOutput";
+import { ContextUsed } from "@/components/tools/ContextUsed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -129,6 +130,9 @@ export function TemplateRunner({
 
       {error && <p className="text-sm text-destructive">⚠ {error}</p>}
       <AiOutput output={output} status={status} label="Result" />
+      {output && status === "done" && (
+        <ContextUsed query={Object.values(values).filter(Boolean).join(" ")} />
+      )}
     </div>
   );
 }
