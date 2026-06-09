@@ -298,7 +298,7 @@ export function findFunctions(stripped: string): FnSpan[] {
 }
 
 /** Body text of a span with directly-nested function spans blanked out. */
-function ownBody(stripped: string, span: FnSpan, all: FnSpan[]): string {
+export function ownBody(stripped: string, span: FnSpan, all: FnSpan[]): string {
   let body = stripped.slice(span.start, span.end + 1);
   for (const other of all) {
     if (other === span || other.start <= span.start || other.end >= span.end) continue;

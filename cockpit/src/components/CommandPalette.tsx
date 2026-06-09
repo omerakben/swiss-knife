@@ -24,6 +24,7 @@ const NAV: { label: string; href: string; keywords?: string }[] = [
   { label: "Rubric Designer", href: "/tools/rubric-designer", keywords: "eval rubric weights bands score" },
   { label: "Eval Cases", href: "/tools/eval-cases", keywords: "golden test cases coverage adversarial boundary" },
   { label: "API Contract", href: "/tools/api-contract", keywords: "openapi swagger rest endpoint yaml" },
+  { label: "Complexity", href: "/tools/complexity", keywords: "big-o performance algorithm hotspots" },
   { label: "QA Pipeline", href: "/tools/qa-pipeline", keywords: "story rubric test" },
   { label: "Memory", href: "/tools/memory", keywords: "facts glossary" },
   { label: "Projects", href: "/tools/projects", keywords: "hub" },
