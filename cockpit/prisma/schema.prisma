@@ -221,6 +221,7 @@ model Project {
 model Settings {
   id           String   @id @default("singleton")
   model        String?
+  qaModel      String? // optional model for the QA pipeline (rigor); falls back to `model`
   temperature  Float?
   baseUrl      String?
   theme        String?  @default("system")

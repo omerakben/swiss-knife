@@ -22,7 +22,7 @@ import {
   type ModelPreset,
 } from "@/lib/models";
 
-type Config = { model: string; baseUrl: string; temperature: number };
+type Config = { model: string; baseUrl: string; temperature: number; qaModel?: string | null };
 type InstalledModel = {
   name: string;
   sizeBytes: number;
@@ -41,6 +41,7 @@ export function SettingsForm({
   defaults: Config;
 }) {
   const [model, setModel] = useState(initialConfig.model);
+  const [qaModel, setQaModel] = useState(initialConfig.qaModel ?? "");
   const [baseUrl, setBaseUrl] = useState(initialConfig.baseUrl);
   const [temperature, setTemperature] = useState(String(initialConfig.temperature));
   const [saving, setSaving] = useState(false);
@@ -107,7 +108,7 @@ export function SettingsForm({
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model, baseUrl, temperature: Number(temperature) }),
+        body: JSON.stringify({ model, qaModel, baseUrl, temperature: Number(temperature) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save");
@@ -174,6 +175,20 @@ export function SettingsForm({
         like <code className="rounded bg-background px-1 py-0.5">gemma4:e4b</code>{" "}
         (~4&nbsp;GB) to keep headroom. Pull missing models with{" "}
         <code className="rounded bg-background px-1 py-0.5">ollama pull &lt;tag&gt;</code>.
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="qaModel">QA pipeline model</Label>
+        <Input
+          id="qaModel"
+          value={qaModel}
+          onChange={(e) => setQaModel(e.target.value)}
+          placeholder="(uses the chat model above)"
+        />
+        <p className="text-xs text-muted-foreground">
+          Optional. Run the QA pipeline on a different model — e.g. <code>gemma4:12b-mlx</code> for
+          rigor — while everything else stays fast. Leave blank to use the chat model above.
+        </p>
       </div>
 
       <div className="space-y-1.5">

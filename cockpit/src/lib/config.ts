@@ -17,6 +17,8 @@ export const DEFAULTS = {
 
 export type EffectiveConfig = {
   model: string;
+  /** Model for the QA pipeline (rigor); null = use `model`. */
+  qaModel: string | null;
   baseUrl: string;
   temperature: number;
   visionModel: string;
@@ -25,8 +27,12 @@ export type EffectiveConfig = {
 
 /** Settings row over env over defaults. Safe before the table is migrated. */
 export async function getEffectiveConfig(): Promise<EffectiveConfig> {
-  let row: { model: string | null; baseUrl: string | null; temperature: number | null } | null =
-    null;
+  let row: {
+    model: string | null;
+    qaModel: string | null;
+    baseUrl: string | null;
+    temperature: number | null;
+  } | null = null;
   try {
     row = await prisma.settings.findUnique({ where: { id: "singleton" } });
   } catch {
@@ -34,6 +40,7 @@ export async function getEffectiveConfig(): Promise<EffectiveConfig> {
   }
   return {
     model: row?.model ?? DEFAULTS.model,
+    qaModel: row?.qaModel ?? process.env.OLLAMA_QA_MODEL ?? null,
     baseUrl: row?.baseUrl ?? DEFAULTS.baseUrl,
     temperature: row?.temperature ?? DEFAULTS.temperature,
     visionModel: DEFAULTS.visionModel,

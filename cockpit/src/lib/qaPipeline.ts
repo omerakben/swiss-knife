@@ -113,9 +113,11 @@ async function extractVerdict(
   }
 }
 
+// QA uses its configured model (default = the global chat model) so the user can
+// opt the pipeline onto the quality tier for rigor without slowing everything.
 async function chatOpts() {
   const cfg = await getEffectiveConfig();
-  return { model: cfg.model, baseUrl: cfg.baseUrl, temperature: cfg.temperature };
+  return { model: cfg.qaModel ?? cfg.model, baseUrl: cfg.baseUrl, temperature: cfg.temperature };
 }
 
 function withMemory(memory: string, instruction: string): ChatMessage[] {

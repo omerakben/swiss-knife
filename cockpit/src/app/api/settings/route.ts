@@ -14,6 +14,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   const body = (await req.json().catch(() => ({}))) as {
     model?: string;
+    qaModel?: string;
     baseUrl?: string;
     temperature?: number | string;
     theme?: string;
@@ -33,6 +34,7 @@ export async function PUT(req: Request) {
   const data: Record<string, unknown> = {};
   // Only touch engine config when those fields are present (the OWUI key form omits them).
   if ("model" in body) data.model = norm(body.model);
+  if ("qaModel" in body) data.qaModel = norm(body.qaModel);
   if ("baseUrl" in body) data.baseUrl = norm(body.baseUrl);
   if ("temperature" in body) data.temperature = temp;
   if (typeof body.theme === "string" && body.theme) data.theme = body.theme;

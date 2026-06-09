@@ -22,7 +22,7 @@ test.describe("settings — model picker", () => {
     await expect(page.getByRole("heading", { name: /settings/i })).toBeVisible();
 
     // The picker (combobox) replaces the old free-text box.
-    await expect(page.getByLabel("Model")).toBeVisible();
+    await expect(page.getByLabel("Model", { exact: true })).toBeVisible();
 
     // The Docker-RAM guidance callout points users at the light model.
     await expect(page.getByText(/light model/i)).toBeVisible();
@@ -31,7 +31,7 @@ test.describe("settings — model picker", () => {
 
   test("lists installed models as options", async ({ page }) => {
     await page.goto("/settings");
-    await page.getByLabel("Model").click();
+    await page.getByLabel("Model", { exact: true }).click();
     await expect(page.getByRole("option", { name: /gemma4:e4b/ })).toBeVisible();
     await expect(page.getByRole("option", { name: /gemma4:12b-mlx/ })).toBeVisible();
     await expect(page.getByRole("option", { name: /custom tag/i })).toBeVisible();
