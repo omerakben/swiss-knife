@@ -4,6 +4,15 @@ import { TasksView, type Task } from "@/components/tasks/TasksView";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// The DB columns are free-form strings; normalize (don't blind-cast) so an
+// unexpected value can't key the Kanban board into an undefined column.
+const STATUSES = ["todo", "doing", "done"] as const;
+const PRIORITIES = ["low", "medium", "high"] as const;
+const asStatus = (s: string): Task["status"] =>
+  (STATUSES as readonly string[]).includes(s) ? (s as Task["status"]) : "todo";
+const asPriority = (p: string): Task["priority"] =>
+  (PRIORITIES as readonly string[]).includes(p) ? (p as Task["priority"]) : "medium";
+
 export default async function TasksPage() {
   const rows = await prisma.task
     .findMany({
@@ -17,8 +26,8 @@ export default async function TasksPage() {
     title: t.title,
     notes: t.notes,
     module: t.module,
-    status: t.status as Task["status"],
-    priority: t.priority as Task["priority"],
+    status: asStatus(t.status),
+    priority: asPriority(t.priority),
     dueDate: t.dueDate ? t.dueDate.toISOString() : null,
     order: t.order,
     projectName: t.project?.name ?? null,

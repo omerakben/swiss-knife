@@ -26,7 +26,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data.completedAt = body.status === "done" ? new Date() : null;
   }
   if (body.dueDate === null) data.dueDate = null;
-  else if (typeof body.dueDate === "string") data.dueDate = new Date(body.dueDate);
+  else if (typeof body.dueDate === "string") {
+    const d = new Date(body.dueDate);
+    if (Number.isNaN(d.getTime())) {
+      return Response.json({ error: "Invalid due date." }, { status: 400 });
+    }
+    data.dueDate = d;
+  }
   if (typeof body.order === "number") data.order = body.order;
 
   if (Object.keys(data).length === 0) {

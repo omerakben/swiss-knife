@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -35,6 +37,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   try {
     // Content links use onDelete: SetNull, so items are unlinked, not deleted.
     await prisma.project.delete({ where: { id } });
+    // Clear the active-project cookie if it pointed at the deleted project —
+    // otherwise a dangling id breaks every save-with-project (FK violation)
+    // until the user re-picks a project.
+    const c = await cookies();
+    if (c.get("activeProjectId")?.value === id) c.delete("activeProjectId");
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Project not found." }, { status: 404 });
