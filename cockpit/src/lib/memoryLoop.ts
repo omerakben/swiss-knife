@@ -11,7 +11,7 @@
 // large prompt to get everything right.
 
 import { prisma } from "@/lib/db";
-import { chat, type ChatMessage } from "@/lib/ollama";
+import { chat, chatJson, type ChatMessage } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
 import { cosine, embedDocuments, parseVector, serializeVector } from "@/lib/embeddings";
 import { FACT_CATEGORIES, normalizeCategory, type FactCategory } from "@/lib/memory";
@@ -66,40 +66,94 @@ function jaccard(a: string, b: string): number {
   return inter / (ta.size + tb.size - inter);
 }
 
-// ── Capture + classify (light model) ─────────────────────────────────────────
+// ── Capture + classify (light model, structured output) ──────────────────────
+const EXTRACT_SYSTEM =
+  "Extract durable, reusable facts about the user, their projects, preferences, vocabulary, or constraints from the text. " +
+  "Skip anything transient or trivial. At most 8 facts. " +
+  `Classify each into exactly one category from: ${FACT_CATEGORIES.join(", ")}.`;
+
+const EXTRACT_SCHEMA = {
+  type: "object",
+  properties: {
+    facts: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          value: { type: "string" },
+          category: { type: "string", enum: [...FACT_CATEGORIES] },
+        },
+        required: ["value", "category"],
+      },
+    },
+  },
+  required: ["facts"],
+};
+
+const CLASSIFY_SCHEMA = {
+  type: "object",
+  properties: {
+    assignments: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          index: { type: "integer" },
+          category: { type: "string", enum: [...FACT_CATEGORIES] },
+        },
+        required: ["index", "category"],
+      },
+    },
+  },
+  required: ["assignments"],
+};
+
+/** Dedupe by lowercased value, drop trivially short, cap at 8. */
+function dedupeCap(raw: { value: string; category: FactCategory }[]): { value: string; category: FactCategory }[] {
+  const seen = new Set<string>();
+  const out: { value: string; category: FactCategory }[] = [];
+  for (const f of raw) {
+    const value = f.value.trim();
+    if (value.length <= 2) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ value, category: f.category });
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
 async function extractAndClassify(text: string): Promise<{ value: string; category: FactCategory }[]> {
   const cfg = await getEffectiveConfig();
-  const out = await chat(
-    [
-      {
-        role: "system",
-        content:
-          "Extract durable, reusable facts about the user, their projects, preferences, vocabulary, or constraints from the text. " +
-          `Classify each into exactly one category from this set: ${FACT_CATEGORIES.join(", ")}. ` +
-          'Return ONLY a plain list, one fact per line, in the format "<category> :: <fact>". ' +
-          "No numbering, no commentary. Skip anything transient or trivial. Max 8 facts.",
-      },
-      { role: "user", content: text },
-    ],
-    { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0.3 }
-  );
-
-  const seen = new Set<string>();
-  const facts: { value: string; category: FactCategory }[] = [];
-  for (const line of out.split("\n")) {
-    const cleaned = line.replace(/^[\s\-*\d.)]+/, "").trim();
-    if (!cleaned) continue;
-    const idx = cleaned.indexOf("::");
-    const category = idx === -1 ? "general" : normalizeCategory(cleaned.slice(0, idx));
-    const value = (idx === -1 ? cleaned : cleaned.slice(idx + 2)).trim();
-    if (value.length <= 2) continue;
-    const dedupeKey = value.toLowerCase();
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-    facts.push({ value, category });
-    if (facts.length >= 8) break;
+  const opts = { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0.2 };
+  try {
+    const out = await chatJson<{ facts: { value: string; category: string }[] }>(
+      [{ role: "system", content: EXTRACT_SYSTEM }, { role: "user", content: text }],
+      EXTRACT_SCHEMA,
+      opts
+    );
+    return dedupeCap((out.facts ?? []).map((f) => ({ value: f.value, category: normalizeCategory(f.category) })));
+  } catch {
+    // Fallback: free-text line parse if structured output is unavailable.
+    const raw = await chat(
+      [
+        { role: "system", content: `${EXTRACT_SYSTEM} Return one fact per line as "<category> :: <fact>".` },
+        { role: "user", content: text },
+      ],
+      opts
+    ).catch(() => "");
+    const parsed: { value: string; category: FactCategory }[] = [];
+    for (const line of raw.split("\n")) {
+      const cleaned = line.replace(/^[\s\-*\d.)]+/, "").trim();
+      if (!cleaned) continue;
+      const idx = cleaned.indexOf("::");
+      const category = idx === -1 ? "general" : normalizeCategory(cleaned.slice(0, idx));
+      const value = (idx === -1 ? cleaned : cleaned.slice(idx + 2)).trim();
+      parsed.push({ value, category });
+    }
+    return dedupeCap(parsed);
   }
-  return facts;
 }
 
 // ── Consolidate a duplicate (quality model, judgment) ────────────────────────
@@ -290,29 +344,35 @@ export async function classifyUncategorized(projectId?: string | null): Promise<
   if (rows.length === 0) return { classified: 0 };
 
   const cfg = await getEffectiveConfig();
+  const opts = { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0 };
+  const system =
+    `Classify each numbered fact into exactly one category from: ${FACT_CATEGORIES.join(", ")}.`;
   const BATCH = 12;
   let classified = 0;
   for (let i = 0; i < rows.length; i += BATCH) {
     const slice = rows.slice(i, i + BATCH);
     const list = slice.map((r, idx) => `${idx + 1}. ${r.value}`).join("\n");
-    const out = await chat(
-      [
-        {
-          role: "system",
-          content:
-            `Classify each numbered fact into exactly one category from this set: ${FACT_CATEGORIES.join(", ")}. ` +
-            'Return ONLY lines in the form "<number>. <category>", one per fact, no commentary.',
-        },
-        { role: "user", content: list },
-      ],
-      { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0.1 }
-    );
 
     const byIndex = new Map<number, FactCategory>();
-    for (const line of out.split("\n")) {
-      const m = line.match(/^\s*(\d+)\s*[.):\-]\s*([a-zA-Z]+)/);
-      if (m) byIndex.set(Number(m[1]), normalizeCategory(m[2]));
+    try {
+      const out = await chatJson<{ assignments: { index: number; category: string }[] }>(
+        [{ role: "system", content: system }, { role: "user", content: list }],
+        CLASSIFY_SCHEMA,
+        opts
+      );
+      for (const a of out.assignments ?? []) byIndex.set(a.index, normalizeCategory(a.category));
+    } catch {
+      // Fallback: free-text "<n>. <category>" parse.
+      const out = await chat(
+        [{ role: "system", content: `${system} Return lines "<number>. <category>".` }, { role: "user", content: list }],
+        opts
+      ).catch(() => "");
+      for (const line of out.split("\n")) {
+        const m = line.match(/^\s*(\d+)\s*[.):\-]\s*([a-zA-Z]+)/);
+        if (m) byIndex.set(Number(m[1]), normalizeCategory(m[2]));
+      }
     }
+
     for (let k = 0; k < slice.length; k++) {
       const cat = byIndex.get(k + 1);
       if (!cat) continue;

@@ -200,6 +200,39 @@ export async function* streamChatWithImages(
   }
 }
 
+// ── Structured output ─────────────────────────────────────────────────────────
+// Constrain generation to a JSON schema via Ollama's native `format` param and
+// return the parsed object. This replaces brittle regex parsing of free text:
+// the model is forced to emit schema-valid JSON. Uses the native /api/chat path
+// (where `format` lives) rather than /v1. Throws on engine error or invalid
+// JSON so the caller can decide a fallback.
+
+export async function chatJson<T>(
+  messages: ChatMessage[],
+  schema: Record<string, unknown>,
+  opts: ChatOptions = {}
+): Promise<T> {
+  const res = await fetch(nativeChatUrl(opts.baseUrl), {
+    method: "POST",
+    headers: HEADERS,
+    body: JSON.stringify({
+      model: opts.model ?? MODEL,
+      messages,
+      format: schema,
+      options: { temperature: opts.temperature ?? 0 },
+      stream: false,
+    }),
+    cache: "no-store",
+    signal: opts.signal,
+  });
+  if (!res.ok) {
+    throw new Error(`Ollama error ${res.status}: ${await res.text().catch(() => "")}`);
+  }
+  const data = await res.json();
+  const content: string = data?.message?.content ?? "";
+  return JSON.parse(content) as T;
+}
+
 // ── Embeddings ─────────────────────────────────────────────────────────────────
 // Vector embeddings come from the NATIVE /api/embed endpoint (not /v1), which
 // takes a string or an array of strings and returns one vector per input. The
