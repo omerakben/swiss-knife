@@ -22,6 +22,7 @@ const NAV: { label: string; href: string; keywords?: string }[] = [
   { label: "ADR Writer", href: "/tools/adr", keywords: "decision record madr architecture" },
   { label: "Code Review", href: "/tools/code-review", keywords: "smells complexity diff lint" },
   { label: "Rubric Designer", href: "/tools/rubric-designer", keywords: "eval rubric weights bands score" },
+  { label: "Eval Cases", href: "/tools/eval-cases", keywords: "golden test cases coverage adversarial boundary" },
   { label: "QA Pipeline", href: "/tools/qa-pipeline", keywords: "story rubric test" },
   { label: "Memory", href: "/tools/memory", keywords: "facts glossary" },
   { label: "Projects", href: "/tools/projects", keywords: "hub" },
