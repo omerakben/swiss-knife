@@ -13,6 +13,7 @@ const tools = [
   { href: "/tools/email-writer", label: "Email Writer" },
   { href: "/tools/brainstorm", label: "Brainstorming" },
   { href: "/tools/image", label: "Image" },
+  { href: "/tools/inbox", label: "Smart Inbox" },
   { href: "/tools/tasks", label: "Tasks" },
   { href: "/tools/gherkin-lint", label: "Gherkin Lint" },
   { href: "/tools/qa-pipeline", label: "QA Pipeline" },
