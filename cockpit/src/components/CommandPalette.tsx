@@ -64,23 +64,34 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // One reset path for EVERY open/close — Radix only fires onOpenChange for
+  // internally-initiated changes (Esc, overlay click); the ⌘K/⌘P handlers and
+  // run paths are programmatic and would otherwise leak active/answer/query
+  // state into the next open.
+  const resetTo = useCallback((nextMode: "default" | "projects") => {
+    setMode(nextMode);
+    setQ("");
+    setActive(0);
+    setAnswer(null);
+    setResults([]);
+  }, []);
+
   // Global ⌘K / Ctrl+K toggle, ⌘P / Ctrl+P for the project switcher, plus a
   // custom event so other UI can open it.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setMode("default");
+        resetTo("default");
         setOpen((o) => !o);
       } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        setMode("projects");
-        setQ("");
+        resetTo("projects");
         setOpen(true);
       }
     };
     const onOpen = () => {
-      setMode("default");
+      resetTo("default");
       setOpen(true);
     };
     window.addEventListener("keydown", onKey);
@@ -89,7 +100,7 @@ export function CommandPalette() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("swissknife:command", onOpen);
     };
-  }, []);
+  }, [resetTo]);
 
   // Focus the search field whenever the palette opens.
   useEffect(() => {
@@ -115,20 +126,26 @@ export function CommandPalette() {
   }, [open]);
 
   // Debounced cross-entity search; only fires once the term is long enough.
+  // The stale flag stops a slow earlier response from overwriting results for
+  // the current term (same pattern as the projects fetch above).
   useEffect(() => {
     if (!open || mode !== "default") return;
     const term = q.trim();
     if (term.length < 2) return;
+    let stale = false;
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`);
         const data = await res.json();
-        setResults(data.results ?? []);
+        if (!stale) setResults(data.results ?? []);
       } catch {
-        setResults([]);
+        if (!stale) setResults([]);
       }
     }, 150);
-    return () => clearTimeout(t);
+    return () => {
+      stale = true;
+      clearTimeout(t);
+    };
   }, [q, open, mode]);
 
   const navMatches = useMemo(() => {
@@ -187,9 +204,8 @@ export function CommandPalette() {
 
   const close = useCallback(() => {
     setOpen(false);
-    setQ("");
-    setMode("default");
-  }, []);
+    resetTo("default");
+  }, [resetTo]);
 
   const go = useCallback(
     (href: string) => {
@@ -296,10 +312,8 @@ export function CommandPalette() {
           break;
         }
         case "switch-project":
-          // The input keeps focus — only the mode and query change.
-          setMode("projects");
-          setQ("");
-          setActive(0);
+          // The input keeps focus — the palette just re-enters in project mode.
+          resetTo("projects");
           break;
         case "reindex":
           close();
@@ -322,7 +336,7 @@ export function CommandPalette() {
           break;
       }
     },
-    [resolvedTheme, setTheme, close, go, runRoutine]
+    [resolvedTheme, setTheme, close, go, runRoutine, resetTo]
   );
 
   const run = useCallback(
@@ -355,12 +369,8 @@ export function CommandPalette() {
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        setActive(0);
-        setAnswer(null);
-        if (!o) {
-          setQ("");
-          setMode("default");
-        }
+        if (!o) resetTo("default");
+        else setActive(0);
       }}
     >
       <DialogContent

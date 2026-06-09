@@ -4,8 +4,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trash2, GripVertical, Pencil } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { Task } from "./TasksView";
 
 const PRIORITY_VARIANT = {
@@ -55,24 +56,35 @@ export function TaskCard({
         <div className="min-w-0 flex-1">
           <p className="text-sm">{task.title}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {task.module && (
-              <Badge
-                variant="outline"
-                className={"border-primary/40 text-[10px] font-medium" + (onFilterModule ? " cursor-pointer" : "")}
-                title={onFilterModule ? `Filter by module “${task.module}”` : undefined}
-                onClick={onFilterModule ? () => onFilterModule(task.module as string) : undefined}
+            {task.module &&
+              (onFilterModule ? (
+                <button
+                  type="button"
+                  className={cn(badgeVariants({ variant: "outline" }), "cursor-pointer border-primary/40 text-[10px] font-medium")}
+                  title={`Filter by module “${task.module}”`}
+                  onClick={() => onFilterModule(task.module as string)}
+                >
+                  {task.module}
+                </button>
+              ) : (
+                <Badge variant="outline" className="border-primary/40 text-[10px] font-medium">
+                  {task.module}
+                </Badge>
+              ))}
+            {onFilterPriority ? (
+              <button
+                type="button"
+                className={cn(badgeVariants({ variant: PRIORITY_VARIANT[task.priority] }), "cursor-pointer text-[10px]")}
+                title={`Filter by ${task.priority} priority`}
+                onClick={() => onFilterPriority(task.priority)}
               >
-                {task.module}
+                {task.priority}
+              </button>
+            ) : (
+              <Badge variant={PRIORITY_VARIANT[task.priority]} className="text-[10px]">
+                {task.priority}
               </Badge>
             )}
-            <Badge
-              variant={PRIORITY_VARIANT[task.priority]}
-              className={"text-[10px]" + (onFilterPriority ? " cursor-pointer" : "")}
-              title={onFilterPriority ? `Filter by ${task.priority} priority` : undefined}
-              onClick={onFilterPriority ? () => onFilterPriority(task.priority) : undefined}
-            >
-              {task.priority}
-            </Badge>
             {task.projectName && (
               <Badge variant="secondary" className="text-[10px]">
                 {task.projectName}

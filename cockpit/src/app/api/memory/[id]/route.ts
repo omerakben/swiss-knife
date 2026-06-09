@@ -53,12 +53,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return Response.json({ error: "Nothing to update." }, { status: 400 });
   }
 
-  try {
-    const fact = await prisma.memoryFact.update({ where: { id }, data });
-    return Response.json({ fact });
-  } catch {
+  // Guard against soft-deleted rows: a generic PATCH must not silently
+  // re-status a fact that's sitting in the Trash (only `restore` targets those).
+  const updated = await prisma.memoryFact
+    .updateMany({ where: { id, deletedAt: null }, data })
+    .catch(() => ({ count: 0 }));
+  if (updated.count === 0) {
     return Response.json({ error: "Fact not found." }, { status: 404 });
   }
+  const fact = await prisma.memoryFact.findUnique({ where: { id } });
+  return Response.json({ fact });
 }
 
 // Soft-delete by default (moves to Trash, restorable). `?purge=true` removes it

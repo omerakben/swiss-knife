@@ -24,7 +24,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -89,19 +90,26 @@ function CategoryBadge({
   onClick,
 }: {
   category: string | null;
-  /** When provided, the badge acts as a click-to-filter chip. */
+  /** When provided, the badge becomes a real button (keyboard-accessible chip). */
   onClick?: (category: string) => void;
 }) {
   if (!category) return null;
+  if (!onClick) {
+    return (
+      <Badge variant="outline" className="text-[10px] capitalize">
+        {category}
+      </Badge>
+    );
+  }
   return (
-    <Badge
-      variant="outline"
-      className={"text-[10px] capitalize" + (onClick ? " cursor-pointer" : "")}
-      title={onClick ? `Filter by category “${category}”` : undefined}
-      onClick={onClick ? () => onClick(category) : undefined}
+    <button
+      type="button"
+      className={cn(badgeVariants({ variant: "outline" }), "cursor-pointer text-[10px] capitalize")}
+      title={`Filter by category “${category}”`}
+      onClick={() => onClick(category)}
     >
       {category}
-    </Badge>
+    </button>
   );
 }
 
@@ -126,8 +134,19 @@ export function MemoryManager({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   // Project/category filters survive reloads; the search box stays ephemeral.
-  const [filterProject, setFilterProject] = usePersisted("sk:memory:project", ALL);
-  const [filterCategory, setFilterCategory] = usePersisted("sk:memory:category", ALLCAT);
+  const [filterProjectRaw, setFilterProject] = usePersisted("sk:memory:project", ALL);
+  const [filterCategoryRaw, setFilterCategory] = usePersisted("sk:memory:category", ALLCAT);
+  // Stored values are validated against what exists NOW — a stale persisted
+  // project id (or garbage) degrades to "all" instead of silently blanking
+  // every section with no visible cue.
+  const filterProject =
+    filterProjectRaw === ALL || filterProjectRaw === NONE || projects.some((p) => p.id === filterProjectRaw)
+      ? filterProjectRaw
+      : ALL;
+  const filterCategory =
+    filterCategoryRaw === ALLCAT || filterCategoryRaw === UNCAT || CATEGORY_ORDER.includes(filterCategoryRaw)
+      ? filterCategoryRaw
+      : ALLCAT;
   const [search, setSearch] = useState("");
   // Bulk selection — ACTIVE facts only. Accepting pending/merge facts stays a
   // per-fact human decision by design; bulk ops here are archive/trash only.
@@ -185,6 +204,8 @@ export function MemoryManager({
   const pendingNew = visible.filter((f) => f.status === "pending" && !f.mergedIntoId);
   const pendingMerge = visible.filter((f) => f.status === "pending" && f.mergedIntoId);
   const active = visible.filter((f) => f.status === "active");
+  // The bulk bar counts only selected facts that are visibly active right now.
+  const activeSelectedCount = active.filter((f) => selected.has(f.id)).length;
   const archived = visible.filter((f) => f.status === "archived");
   const indexedCount = active.filter((f) => f.indexed).length;
 
@@ -222,7 +243,10 @@ export function MemoryManager({
 
   /** Bulk archive / soft-delete over the per-row endpoints; ONE refresh at the end. */
   async function bulkApply(action: "archive" | "trash") {
-    const ids = [...selected];
+    // Only currently-visible ACTIVE facts — a selection made before a filter
+    // change (or a row trashed individually) must not be acted on blind.
+    const activeIds = new Set(active.map((f) => f.id));
+    const ids = [...selected].filter((id) => activeIds.has(id));
     if (ids.length === 0) return;
     setSelected(new Set());
     const results = await Promise.all(
@@ -246,6 +270,12 @@ export function MemoryManager({
   }
 
   async function remove(id: string) {
+    setSelected((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     const res = await fetch(`/api/memory/${id}`, { method: "DELETE" });
     if (!res.ok) return toast.error("Failed");
     router.refresh();
@@ -659,9 +689,9 @@ export function MemoryManager({
 
       <div className="mt-8">
         <h2 className="text-sm font-medium text-muted-foreground">Active facts ({active.length})</h2>
-        {selected.size > 0 && (
+        {activeSelectedCount > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
-            <span className="text-sm">{selected.size} selected</span>
+            <span className="text-sm">{activeSelectedCount} selected</span>
             <Button size="sm" variant="outline" onClick={() => void bulkApply("archive")}>
               Archive
             </Button>
@@ -684,15 +714,16 @@ export function MemoryManager({
             {groupByCategory(active).map(([cat, items]) => (
               <div key={cat}>
                 <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
-                  <span
+                  <button
+                    type="button"
                     className={
-                      (cat === UNCAT ? "" : "capitalize ") + "cursor-pointer hover:text-foreground"
+                      (cat === UNCAT ? "" : "capitalize ") + "cursor-pointer uppercase tracking-wide hover:text-foreground"
                     }
-                    title={`Filter by this category`}
+                    title="Filter by this category"
                     onClick={() => setFilterCategory(cat)}
                   >
                     {cat === UNCAT ? "Uncategorized" : cat}
-                  </span>{" "}
+                  </button>{" "}
                   ({items.length})
                 </div>
                 <div className="space-y-2">
@@ -726,14 +757,14 @@ export function MemoryManager({
                           <span className="flex-1 text-sm">{f.value}</span>
                         )}
                         {f.projectName && (
-                          <Badge
-                            variant="outline"
-                            className="cursor-pointer text-[10px]"
+                          <button
+                            type="button"
+                            className={cn(badgeVariants({ variant: "outline" }), "shrink-0 cursor-pointer text-[10px]")}
                             title={`Filter by project “${f.projectName}”`}
                             onClick={() => setFilterProject(f.projectId ?? NONE)}
                           >
                             {f.projectName}
-                          </Badge>
+                          </button>
                         )}
                         <Badge variant="secondary" className="text-[10px]">
                           {f.source}

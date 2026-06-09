@@ -14,6 +14,14 @@ describe("maxLoopNesting", () => {
   it("counts iteration callbacks as loops", () => {
     expect(maxLoopNesting(`{ items.forEach((i) => { rows.map((r) => { z(); }); }); }`)).toBe(2);
   });
+
+  it("does not stack sequential braceless arrow callbacks", () => {
+    expect(maxLoopNesting(`{ const a = xs.map(x => x * 2); const b = ys.filter(y => y > 0); }`)).toBe(1);
+  });
+
+  it("still nests braceless callbacks inside each other", () => {
+    expect(maxLoopNesting(`{ const m = xs.map(x => ys.map(y => x + y)); }`)).toBe(2);
+  });
 });
 
 describe("scanComplexity", () => {
@@ -60,6 +68,9 @@ describe("classifyBigO", () => {
     expect(classifyBigO("O(n)")).toBe("linear");
     expect(classifyBigO("O(n + m)")).toBe("linear");
     expect(classifyBigO("O(n log n)")).toBe("linearithmic");
+    expect(classifyBigO("O(n*log n)")).toBe("linearithmic");
+    expect(classifyBigO("O(n · log n)")).toBe("linearithmic");
+    expect(classifyBigO("O(n × log n)")).toBe("linearithmic");
     expect(classifyBigO("O(n^2)")).toBe("polynomial");
     expect(classifyBigO("O(n²)")).toBe("polynomial");
     expect(classifyBigO("O(n*m)")).toBe("polynomial");

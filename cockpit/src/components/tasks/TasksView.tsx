@@ -18,7 +18,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -125,6 +126,12 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
   const totalCount = allTasks.length;
   const filteredCount = filtered.todo.length + filtered.doing.length + filtered.done.length;
 
+  // Bulk ops act ONLY on selected tasks that are currently visible — a
+  // selection made before a filter change must not let "Delete N" remove
+  // tasks the user can't see (and deleted rows are pruned from the set).
+  const visibleIds = new Set(STATUSES.flatMap((s) => filtered[s]).map((t) => t.id));
+  const activeSelection = [...selected].filter((id) => visibleIds.has(id));
+
   // ---- mutations ----
   async function addTask() {
     const t = title.trim();
@@ -157,6 +164,12 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
   }
 
   async function deleteTask(id: string) {
+    setSelected((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setBoard((prev) => ({
       todo: prev.todo.filter((t) => t.id !== id),
       doing: prev.doing.filter((t) => t.id !== id),
@@ -201,7 +214,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
 
   /** Bulk status/priority over the per-row PATCH; optimistic, failures surfaced. */
   async function bulkPatch(data: { status?: Status; priority?: Priority }) {
-    const ids = [...selected];
+    const ids = activeSelection;
     if (ids.length === 0) return;
     setSelected(new Set());
     const idSet = new Set(ids);
@@ -238,7 +251,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
 
   /** Bulk delete over the per-row DELETE; failures surfaced (unlike single delete). */
   async function bulkDelete() {
-    const ids = [...selected];
+    const ids = activeSelection;
     if (ids.length === 0) return;
     setSelected(new Set());
     const idSet = new Set(ids);
@@ -477,9 +490,9 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
         </TabsContent>
 
         <TabsContent value="list" className="mt-4">
-          {selected.size > 0 && (
+          {activeSelection.length > 0 && (
             <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
-              <span className="text-sm">{selected.size} selected</span>
+              <span className="text-sm">{activeSelection.length} selected</span>
               <Button
                 size="sm"
                 variant="ghost"
@@ -509,7 +522,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
                 </SelectContent>
               </Select>
               <Button size="sm" variant="destructive" onClick={() => setConfirmBulkDelete(true)}>
-                Delete {selected.size}
+                Delete {activeSelection.length}
               </Button>
             </div>
           )}
@@ -525,36 +538,37 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
                     type="checkbox"
                     checked={selected.has(t.id)}
                     onChange={() => toggleSelect(t.id)}
-                    className="h-4 w-4"
+                    className="h-4 w-4 shrink-0"
                     aria-label={`Select ${t.title}`}
                   />
                   <input
                     type="checkbox"
                     checked={t.status === "done"}
                     onChange={(e) => setStatus(t.id, e.target.checked ? "done" : "todo")}
-                    className="h-4 w-4"
+                    className="h-4 w-4 shrink-0"
                     aria-label={`Mark ${t.title} done`}
                   />
                   <span
                     className={
-                      "flex-1 text-sm " + (t.status === "done" ? "text-muted-foreground line-through" : "")
+                      "min-w-0 flex-1 truncate text-sm " +
+                      (t.status === "done" ? "text-muted-foreground line-through" : "")
                     }
                   >
                     {t.title}
                   </span>
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline" className="shrink-0 text-[10px]">
                     {t.status}
                   </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="cursor-pointer text-[10px]"
+                  <button
+                    type="button"
+                    className={cn(badgeVariants({ variant: "secondary" }), "shrink-0 cursor-pointer text-[10px]")}
                     title={`Filter by ${t.priority} priority`}
                     onClick={() => setPriorityFilter(t.priority)}
                   >
                     {t.priority}
-                  </Badge>
+                  </button>
                   {t.dueDate && (
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="shrink-0 text-[11px] text-muted-foreground">
                       due {new Date(t.dueDate).toLocaleDateString()}
                     </span>
                   )}
@@ -587,7 +601,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
       <ConfirmDialog
         open={confirmBulkDelete}
         onOpenChange={setConfirmBulkDelete}
-        title={`Delete ${selected.size} task${selected.size === 1 ? "" : "s"}?`}
+        title={`Delete ${activeSelection.length} task${activeSelection.length === 1 ? "" : "s"}?`}
         description="This permanently deletes the selected tasks — there's no trash for tasks."
         onConfirm={() => void bulkDelete()}
       />

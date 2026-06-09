@@ -26,6 +26,7 @@ note() { printf "  \033[33m!\033[0m %s\n" "$1"; if [ -n "${2:-}" ]; then printf 
 say()  { printf "\033[1m%s\033[0m\n" "$1"; }
 
 engine_up()      { curl -fsS --max-time 3 "$ENGINE_URL/api/tags" >/dev/null 2>&1; }
+docker_installed() { command -v docker >/dev/null 2>&1; }
 engine_tags()    { curl -fsS --max-time 3 "$ENGINE_URL/api/tags" 2>/dev/null || true; }
 model_pulled()   { engine_tags | grep -q "\"$1"; }
 docker_up()      { docker info >/dev/null 2>&1; }
@@ -57,6 +58,11 @@ cmd_doctor() {
   else
     bad "Official Ollama app not found" "brew install --cask ollama-app  (NOT 'brew install ollama' — the formula has no llama-server, GGUF models fail)"
   fi
+  if command -v ollama >/dev/null 2>&1; then
+    ok "ollama CLI on PATH (model pulls work)"
+  else
+    bad "ollama CLI not on PATH — model pulls will fail" "ln -s '$OLLAMA_APP/Contents/Resources/ollama' /usr/local/bin/ollama  (or: brew install --cask ollama-app)"
+  fi
   if command -v brew >/dev/null 2>&1 && brew list --formula 2>/dev/null | grep -qx ollama; then
     bad "Homebrew ollama FORMULA installed — no llama-server in its bottle; it shadows the app's CLI" "brew uninstall ollama && brew install --cask ollama-app"
   else
@@ -82,7 +88,9 @@ cmd_doctor() {
 
   echo
   say "Docker"
-  if docker_up; then
+  if ! docker_installed; then
+    bad "Docker isn't installed" "install Docker Desktop: https://www.docker.com/products/docker-desktop/"
+  elif docker_up; then
     ok "Docker daemon running"
     local running
     running=$(docker compose ps --status running --services 2>/dev/null || true)
@@ -134,8 +142,9 @@ cmd_doctor() {
 cmd_status() {
   if engine_up; then
     local count
-    count=$(engine_tags | grep -o '"name"' | wc -l | tr -d ' ')
-    ok "Engine      up on :11434 ($count models pulled)"
+    # `|| true`: zero models would otherwise kill the script via pipefail.
+    count=$(engine_tags | grep -o '"name"' | wc -l | tr -d ' ' || true)
+    ok "Engine      up on :11434 (${count:-0} models pulled)"
   else
     bad "Engine      down" "open -a Ollama  (or: ./swiss up)"
   fi
@@ -156,7 +165,9 @@ cmd_status() {
     bad "Open WebUI  down" "./swiss up"
   fi
 
-  if docker_up; then
+  if ! docker_installed; then
+    bad "Docker      not installed" "install Docker Desktop: https://www.docker.com/products/docker-desktop/"
+  elif docker_up; then
     ok "Docker      daemon running"
   else
     bad "Docker      daemon down" "start Docker Desktop"
@@ -193,7 +204,16 @@ cmd_up() {
   fi
   ok "engine up on :11434"
 
-  # 2) Models (light + quality tiers + the embedder).
+  # 2) Models (light + quality tiers + the embedder). pull-models needs the
+  # `ollama` CLI; the app bundles one — self-heal PATH if the symlink is absent.
+  if ! command -v ollama >/dev/null 2>&1; then
+    if [ -x "$OLLAMA_APP/Contents/Resources/ollama" ]; then
+      export PATH="$OLLAMA_APP/Contents/Resources:$PATH"
+    else
+      bad "the 'ollama' CLI isn't on PATH (needed to pull models)" "ln -s '$OLLAMA_APP/Contents/Resources/ollama' /usr/local/bin/ollama"
+      exit 1
+    fi
+  fi
   bash scripts/pull-models.sh
 
   # 3) Containers.
@@ -217,8 +237,12 @@ cmd_up() {
 
 cmd_down() {
   say "▶ Swiss Knife down"
-  docker compose down
-  ok "containers stopped"
+  if docker_installed && docker_up; then
+    docker compose down
+    ok "containers stopped & removed (data lives in named volumes)"
+  else
+    note "Docker isn't running — nothing to stop"
+  fi
   echo "  The native Ollama app keeps running (it's your system engine) — quit it from the menu bar if you want."
 }
 

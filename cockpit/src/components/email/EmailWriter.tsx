@@ -11,6 +11,7 @@ import { ContextUsed } from "@/components/tools/ContextUsed";
 import { Button } from "@/components/ui/button";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { Label } from "@/components/ui/label";
+import { ErrorAlert } from "@/components/ErrorAlert";
 import {
   Select,
   SelectContent,
@@ -138,7 +139,7 @@ export function EmailWriter() {
         )}
       </div>
 
-      {error && <p className="mt-4 text-sm text-destructive">⚠ {error}</p>}
+      {error && <ErrorAlert className="mt-4" title="Draft failed" message={error} />}
       <AiOutput output={output} status={status} label="Draft" />
       {output && status === "done" && <ContextUsed query={brief} />}
     </div>

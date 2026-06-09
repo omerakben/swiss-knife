@@ -30,6 +30,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "That's too much code — paste a focused snippet." }, { status: 413 });
   }
 
+  // The claimed bounds are short O(...) strings — cap them like every other
+  // prompt input (a multi-MB "timeBigO" must not bypass the code cap above).
+  const bigO = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 200) : "?");
+
   // Recompute the scan server-side (deterministic, cheap) to ground the derivation.
   const scan = scanComplexity(code);
   const facts = `Static scan: max loop depth ${scan.maxLoopDepth}, recursion ${scan.hasRecursion ? "present" : "absent"}, sort calls ${scan.hasSort ? "present" : "absent"}, ${scan.functions.length} function(s).`;
@@ -38,7 +42,7 @@ export async function POST(req: Request) {
     { role: "system", content: SYSTEM },
     {
       role: "user",
-      content: `Snippet:\n\`\`\`\n${code}\n\`\`\`\n\nClaimed: time ${timeBigO ?? "?"}, space ${spaceBigO ?? "?"}.\n${facts}\n\nDerive the bounds.`,
+      content: `Snippet:\n\`\`\`\n${code}\n\`\`\`\n\nClaimed: time ${bigO(timeBigO)}, space ${bigO(spaceBigO)}.\n${facts}\n\nDerive the bounds.`,
     },
   ];
 

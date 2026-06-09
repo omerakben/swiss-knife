@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { Label } from "@/components/ui/label";
+import { ErrorAlert } from "@/components/ErrorAlert";
 import {
   Select,
   SelectContent,
@@ -128,7 +129,7 @@ export function TemplateRunner({
         )}
       </div>
 
-      {error && <p className="text-sm text-destructive">⚠ {error}</p>}
+      {error && <ErrorAlert title="Run failed" message={error} />}
       <AiOutput output={output} status={status} label="Result" />
       {output && status === "done" && (
         <ContextUsed query={Object.values(values).filter(Boolean).join(" ")} />

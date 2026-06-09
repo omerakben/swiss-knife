@@ -41,26 +41,38 @@ const SORT_CALL = /\.(sort|toSorted)\s*\(/;
 
 /** Max overlapping-loop nesting in a (stripped) function body. */
 export function maxLoopNesting(body: string): number {
-  // Collect loop-introduction positions, then walk chars tracking brace depth;
-  // a loop entered at depth d is "active" until depth returns to d.
-  const starts = new Set<number>();
-  for (const re of [LOOP_KEYWORD, ITERATION_METHOD]) {
-    re.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(body))) starts.add(m.index);
-  }
+  // Keyword loops are "active" until brace depth returns to their entry depth.
+  // Iteration callbacks close at their CALL's closing paren instead — a
+  // braceless arrow body (`xs.map(x => x * 2)`) never emits a `}`, and keying
+  // on braces alone made sequential callbacks look nested.
+  const starts = new Map<number, "loop" | "iter">();
+  let m: RegExpExecArray | null;
+  LOOP_KEYWORD.lastIndex = 0;
+  while ((m = LOOP_KEYWORD.exec(body))) starts.set(m.index, "loop");
+  ITERATION_METHOD.lastIndex = 0;
+  while ((m = ITERATION_METHOD.exec(body))) starts.set(m.index, "iter");
 
-  let depth = 0;
+  let braceDepth = 0;
+  let parenDepth = 0;
   let max = 0;
-  const stack: number[] = [];
+  const stack: { brace: number; paren: number; iter: boolean }[] = [];
   for (let i = 0; i < body.length; i++) {
-    if (starts.has(i)) {
-      stack.push(depth);
+    const kind = starts.get(i);
+    if (kind) {
+      stack.push({ brace: braceDepth, paren: parenDepth, iter: kind === "iter" });
       if (stack.length > max) max = stack.length;
-    } else if (body[i] === "{") depth++;
-    else if (body[i] === "}") {
-      depth--;
-      while (stack.length && stack[stack.length - 1] >= depth) stack.pop();
+    }
+    const c = body[i];
+    if (c === "(") parenDepth++;
+    else if (c === ")") {
+      parenDepth--;
+      while (stack.length && stack[stack.length - 1].iter && parenDepth <= stack[stack.length - 1].paren) {
+        stack.pop();
+      }
+    } else if (c === "{") braceDepth++;
+    else if (c === "}") {
+      braceDepth--;
+      while (stack.length && stack[stack.length - 1].brace >= braceDepth) stack.pop();
     }
   }
   return max;
@@ -112,7 +124,8 @@ export function classifyBigO(s: string): GrowthClass {
     .replace(/[×·]/g, "*");
 
   if (/!|\d+\^[a-z]|[a-z]\^[a-z]/.test(t)) return "exponential"; // n!, 2^n, k^n
-  if (/[a-z]\^\d|([a-z])\*\1|[a-z]\*[a-z]/.test(t)) return "polynomial"; // n^2, n*n, n*m
+  // n^2, n*n, n*m — but NOT n*log… (starred linearithmic falls through below).
+  if (/[a-z]\^\d|([a-z])\*\1|[a-z]\*(?!log)[a-z]/.test(t)) return "polynomial";
   if (/[a-z]\*?log/.test(t)) return "linearithmic"; // nlogn, n*logn
   if (/^log/.test(t)) return "logarithmic";
   if (/^[a-z](\+[a-z])*$/.test(t)) return "linear"; // n, n+m, v+e

@@ -8,6 +8,7 @@ import { useAiTool } from "@/hooks/useAiTool";
 import { Button } from "@/components/ui/button";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { AiOutput } from "@/components/tools/AiOutput";
+import { ErrorAlert } from "@/components/ErrorAlert";
 
 export type AiToolShellProps = {
   title: string;
@@ -92,7 +93,7 @@ export function AiToolShell({
         )}
       </div>
 
-      {error && <p className="mt-4 text-sm text-destructive">⚠ {error}</p>}
+      {error && <ErrorAlert className="mt-4" title="Run failed" message={error} />}
 
       <AiOutput output={output} status={status} label={outputLabel} />
     </div>

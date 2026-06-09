@@ -125,7 +125,7 @@ Also there for you:
 - `WEBUI_AUTH=False` in `docker-compose.yml` is fine for single-user local use.
   Set it to `True` before exposing Open WebUI beyond localhost.
 - The whole thing is reproducible: clone the folder, install the two prerequisites,
-  run `./start.sh`.
+  run `./swiss doctor` (preflight with fix-it commands), then `./swiss up`.
 
 ## Local development (without Docker)
 

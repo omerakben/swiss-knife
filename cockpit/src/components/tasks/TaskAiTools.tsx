@@ -8,6 +8,7 @@ import { useAiTool } from "@/hooks/useAiTool";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ErrorAlert } from "@/components/ErrorAlert";
 import {
   Dialog,
   DialogContent,
@@ -97,7 +98,7 @@ export function TaskAiTools({ onTasksCreated }: { onTasksCreated: (tasks: Task[]
           <Button onClick={() => standup.run("")} disabled={standup.isRunning}>
             {standup.isRunning ? "Writing…" : "Generate summary"}
           </Button>
-          {standup.error && <p className="mt-2 text-sm text-destructive">⚠ {standup.error}</p>}
+          {standup.error && <ErrorAlert className="mt-2" title="Run failed" message={standup.error} />}
           <AiOutput output={standup.output} status={standup.status} label="Standup" />
         </DialogContent>
       </Dialog>

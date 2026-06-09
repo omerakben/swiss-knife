@@ -30,6 +30,12 @@ describe("lintOpenapi", () => {
     expect(r.summary.version).toContain("3.1");
   });
 
+  it("accepts minified single-line JSON (not mistaken for a file path)", async () => {
+    const r = await lintOpenapi(JSON.stringify(GOOD));
+    expect(r.ok).toBe(true);
+    expect(r.summary.operations).toBe(1);
+  });
+
   it("accepts a YAML string", async () => {
     const yaml = `openapi: 3.1.0
 info:

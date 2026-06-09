@@ -13,7 +13,7 @@ test.describe("responsive sidebar", () => {
     await expect(page.getByRole("link", { name: "Prompt Optimizer", exact: true })).toBeHidden();
 
     await openMenu.click();
-    const drawer = page.getByRole("complementary", { name: "Mobile navigation" });
+    const drawer = page.getByRole("dialog", { name: "Mobile navigation" });
     await expect(drawer.getByRole("link", { name: "Gherkin Lint", exact: true })).toBeVisible();
 
     await drawer.getByRole("link", { name: "Gherkin Lint", exact: true }).click();

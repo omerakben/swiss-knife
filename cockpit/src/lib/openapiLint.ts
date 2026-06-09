@@ -5,6 +5,7 @@
 // documented failure shape, list endpoints need pagination, operations need
 // ids. ERROR = gate, WARN = advisory — same contract as the other lint libs.
 
+import YAML from "yaml";
 import { Validator } from "@seriousme/openapi-schema-validator";
 
 export type OpenapiIssue = { severity: "ERROR" | "WARN"; path: string; message: string };
@@ -49,7 +50,12 @@ export async function lintOpenapi(input: unknown): Promise<OpenapiLintResult> {
   let doc: Obj | null = null;
 
   try {
-    const res = await validator.validate(input as Parameters<Validator["validate"]>[0]);
+    // Pre-parse strings ourselves (YAML 1.2 is a JSON superset): the validator
+    // treats any newline-free string as a FILENAME and fs.readFile()s it —
+    // which both rejects minified one-line JSON pastes with a misleading error
+    // and turns pasted path-like strings into local file reads.
+    const data: unknown = typeof input === "string" ? YAML.parse(input) : input;
+    const res = await validator.validate(data as Parameters<Validator["validate"]>[0]);
     version = (validator.version as string | undefined) ?? null;
     // Rules run on the dereferenced doc when possible so $ref'd response
     // schemas still trigger the collection/pagination checks.

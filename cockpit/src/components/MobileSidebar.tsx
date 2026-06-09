@@ -1,26 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, Wrench, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 /**
  * Below md: a slim top bar with a hamburger that opens the sidebar content as
- * a left drawer. The content itself is server-rendered and passed in, so this
- * stays a thin shell (state + overlay only).
+ * a left drawer. Built on the Radix Dialog like every other overlay in the app
+ * — focus trap, scroll lock, aria-modal, Esc, and focus-return come for free.
+ * The content itself is server-rendered and passed in.
  */
 export function MobileSidebar({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
 
   return (
     <div className="md:hidden">
@@ -34,31 +27,30 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
         </span>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} aria-hidden />
-          <aside
-            aria-label="Mobile navigation"
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-border bg-card shadow-lg"
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          showClose={false}
+          aria-describedby={undefined}
+          className="left-0 top-0 flex h-full w-72 max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-r border-border p-0 sm:rounded-none"
+        >
+          <DialogTitle className="sr-only">Mobile navigation</DialogTitle>
+          <div className="flex justify-end px-2 pt-2">
+            <Button variant="ghost" size="sm" aria-label="Close menu" onClick={() => setOpen(false)}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          {/* The content is server-rendered, so close-on-navigate is handled
+              by delegation: any link click inside the drawer closes it. */}
+          <div
+            className="flex min-h-0 flex-1 flex-col"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest("a")) setOpen(false);
+            }}
           >
-            <div className="flex justify-end px-2 pt-2">
-              <Button variant="ghost" size="sm" aria-label="Close menu" onClick={() => setOpen(false)}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            {/* The content is server-rendered, so close-on-navigate is handled
-                by delegation: any link click inside the drawer closes it. */}
-            <div
-              className="flex min-h-0 flex-1 flex-col"
-              onClick={(e) => {
-                if ((e.target as HTMLElement).closest("a")) setOpen(false);
-              }}
-            >
-              {children}
-            </div>
-          </aside>
-        </div>
-      )}
+            {children}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

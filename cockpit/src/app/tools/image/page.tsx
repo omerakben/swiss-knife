@@ -8,6 +8,7 @@ import { useAiTool } from "@/hooks/useAiTool";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ErrorAlert } from "@/components/ErrorAlert";
 
 export default function ImagePage() {
   const [image, setImage] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export default function ImagePage() {
         </div>
       </div>
 
-      {error && <p className="mt-4 text-sm text-destructive">⚠ {error}</p>}
+      {error && <ErrorAlert className="mt-4" title="Run failed" message={error} />}
       <AiOutput output={output} status={status} label="Answer" />
     </div>
   );
