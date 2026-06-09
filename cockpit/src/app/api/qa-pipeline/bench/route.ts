@@ -14,7 +14,9 @@ export async function POST() {
 
   const projectId = await getActiveProjectId();
   const ctx = await loadProjectQaContext(projectId);
-  if (!ctx.hasPack) return Response.json({ needsPack: true });
+  // The bench only scores against the rubric — a designed rubric alone (no
+  // Gherkin template / glossary pack) is enough to run it.
+  if (!ctx.rubricTemplate) return Response.json({ needsPack: true });
 
   const cases = await prisma.goldenCase.findMany({ where: { projectId } });
   if (cases.length === 0) {

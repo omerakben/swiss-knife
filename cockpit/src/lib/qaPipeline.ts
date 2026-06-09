@@ -12,6 +12,7 @@ import { getEffectiveConfig } from "@/lib/config";
 import { getMemoryContext } from "@/lib/memory";
 import { renderTemplate } from "@/lib/templates";
 import { lintGherkin, type GherkinLintResult } from "@/lib/gherkinLint";
+import { projectRubricSlug } from "@/lib/rubric";
 
 // Stable slugs the project pack seeds these templates under (see
 // prisma/seed-lbmh.mjs → projects/<name>/pack/content.mjs). Resolved per project,
@@ -54,9 +55,16 @@ export type IterationResult = {
  * A project "has the pack" only when both templates and at least one fact exist.
  */
 export async function loadProjectQaContext(projectId: string | null): Promise<QaContext> {
-  const [gherkinTemplate, rubricTemplate, factCount] = await Promise.all([
+  const [gherkinTemplate, designedRubric, packRubric, factCount] = await Promise.all([
     prisma.template.findFirst({
       where: { slug: GHERKIN_SLUG, projectId },
+      select: { id: true, body: true },
+    }),
+    // A rubric saved by the Rubric Designer (per-project slug) overrides the
+    // seeded pack rubric — same body contract, so pipeline/bench/rescore are
+    // unchanged consumers.
+    prisma.template.findFirst({
+      where: { slug: projectRubricSlug(projectId), projectId },
       select: { id: true, body: true },
     }),
     prisma.template.findFirst({
@@ -67,6 +75,7 @@ export async function loadProjectQaContext(projectId: string | null): Promise<Qa
       ? prisma.memoryFact.count({ where: { projectId, status: "active", deletedAt: null } })
       : Promise.resolve(0),
   ]);
+  const rubricTemplate = designedRubric ?? packRubric;
 
   const hasGlossary = factCount > 0;
   return {
