@@ -25,7 +25,25 @@ via `host.docker.internal`.
 
 ---
 
-## Prerequisites (one-time, per machine)
+## Fastest path (new machine → working cockpit)
+
+```bash
+# macOS (needs Homebrew):
+git clone <repo-url> && cd swiss-knife && ./swiss setup && ./swiss up
+```
+
+```powershell
+# Windows 10/11 (PowerShell):
+git clone <repo-url>; cd swiss-knife; .\swiss setup; .\swiss up
+```
+
+`setup` installs the two prerequisites below (skipping anything already
+installed). One honest caveat on a brand-new machine: **Docker Desktop's first
+launch is interactive** (license click-through; on Windows it enables WSL2 and
+may ask to reboot) — do that once when `setup` tells you to, then `up` is fully
+hands-off, forever. `doctor` is always there if anything looks off.
+
+## Prerequisites (one-time, per machine — or just run `setup` above)
 
 **macOS (Apple Silicon)**
 

@@ -337,6 +337,40 @@ function Invoke-Up {
   Write-Host "   Stop:        .\swiss.ps1 down    Inspect: .\swiss.ps1 status / .\swiss.ps1 doctor"
 }
 
+function Invoke-Setup {
+  Write-Say "> Swiss Knife setup - install the two prerequisites (Docker Desktop + Ollama)"
+  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Bad "winget isn't available (needed to install the prerequisites)" "install 'App Installer' from the Microsoft Store, then re-run .\swiss setup - or install Docker Desktop and Ollama manually from their sites"
+    exit 1
+  }
+
+  if (Test-DockerInstalled) {
+    Write-Ok "Docker already installed"
+  } else {
+    Write-Host "  installing Docker Desktop (winget)..."
+    winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) { Write-Bad "Docker Desktop install failed" "install manually: https://www.docker.com/products/docker-desktop/" }
+    else { Write-Note "Launch Docker Desktop once to finish its setup (enables the WSL2 backend; it may ask to log out or reboot)" }
+  }
+
+  if ((Get-Command ollama -ErrorAction SilentlyContinue) -or (Test-OllamaApp)) {
+    Write-Ok "Ollama already installed"
+  } else {
+    Write-Host "  installing Ollama (winget)..."
+    winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) { Write-Bad "Ollama install failed" "install manually: https://ollama.com/download/windows" }
+    else { Write-Note "Open a NEW terminal afterwards so the ollama CLI lands on PATH (swiss up also self-heals this)" }
+  }
+
+  Write-Host ""
+  if ($script:Fails -eq 0) {
+    Write-Say "Setup done. Start everything with: .\swiss up"
+  } else {
+    Write-Say "Fix the item(s) above, then: .\swiss up"
+    exit 1
+  }
+}
+
 function Invoke-Down {
   Write-Say "> Swiss Knife down"
   if (Test-DockerUp) {
@@ -356,11 +390,12 @@ function Show-Usage {
   Write-Host @"
 Swiss Knife - local AI cockpit (Windows)
 
-  .\swiss.ps1 up       start everything: native Ollama + models + containers
-  .\swiss.ps1 down     stop the containers (native Ollama keeps running)
-  .\swiss.ps1 status   one-line state of engine / cockpit / Open WebUI / Docker
-  .\swiss.ps1 doctor   full preflight: Ollama install, GPU/RAM, models, Docker,
-                       surfaces, optional voice deps - with fix-it commands
+  .\swiss setup    one-time: install the prerequisites (Docker Desktop + Ollama)
+  .\swiss up       start everything: native Ollama + models + containers
+  .\swiss down     stop the containers (native Ollama keeps running)
+  .\swiss status   one-line state of engine / cockpit / Open WebUI / Docker
+  .\swiss doctor   full preflight: Ollama install, GPU/RAM, models, Docker,
+                   surfaces, optional voice deps - with fix-it commands
 
 Quality tier on Windows is gemma4:12b (GGUF). gemma4:12b-mlx is Apple Silicon
 only. Default chat model everywhere is gemma4:e4b (light, ~4 GB).
@@ -368,6 +403,7 @@ only. Default chat model everywhere is gemma4:e4b (light, ~4 GB).
 }
 
 switch ($Command.ToLower()) {
+  "setup"  { Invoke-Setup }
   "up"     { Invoke-Up }
   "down"   { Invoke-Down }
   "status" { Invoke-Status }
