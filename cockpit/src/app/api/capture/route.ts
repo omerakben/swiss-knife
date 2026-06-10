@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { describeImage } from "@/lib/vision";
 import { readCaptureToken, tokenMatches } from "@/lib/captureAuth";
+import { embedDocuments, serializeVector } from "@/lib/embeddings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,8 +99,17 @@ export async function POST(req: Request) {
 
   let id: string;
   if (tgt === "fact") {
+    // Verbatim human text with an explicit target=fact → active is right; but
+    // embed at create (best-effort) so it ranks without a manual reindex.
+    let embedding: string | null = null;
+    try {
+      const [v] = await embedDocuments([t.slice(0, 300)]);
+      embedding = serializeVector(v);
+    } catch {
+      embedding = null;
+    }
     const f = await prisma.memoryFact.create({
-      data: { value: t.slice(0, 300), source: "manual", status: "active", projectId: pid },
+      data: { value: t.slice(0, 300), source: "manual", status: "active", projectId: pid, embedding },
     });
     id = f.id;
   } else if (tgt === "prompt") {

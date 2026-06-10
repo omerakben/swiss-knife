@@ -218,6 +218,9 @@ export function CommandPalette() {
   const quickAdd = useCallback(
     async (text: string) => {
       close();
+      // Immediate feedback: the classify call runs on the local model and can
+      // take seconds on a cold load — never leave the user wondering.
+      const toastId = toast.loading("Adding…");
       try {
         const res = await fetch("/api/quick-add", {
           method: "POST",
@@ -226,7 +229,11 @@ export function CommandPalette() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
-        toast.success(`Added ${data.kind}: ${data.title}`, {
+        const label = data.pending
+          ? `Fact queued for review: ${data.title}`
+          : `Added ${data.kind}: ${data.title}`;
+        toast.success(label, {
+          id: toastId,
           action: {
             label: "Undo",
             onClick: () => void fetch(data.deleteUrl, { method: "DELETE" }).then(() => router.refresh()),
@@ -234,7 +241,7 @@ export function CommandPalette() {
         });
         router.refresh();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Couldn't add");
+        toast.error(e instanceof Error ? e.message : "Couldn't add", { id: toastId });
       }
     },
     [router, close]

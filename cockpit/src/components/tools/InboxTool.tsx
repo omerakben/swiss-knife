@@ -51,7 +51,10 @@ export function InboxTool() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      toast.success(`Filed as ${data.kind}: ${data.title}`, {
+      const label = data.pending
+        ? `Fact queued for review: ${data.title}`
+        : `Filed as ${data.kind}: ${data.title}`;
+      toast.success(label, {
         action: { label: "Undo", onClick: () => void fetch(data.deleteUrl, { method: "DELETE" }) },
       });
       setText("");

@@ -4,6 +4,12 @@ import { chatJson } from "@/lib/ollama";
 import { getEffectiveConfig } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import { logActivity } from "@/lib/activity";
+import { embedDocuments, serializeVector } from "@/lib/embeddings";
+
+// A quick note routed into a structured chatJson call on the light model —
+// bound it like the sibling capture routes (the perf lesson: big structured
+// calls are the slow class). 20k chars is far beyond any real quick note.
+const MAX_TEXT = 20_000;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +36,12 @@ export async function POST(req: Request) {
 
   const { text } = (await req.json().catch(() => ({}))) as { text?: string };
   if (!text || !text.trim()) return Response.json({ error: "Nothing to add." }, { status: 400 });
+  if (text.length > MAX_TEXT) {
+    return Response.json(
+      { error: "That's too long for a quick note — use Smart Inbox for documents." },
+      { status: 400 }
+    );
+  }
 
   const cfg = await getEffectiveConfig();
   const projectId = await getActiveProjectId();
@@ -50,10 +62,28 @@ export async function POST(req: Request) {
   await logActivity({ entity: parsed.kind, action: "quick-added", summary: title, projectId });
 
   if (parsed.kind === "fact") {
+    // The stored value is the model's paraphrase, so it goes through the same
+    // human gate as every other model-written fact: pending review in Memory.
+    // Embed at create (best-effort) so it dedupes/ranks without a reindex.
+    const value = detail || title;
+    let embedding: string | null = null;
+    try {
+      const [v] = await embedDocuments([value]);
+      embedding = serializeVector(v);
+    } catch {
+      embedding = null;
+    }
     const f = await prisma.memoryFact.create({
-      data: { value: detail || title, source: "manual", status: "active", projectId },
+      data: { value, source: "ai", status: "pending", projectId, embedding },
     });
-    return Response.json({ kind: "fact", id: f.id, title: f.value.slice(0, 60), href: "/tools/memory", deleteUrl: `/api/memory/${f.id}` });
+    return Response.json({
+      kind: "fact",
+      pending: true,
+      id: f.id,
+      title: f.value.slice(0, 60),
+      href: "/tools/memory",
+      deleteUrl: `/api/memory/${f.id}`,
+    });
   }
 
   if (parsed.kind === "idea") {
