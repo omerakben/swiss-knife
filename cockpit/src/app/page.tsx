@@ -57,8 +57,9 @@ export default async function Dashboard() {
               <li>
                 <span className="font-medium text-foreground">Everything is local.</span> The model,
                 the data, this page — nothing leaves this machine. Run{" "}
-                <code className="rounded bg-muted px-1 py-0.5">./swiss doctor</code> in the repo for
-                a full preflight.
+                <code className="rounded bg-muted px-1 py-0.5">./swiss doctor</code> (macOS) or{" "}
+                <code className="rounded bg-muted px-1 py-0.5">.\swiss doctor</code> (Windows) in
+                the repo for a full preflight.
               </li>
               <li>
                 <span className="font-medium text-foreground">Projects are optional.</span> With no
@@ -69,8 +70,9 @@ export default async function Dashboard() {
                 to scope memory, tasks, and prompts — and switch any time in the sidebar.
               </li>
               <li>
-                <span className="font-medium text-foreground">⌘K opens the palette.</span> Search
-                everything, ask a one-shot question, or quick-add a note from anywhere.
+                <span className="font-medium text-foreground">⌘K (Ctrl K on Windows) opens the
+                palette.</span>{" "}
+                Search everything, ask a one-shot question, or quick-add a note from anywhere.
               </li>
             </ol>
             <p className="mt-3 text-sm text-muted-foreground">

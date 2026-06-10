@@ -13,7 +13,9 @@ async function configuredToken(): Promise<string | null> {
 }
 
 // Token-authed, headless routine runner (same token as quick-capture), so a
-// scheduled macOS Shortcut can fire `standup`/`wrapup` with no clicks.
+// scheduled macOS Shortcut — or a Windows Task Scheduler job running
+// `Invoke-RestMethod` with the x-capture-token header — can fire
+// `standup`/`wrapup` with no clicks.
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 

@@ -59,7 +59,7 @@ export async function assertOllamaReady(modelOverride?: string): Promise<Respons
   if (h.ok) return null;
   const msg =
     h.reason === "ollama_down"
-      ? "Ollama isn't running. Start the Ollama app (open -a Ollama) and try again."
+      ? "Ollama isn't running. Start the Ollama app (macOS: open -a Ollama · Windows: launch Ollama from the Start menu) and try again."
       : `Model "${h.model}" isn't pulled. Run: ollama pull ${h.model}`;
   return Response.json({ error: msg, reason: h.reason }, { status: 503 });
 }

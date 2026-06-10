@@ -1,0 +1,28 @@
+# Line-ending discipline so Windows checkouts don't break the Linux containers.
+# THE critical one: shell scripts (especially cockpit/docker-entrypoint.sh) must
+# stay LF — with git's default core.autocrlf=true on Windows, a CRLF entrypoint
+# fails inside the container with "/bin/sh^M: bad interpreter".
+* text=auto
+
+# Always LF: anything executed on Linux/macOS or inside containers.
+*.sh        text eol=lf
+swiss       text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.mjs       text eol=lf
+*.json      text eol=lf
+*.prisma    text eol=lf
+*.md        text eol=lf
+
+# Always CRLF: Windows-native scripts (notepad/legacy-tool friendly).
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
+
+# Never touch binaries.
+*.png       binary
+*.jpg       binary
+*.svg       text eol=lf
+*.db        binary

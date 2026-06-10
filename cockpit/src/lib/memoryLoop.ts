@@ -25,8 +25,10 @@ import { FACT_CATEGORIES, normalizeCategory, type FactCategory } from "@/lib/mem
 const DEDUPE_COSINE = 0.72;
 const JACCARD_DUP = 0.8;
 // The quality tier for the judgment step. Falls back to the configured model if
-// it isn't pulled, so consolidation degrades rather than failing.
-const QUALITY_MODEL = "gemma4:12b-mlx";
+// it isn't pulled, so consolidation degrades rather than failing. Overridable
+// because the default is the MLX build (Apple Silicon only) — Windows/Linux
+// hosts set OLLAMA_QUALITY_MODEL=gemma4:12b (GGUF) to skip the doomed first try.
+const QUALITY_MODEL = process.env.OLLAMA_QUALITY_MODEL || "gemma4:12b-mlx";
 // Decay: model-suggested facts never surfaced as relevant get archived after
 // this many days. Manual, pinned, seeded (sourceKey), and used facts are spared.
 const STALE_DAYS = 30;

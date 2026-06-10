@@ -5,12 +5,15 @@ import { Upload, Square } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
+import { useIsMac } from "@/hooks/useIsMac";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorAlert } from "@/components/ErrorAlert";
 
 export default function ImagePage() {
+  const isMac = useIsMac();
+  const pasteKey = isMac ? "⌘V" : "Ctrl+V";
   const [image, setImage] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [over, setOver] = useState(false);
@@ -105,8 +108,8 @@ export default function ImagePage() {
     <div className="max-w-3xl" onPaste={onPaste}>
       <h1 className="text-2xl font-semibold tracking-tight">Image</h1>
       <p className="mt-1 text-muted-foreground">
-        Ask local Gemma about an image — paste a screenshot (⌘V), drop a file, or upload. Nothing
-        leaves your machine.
+        Ask local Gemma about an image — paste a screenshot ({pasteKey}), drop a file, or upload.
+        Nothing leaves your machine.
       </p>
 
       <div className="mt-6 space-y-4">
@@ -127,7 +130,7 @@ export default function ImagePage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="Upload preview" className="mx-auto max-h-64 rounded-md border border-border" />
           ) : (
-            <p>Paste (⌘V), drop an image here, or use the button below.</p>
+            <p>Paste ({pasteKey}), drop an image here, or use the button below.</p>
           )}
         </div>
 

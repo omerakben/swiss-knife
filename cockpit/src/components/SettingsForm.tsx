@@ -241,12 +241,13 @@ export function SettingsForm({
             className="mt-2"
             value={qaModel}
             onChange={(e) => setQaModel(e.target.value)}
-            placeholder="e.g. gemma4:12b-mlx"
+            placeholder="e.g. gemma4:12b (or gemma4:12b-mlx on Apple Silicon)"
           />
         )}
         <p className="text-xs text-muted-foreground">
-          Optional. Run the QA pipeline on a different model — e.g. <code>gemma4:12b-mlx</code> for
-          rigor — while everything else stays fast.
+          Optional. Run the QA pipeline on a different model for rigor — e.g.{" "}
+          <code>gemma4:12b</code> (GGUF, all platforms) or <code>gemma4:12b-mlx</code> (Apple
+          Silicon only) — while everything else stays fast.
         </p>
       </div>
 
