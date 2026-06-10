@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { parseDueDateInput } from "@/lib/dates";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   try {
     const task = await prisma.task.update({ where: { id }, data });
+    // "What did I do today" (Activity + wrapup) cares about completions.
+    if (data.status === "done") {
+      await logActivity({ entity: "task", action: "completed", summary: task.title, projectId: task.projectId });
+    }
     return Response.json({ task });
   } catch {
     return Response.json({ error: "Task not found." }, { status: 404 });

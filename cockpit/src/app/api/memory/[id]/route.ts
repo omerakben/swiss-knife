@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { applyMerge } from "@/lib/memoryLoop";
 import { embedDocuments, serializeVector } from "@/lib/embeddings";
 import { normalizeCategory } from "@/lib/memory";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,11 +36,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // existing active fact, and it runs only on an explicit accept.
   if (body.status === "active") {
     const fact = await prisma.memoryFact
-      .findUnique({ where: { id }, select: { id: true, value: true, mergedIntoId: true } })
+      .findUnique({ where: { id }, select: { id: true, value: true, mergedIntoId: true, projectId: true } })
       .catch(() => null);
     if (fact?.mergedIntoId) {
       try {
         await applyMerge(fact.id, fact.mergedIntoId, fact.value);
+        await logActivity({
+          entity: "fact",
+          action: "merge-accepted",
+          summary: fact.value.slice(0, 120),
+          projectId: fact.projectId,
+        });
         return Response.json({ merged: true, targetId: fact.mergedIntoId });
       } catch {
         return Response.json({ error: "Merge target no longer exists." }, { status: 404 });
@@ -90,6 +97,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return Response.json({ error: "Fact not found." }, { status: 404 });
   }
   const fact = await prisma.memoryFact.findUnique({ where: { id } });
+  // A pending → active flip is the human accept — the loop's key event.
+  if (data.status === "active" && fact) {
+    await logActivity({
+      entity: "fact",
+      action: "accepted",
+      summary: fact.value.slice(0, 120),
+      projectId: fact.projectId,
+    });
+  }
   return Response.json({ fact });
 }
 

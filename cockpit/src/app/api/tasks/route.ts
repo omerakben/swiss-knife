@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getActiveProjectId } from "@/lib/project";
 import { parseDueDateInput } from "@/lib/dates";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,5 +61,6 @@ export async function POST(req: Request) {
     },
   });
 
+  await logActivity({ entity: "task", action: "created", summary: task.title, projectId });
   return Response.json({ task });
 }

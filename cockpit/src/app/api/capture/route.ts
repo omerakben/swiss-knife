@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { describeImage } from "@/lib/vision";
 import { readCaptureToken, tokenMatches } from "@/lib/captureAuth";
 import { embedDocuments, serializeVector } from "@/lib/embeddings";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -91,6 +92,9 @@ export async function POST(req: Request) {
         projectId: pid,
       },
     });
+    // The Activity page advertises captures and the wrapup routine reads them —
+    // a headless capture that leaves no activity row is invisible to both.
+    await logActivity({ entity: "idea", action: "captured", summary: idea.title ?? idea.topic, projectId: pid });
     return Response.json({ ok: true, target: "idea", id: idea.id, imagePath, described: !!description });
   }
 
@@ -130,5 +134,6 @@ export async function POST(req: Request) {
     id = task.id;
   }
 
+  await logActivity({ entity: tgt as string, action: "captured", summary: t.slice(0, 120), projectId: pid });
   return Response.json({ ok: true, target: tgt, id });
 }
