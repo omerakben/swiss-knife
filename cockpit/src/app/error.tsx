@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 
 export default function Error({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -22,10 +22,10 @@ export default function Error({
       <div className="space-y-2">
         <h2 className="text-lg font-semibold">Something broke on this page</h2>
         <p className="max-w-md text-sm text-muted-foreground">
-          {error.message || "An unexpected error occurred."} The rest of the app is fine — try again.
+          {error.message || "An unexpected error occurred."} The rest of the app is fine - try again.
         </p>
       </div>
-      <Button onClick={() => reset()}>Try again</Button>
+      <Button onClick={() => unstable_retry()}>Try again</Button>
     </div>
   );
 }

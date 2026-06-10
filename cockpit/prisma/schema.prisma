@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 // ── Prompts (Phase 1 optimizer + Phase 2 library) ───────────────────────────

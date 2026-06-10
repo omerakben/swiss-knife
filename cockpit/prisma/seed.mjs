@@ -1,8 +1,10 @@
 // Idempotent seed for builtin templates (run: npm run db:seed).
 // Upserts on `slug` so re-running refreshes wording without duplicating.
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" });
+const prisma = new PrismaClient({ adapter });
 
 // Reusable variable definitions.
 const topic = { name: "topic", label: "Topic", type: "textarea", required: true };

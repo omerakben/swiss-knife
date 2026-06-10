@@ -6,12 +6,14 @@
 //
 // Pack location: defaults to ../projects/lbmh/pack relative to this file; override with
 // the LBMH_PACK_DIR env var (absolute path or relative to cockpit/).
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" });
+const prisma = new PrismaClient({ adapter });
 
 function packDirUrl() {
   if (process.env.LBMH_PACK_DIR) {

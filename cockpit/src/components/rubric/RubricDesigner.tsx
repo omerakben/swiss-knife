@@ -117,12 +117,13 @@ export function RubricDesigner() {
       </p>
 
       {current && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          Active rubric for this project: <span className="font-medium">{current.name}</span>{" "}
-          <Badge variant="outline" className="ml-1 text-[10px]">
+        <div className="mt-2 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+          <span>Active rubric for this project:</span>
+          <span className="font-medium">{current.name}</span>
+          <Badge variant="outline" className="text-[10px]">
             {current.source}
           </Badge>
-        </p>
+        </div>
       )}
 
       <VoiceTextarea
@@ -241,15 +242,15 @@ export function RubricDesigner() {
           {sep && (
             <Card>
               <CardContent className="py-3">
-                <p className="text-sm font-medium">
-                  Separation check{" "}
+                <div className="flex flex-wrap items-center gap-1 text-sm font-medium">
+                  <span>Separation check</span>
                   <Badge
                     variant={sep.ok ? "secondary" : "destructive"}
-                    className="ml-1 shrink-0 whitespace-nowrap text-[10px]"
+                    className="shrink-0 whitespace-nowrap text-[10px]"
                   >
                     {sep.ok ? "separates" : "does not separate"}
                   </Badge>
-                </p>
+                </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   should-PASS sample → {sep.pass.verdict}
                   {typeof sep.pass.score === "number" ? ` · ${sep.pass.score}/100` : ""} ·

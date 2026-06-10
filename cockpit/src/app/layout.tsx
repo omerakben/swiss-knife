@@ -8,6 +8,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 export const metadata: Metadata = {
   title: "Swiss Knife",
   description: "Local AI daily runner powered by Gemma",
+  icons: [{ rel: "icon", url: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
