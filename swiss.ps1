@@ -132,10 +132,18 @@ function Invoke-Doctor {
   } else {
     Write-Note "Ollama tray app not found in the default location" "fine if you installed elsewhere; otherwise: winget install Ollama.Ollama"
   }
-  if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
-    Write-Ok "NVIDIA GPU tooling present (models run GPU-accelerated)"
+  # Ollama for Windows accelerates on NVIDIA (CUDA) and AMD Radeon (ROCm) —
+  # only diagnose CPU-only when neither is present.
+  $gpuNames = @()
+  try { $gpuNames = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }) } catch { }
+  $hasNvidia = [bool](Get-Command nvidia-smi -ErrorAction SilentlyContinue) -or (($gpuNames -match "NVIDIA").Count -gt 0)
+  $hasAmd = ($gpuNames -match "AMD|Radeon").Count -gt 0
+  if ($hasNvidia) {
+    Write-Ok "NVIDIA GPU detected (models run CUDA-accelerated)"
+  } elseif ($hasAmd) {
+    Write-Ok "AMD Radeon GPU detected (Ollama accelerates via ROCm on supported models)"
   } else {
-    Write-Note "No NVIDIA tooling detected - models run on CPU (works, slower)" "stick to the light tier (gemma4:e4b) on CPU-only machines"
+    Write-Note "No supported GPU detected - models run on CPU (works, slower)" "stick to the light tier (gemma4:e4b) on CPU-only machines"
   }
   try {
     $ramGb = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
@@ -289,7 +297,18 @@ function Invoke-Up {
   }
   Write-Ok "engine up on :11434"
 
-  # 2) Models (light + quality tiers + the embedder).
+  # 2) Models (light + quality tiers + the embedder). pull-models needs the
+  # ollama CLI; the installer adds it to the USER PATH, which a same-session
+  # terminal may not have picked up yet — self-heal from the app directory.
+  if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
+    $ollamaDir = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "Programs\Ollama" } else { $null }
+    if ($ollamaDir -and (Test-Path (Join-Path $ollamaDir "ollama.exe"))) {
+      $env:Path = "$ollamaDir;$env:Path"
+    } else {
+      Write-Bad "the 'ollama' CLI isn't on PATH (needed to pull models)" "open a NEW terminal after installing Ollama, or: winget install Ollama.Ollama"
+      exit 1
+    }
+  }
   & (Join-Path $PSScriptRoot "scripts\pull-models.ps1")
   if ($LASTEXITCODE -ne 0) { exit 1 }
 
@@ -322,6 +341,10 @@ function Invoke-Down {
   Write-Say "> Swiss Knife down"
   if (Test-DockerUp) {
     docker compose down
+    if ($LASTEXITCODE -ne 0) {
+      Write-Bad "docker compose down failed" "check Docker Desktop and the compose output above"
+      exit 1
+    }
     Write-Ok "containers stopped & removed (data lives in named volumes)"
   } else {
     Write-Note "Docker isn't running - nothing to stop"

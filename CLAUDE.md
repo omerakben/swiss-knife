@@ -30,7 +30,7 @@ Two chat tiers, switchable live in **Settings → Model** (a picker that lists i
 
 ## Architecture (3 layers)
 
-- **Engine:** Ollama (native) serving `gemma4:12b-mlx` + an embedding model. OpenAI-compatible API at `http://localhost:11434/v1`.
+- **Engine:** Ollama (native on the host) serving `gemma4:e4b` (default) + the platform quality tier (`12b-mlx` mac / `12b` win) + an embedding model. OpenAI-compatible API at `http://localhost:11434/v1`.
 - **Deep-work surface:** Open WebUI (Docker, off-the-shelf) — chat, document RAG, multimodal, prompt library. Configured, not coded.
 - **Cockpit (the part we build):** Next.js 15 app (this repo's `cockpit/`). Talks to Ollama directly; owns todo/Kanban/email/prompt tools + a project hub that links into Open WebUI.
 

@@ -1,7 +1,7 @@
 # 🔧 Swiss Knife — Local AI Daily Runner
 
-A locally-run, private "daily cockpit" powered by **local Gemma 4 12B** via Ollama.
-Two surfaces, one engine:
+A locally-run, private "daily cockpit" powered by **local Gemma 4** via Ollama
+(light `gemma4:e4b` default + a 12B quality tier). Two surfaces, one engine:
 
 - **Cockpit** (`http://localhost:3000`) — your custom Next.js app (Prompt Optimizer today; later: email writer, todo, Kanban, knowledge base).
 - **Open WebUI** (`http://localhost:3001`) — off-the-shelf chat + document RAG + prompt library + multimodal.
@@ -175,8 +175,11 @@ Also there for you (same on Windows with `.\swiss`):
 - **Voice capture** runs in local dev only (the Docker image doesn't bundle
   ffmpeg/whisper): `winget install Gyan.FFmpeg`, grab a whisper.cpp Windows
   release binary, and the doctor prints the model download one-liner.
-- **GPU:** nothing to configure — native Ollama picks up NVIDIA CUDA
-  automatically; without a GPU, stick to `gemma4:e4b`.
+- **GPU:** nothing to configure — native Ollama accelerates on NVIDIA (CUDA)
+  and AMD Radeon (ROCm) automatically; without a supported GPU, stick to
+  `gemma4:e4b`.
+- **If `.\swiss` doesn't resolve** in your shell, use the explicit form:
+  `.\swiss.cmd up`.
 
 ## Local development (without Docker)
 
