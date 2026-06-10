@@ -66,6 +66,10 @@ export async function POST(req: Request) {
     return Response.json({ error: e instanceof Error ? e.message : "Couldn't analyze the snippet." }, { status: 500 });
   }
 
+  // The model can cite L99 in an 8-line paste — drop hotspots whose line
+  // doesn't exist in the snippet (the scan already counted its lines).
+  verdict.hotspots = (verdict.hotspots ?? []).filter((h) => h.line >= 1 && h.line <= scan.lines);
+
   const warnings = auditClaim(scan, verdict.timeBigO);
   return Response.json({
     verdict,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { auditClaim, classifyBigO, maxLoopNesting, scanComplexity } from "./complexity";
+import { auditClaim, classifyBigO, maxLoopNesting, scanComplexity, withGrowthWarnings } from "./complexity";
+import { scanCode } from "./codeSmells";
 
 describe("maxLoopNesting", () => {
   it("counts nested loops", () => {
@@ -112,5 +113,44 @@ describe("auditClaim", () => {
 
   it("warns on unparseable notation", () => {
     expect(auditClaim(flat, "pretty fast")[0].message).toMatch(/Couldn't parse/);
+  });
+});
+
+describe("withGrowthWarnings", () => {
+  const triple = `function deep(xs) {
+  for (const a of xs) {
+    for (const b of xs) {
+      for (const c of xs) {
+        use(a, b, c);
+      }
+    }
+  }
+}`;
+
+  it("adds a WARN for 3-deep nested iteration with the function's line", () => {
+    const base = scanCode(triple);
+    const out = withGrowthWarnings(base, triple);
+    const growth = out.issues.filter((i) => i.rule === "growth");
+    expect(growth).toHaveLength(1);
+    expect(growth[0].severity).toBe("WARN");
+    expect(growth[0].message).toMatch(/O\(n\^3\)/);
+    expect(out.summary.warnings).toBe(base.summary.warnings + 1);
+    expect(out.ok).toBe(base.ok); // advisory: never flips the gate
+  });
+
+  it("flags bare top-level nesting at line 1", () => {
+    const bare = `for (a) { for (b) { for (c) { x(); } } }`;
+    const out = withGrowthWarnings(scanCode(bare), bare);
+    const growth = out.issues.filter((i) => i.rule === "growth");
+    expect(growth).toHaveLength(1);
+    expect(growth[0].line).toBe(1);
+  });
+
+  it("stays silent below 3-deep and on diffs", () => {
+    const double = `function d(xs) {\n  for (const a of xs) {\n    for (const b of xs) { use(a, b); }\n  }\n}`;
+    expect(withGrowthWarnings(scanCode(double), double).issues.filter((i) => i.rule === "growth")).toHaveLength(0);
+    const diff = `--- a/f.ts\n+++ b/f.ts\n@@ -1,1 +1,1 @@\n+const x = 1;\n`;
+    const diffScan = scanCode(diff);
+    expect(withGrowthWarnings(diffScan, diff)).toBe(diffScan);
   });
 });

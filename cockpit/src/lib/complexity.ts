@@ -6,7 +6,7 @@
 // no recursion, and no sort is a hallucination worth flagging. Reuses the
 // codeSmells lexer (strings/comments stripped, functions located).
 
-import { findFunctions, ownBody, stripCode } from "@/lib/codeSmells";
+import { findFunctions, ownBody, stripCode, type SmellResult } from "@/lib/codeSmells";
 
 export type FnComplexity = {
   name: string;
@@ -111,6 +111,51 @@ export function scanComplexity(code: string): ComplexityScan {
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Append free growth-mechanism WARNs to a smell-scan result (code mode): deep
+ * nested iteration is an algorithmic smell the style rules don't see — the
+ * nesting rule fires on braces, not on "this is probably O(n³)". Zero model
+ * calls; lives here (not codeSmells) because complexity already imports the
+ * codeSmells lexer and the reverse import would be a cycle.
+ */
+export function withGrowthWarnings(result: SmellResult, code: string): SmellResult {
+  if (result.summary.mode !== "code") return result;
+  let scan: ComplexityScan;
+  try {
+    scan = scanComplexity(code);
+  } catch {
+    return result; // advisory only — never break the scan
+  }
+  const issues = [...result.issues];
+  let flaggedFn = false;
+  for (const fn of scan.functions) {
+    if (fn.loopDepth >= 3) {
+      flaggedFn = true;
+      issues.push({
+        severity: "WARN",
+        line: fn.line,
+        rule: "growth",
+        message: `\`${fn.name}\` nests iteration ${fn.loopDepth} deep — likely O(n^${fn.loopDepth}) growth. Confirm with the Big-O estimate.`,
+      });
+    }
+  }
+  if (!flaggedFn && scan.maxLoopDepth >= 3) {
+    issues.push({
+      severity: "WARN",
+      line: 1,
+      rule: "growth",
+      message: `Iteration nests ${scan.maxLoopDepth} deep — likely O(n^${scan.maxLoopDepth}) growth. Confirm with the Big-O estimate.`,
+    });
+  }
+  if (issues.length === result.issues.length) return result;
+  issues.sort((a, b) => a.line - b.line || (a.severity === b.severity ? 0 : a.severity === "ERROR" ? -1 : 1));
+  return {
+    issues,
+    summary: { ...result.summary, warnings: issues.filter((i) => i.severity === "WARN").length },
+    ok: result.ok,
+  };
 }
 
 /** Parse a Big-O string ("O(n log n)", "O(n²)", "O(n*m)") into a growth class. */
