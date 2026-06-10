@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getActiveProjectId } from "@/lib/project";
 import { TasksView, type Task } from "@/components/tasks/TasksView";
 
 export const runtime = "nodejs";
@@ -14,12 +15,20 @@ const asPriority = (p: string): Task["priority"] =>
   (PRIORITIES as readonly string[]).includes(p) ? (p as Task["priority"]) : "medium";
 
 export default async function TasksPage() {
-  const rows = await prisma.task
-    .findMany({
-      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      include: { project: { select: { name: true } } },
-    })
-    .catch(() => []);
+  const activeProjectId = await getActiveProjectId();
+  const [rows, activeProjectRow] = await Promise.all([
+    prisma.task
+      .findMany({
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        include: { project: { select: { name: true } } },
+      })
+      .catch(() => []),
+    activeProjectId
+      ? prisma.project
+          .findUnique({ where: { id: activeProjectId }, select: { id: true, name: true } })
+          .catch(() => null)
+      : null,
+  ]);
 
   const tasks: Task[] = rows.map((t) => ({
     id: t.id,
@@ -30,8 +39,9 @@ export default async function TasksPage() {
     priority: asPriority(t.priority),
     dueDate: t.dueDate ? t.dueDate.toISOString() : null,
     order: t.order,
+    projectId: t.projectId,
     projectName: t.project?.name ?? null,
   }));
 
-  return <TasksView initialTasks={tasks} />;
+  return <TasksView initialTasks={tasks} activeProject={activeProjectRow} />;
 }

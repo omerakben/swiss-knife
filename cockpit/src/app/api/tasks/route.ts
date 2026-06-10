@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getActiveProjectId } from "@/lib/project";
+import { parseDueDateInput } from "@/lib/dates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,13 +33,14 @@ export async function POST(req: Request) {
 
   // Validate the due date up front: an invalid string -> Invalid Date, which
   // Prisma rejects with an unhandled throw (a 500) here. Catch it as a 400.
+  // Date-only input is stored at UTC noon (see lib/dates.ts) so the shown day
+  // can't drift across timezones.
   let dueDate: Date | null = null;
   if (body.dueDate) {
-    const d = new Date(body.dueDate);
-    if (Number.isNaN(d.getTime())) {
+    dueDate = parseDueDateInput(body.dueDate);
+    if (!dueDate) {
       return Response.json({ error: "Invalid due date." }, { status: 400 });
     }
-    dueDate = d;
   }
 
   const projectId = await getActiveProjectId();

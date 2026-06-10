@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { parseDueDateInput } from "@/lib/dates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,8 +30,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   if (body.dueDate === null) data.dueDate = null;
   else if (typeof body.dueDate === "string") {
-    const d = new Date(body.dueDate);
-    if (Number.isNaN(d.getTime())) {
+    const d = parseDueDateInput(body.dueDate);
+    if (!d) {
       return Response.json({ error: "Invalid due date." }, { status: 400 });
     }
     data.dueDate = d;

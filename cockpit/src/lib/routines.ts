@@ -28,7 +28,49 @@ function bullets<T>(rows: T[], pick: (r: T) => string | null): string {
   return lines.length ? lines.map((l) => `- ${l}`).join("\n") : "- (none)";
 }
 
-export async function runRoutine(slug: RoutineSlug): Promise<{ title: string; text: string; ideaId: string }> {
+export const STANDUP_SYSTEM =
+  "Write a brief daily standup from a task board: three short sections — 'In progress', 'Up next' (top 3), 'Recently done'. Concise, no preamble.";
+
+/**
+ * The one standup board builder (shared by the streamed /api/tasks/standup and
+ * the headless routine). Scoped to a project when given, bounded per section,
+ * and 'done' limited to the last 7 days — an unbounded all-projects dump of a
+ * 222-task pack diluted the light model into a useless summary.
+ */
+export async function buildStandupBoard(projectId: string | null): Promise<string | null> {
+  const scope = projectId ? { OR: [{ projectId: null }, { projectId }] } : {};
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [doing, todo, done] = await Promise.all([
+    prisma.task.findMany({
+      where: { ...scope, status: "doing" },
+      orderBy: [{ order: "asc" }],
+      take: 15,
+      select: { title: true },
+    }),
+    prisma.task.findMany({
+      where: { ...scope, status: "todo" },
+      orderBy: [{ order: "asc" }],
+      take: 15,
+      select: { title: true },
+    }),
+    prisma.task.findMany({
+      where: { ...scope, status: "done", completedAt: { gte: weekAgo } },
+      orderBy: [{ completedAt: "desc" }],
+      take: 15,
+      select: { title: true },
+    }),
+  ]);
+  if (doing.length + todo.length + done.length === 0) return null;
+  return `Doing:\n${bullets(doing, (t) => t.title)}\n\nTo do:\n${bullets(
+    todo,
+    (t) => t.title
+  )}\n\nDone (last 7 days):\n${bullets(done, (t) => t.title)}`;
+}
+
+export async function runRoutine(
+  slug: RoutineSlug,
+  projectId: string | null = null
+): Promise<{ title: string; text: string; ideaId: string }> {
   const cfg = await getEffectiveConfig();
   const opts = { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0.3 };
   const today = startOfDay(new Date());
@@ -38,11 +80,10 @@ export async function runRoutine(slug: RoutineSlug): Promise<{ title: string; te
   let prompt: string;
 
   if (slug === "standup") {
-    const tasks = await prisma.task.findMany({ orderBy: [{ order: "asc" }] });
-    const section = (status: string) => bullets(tasks.filter((t) => t.status === status), (t) => t.title);
-    system =
-      "Write a brief daily standup from a task board: three short sections — 'In progress', 'Up next' (top 3), 'Recently done'. Concise, no preamble.";
-    prompt = `Doing:\n${section("doing")}\n\nTo do:\n${section("todo")}\n\nDone:\n${section("done")}`;
+    const board = await buildStandupBoard(projectId);
+    if (!board) throw new Error("No tasks to summarize yet.");
+    system = STANDUP_SYSTEM;
+    prompt = board;
     title = `Standup ${ymd(today)}`;
   } else {
     const tomorrow = new Date(today);
@@ -67,7 +108,7 @@ export async function runRoutine(slug: RoutineSlug): Promise<{ title: string; te
   }
 
   const text = (await chat([{ role: "system", content: system }, { role: "user", content: prompt }], opts)).trim();
-  const idea = await prisma.idea.create({ data: { topic: title, title, content: text } });
-  await logActivity({ entity: "idea", action: slug, summary: title });
+  const idea = await prisma.idea.create({ data: { topic: title, title, content: text, projectId } });
+  await logActivity({ entity: "idea", action: slug, summary: title, projectId });
   return { title, text, ideaId: idea.id };
 }

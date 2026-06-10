@@ -5,6 +5,7 @@ import { getEffectiveConfig } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import { logActivity } from "@/lib/activity";
 import { embedDocuments, serializeVector } from "@/lib/embeddings";
+import { extractDueDate } from "@/lib/quickDates";
 
 // A quick note routed into a structured chatJson call on the light model —
 // bound it like the sibling capture routes (the perf lesson: big structured
@@ -28,7 +29,7 @@ const SCHEMA = {
 
 const SYSTEM =
   "Classify this quick note into exactly one of: task (an action to do), fact (durable info worth remembering), idea (a thought to develop). " +
-  "Give a short title and an optional one-line detail.";
+  "Give a short imperative title (drop filler like 'remind me to' and any date/time words — dates are handled separately) and an optional one-line detail.";
 
 export async function POST(req: Request) {
   const notReady = await assertOllamaReady();
@@ -93,9 +94,12 @@ export async function POST(req: Request) {
     return Response.json({ kind: "idea", id: i.id, title, href: "/tools/brainstorm", deleteUrl: `/api/ideas/${i.id}` });
   }
 
+  // "tomorrow" / "on friday" / "in 3 days" in the note become a real due date —
+  // deterministic parse over the user's own text, not a model guess.
+  const { dueDate } = extractDueDate(text);
   const max = await prisma.task.aggregate({ where: { status: "todo" }, _max: { order: true } });
   const t = await prisma.task.create({
-    data: { title, notes: detail, status: "todo", order: (max._max.order ?? 0) + 1, projectId },
+    data: { title, notes: detail, status: "todo", dueDate, order: (max._max.order ?? 0) + 1, projectId },
   });
   return Response.json({ kind: "task", id: t.id, title, href: "/tools/tasks", deleteUrl: `/api/tasks/${t.id}` });
 }

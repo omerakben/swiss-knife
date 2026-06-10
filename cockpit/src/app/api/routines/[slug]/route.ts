@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { assertOllamaReady } from "@/lib/health";
+import { getActiveProjectId } from "@/lib/project";
 import { isRoutine, runRoutine, ROUTINES } from "@/lib/routines";
 import { readCaptureToken, tokenMatches } from "@/lib/captureAuth";
 
@@ -31,7 +32,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (notReady) return notReady;
 
   try {
-    const result = await runRoutine(slug);
+    // Browser-initiated runs (the palette) carry the active-project cookie and
+    // scope the routine; headless Shortcut calls have no cookie → global.
+    const projectId = await getActiveProjectId();
+    const result = await runRoutine(slug, projectId);
     return Response.json(result);
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Routine failed." }, { status: 500 });
