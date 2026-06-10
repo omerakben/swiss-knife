@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Square } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +32,9 @@ export function EmailWriter() {
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // The settings that produced the current draft — save persists THIS pairing,
+  // not whatever the form says now (editable again after the run finishes).
+  const lastRun = useRef({ mode, tone, length, brief, sourceText });
 
   const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
     endpoint: "/api/email",
@@ -45,10 +48,12 @@ export function EmailWriter() {
       return;
     }
     setSaved(false);
+    lastRun.current = { mode, tone, length, brief, sourceText };
     await run("");
   }
 
-  // Save-after-run: persist EXACTLY the draft on screen (no regeneration).
+  // Save-after-run: persist EXACTLY the draft on screen (no regeneration),
+  // paired with the inputs that produced it.
   async function saveDraft() {
     if (!output) return;
     setSaving(true);
@@ -56,7 +61,7 @@ export function EmailWriter() {
       const res = await fetch("/api/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, tone, length, brief, sourceText, persist: output }),
+        body: JSON.stringify({ ...lastRun.current, persist: output }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

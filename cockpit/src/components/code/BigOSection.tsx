@@ -26,6 +26,10 @@ export function BigOSection({ code, disabled }: { code: string; disabled?: boole
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // The snippet the verdict describes — the derivation runs on THIS snapshot,
+  // not whatever is in the editor by then (stale verdict + new code would
+  // produce a confidently wrong walkthrough).
+  const analyzedCode = useRef("");
 
   const derivation = useAiTool({
     endpoint: "/api/complexity-derivation",
@@ -53,6 +57,7 @@ export function BigOSection({ code, disabled }: { code: string; disabled?: boole
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Couldn't analyze the snippet.");
+      analyzedCode.current = code;
       setResult(json as Result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't analyze the snippet.");
@@ -81,7 +86,7 @@ export function BigOSection({ code, disabled }: { code: string; disabled?: boole
             size="sm"
             variant="ghost"
             onClick={() =>
-              derivation.run(code, {
+              derivation.run(analyzedCode.current, {
                 timeBigO: result.verdict.timeBigO,
                 spaceBigO: result.verdict.spaceBigO,
               })

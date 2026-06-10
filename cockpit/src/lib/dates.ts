@@ -1,7 +1,8 @@
 // Due dates are calendar days, not instants. The DB column is a DateTime, so
 // the convention is: date-only input ("YYYY-MM-DD") is stored at UTC NOON of
-// that day. UTC noon renders as the same calendar day in every timezone from
-// UTC-11 to UTC+12, so neither display nor day-bucketing can drift overnight.
+// that day. UTC noon renders as the same calendar day in timezones from
+// UTC-11 to UTC+12 (UTC+13/+14 — Kiribati, NZ summer — would still shift;
+// dueDayString() reads the ISO date part so app surfaces stay correct there).
 // Legacy rows (stored at UTC midnight by `new Date("YYYY-MM-DD")`) still
 // resolve to their intended day through dueDayString(), which reads the ISO
 // date part instead of converting the instant to a local timezone.

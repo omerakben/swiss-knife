@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Square } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +50,8 @@ export function TemplateRunner({
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // The values that produced the current output — save persists THIS pairing.
+  const lastRunValues = useRef(values);
 
   const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
     endpoint: "/api/templates/run",
@@ -68,10 +70,12 @@ export function TemplateRunner({
       return;
     }
     setSaved(false);
+    lastRunValues.current = values;
     await run("");
   }
 
-  // Save-after-run: persist EXACTLY the result on screen (no regeneration).
+  // Save-after-run: persist EXACTLY the result on screen (no regeneration),
+  // paired with the values that produced it.
   async function saveResult() {
     if (!output) return;
     setSaving(true);
@@ -79,7 +83,7 @@ export function TemplateRunner({
       const res = await fetch("/api/templates/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId: template.id, values, persist: output }),
+        body: JSON.stringify({ templateId: template.id, values: lastRunValues.current, persist: output }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

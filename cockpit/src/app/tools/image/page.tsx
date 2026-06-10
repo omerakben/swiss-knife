@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type ClipboardEvent, type DragEvent } from "react";
+import { useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent } from "react";
 import { Upload, Square } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,28 +58,34 @@ export default function ImagePage() {
     loadFile(e.dataTransfer.files?.[0]);
   }
 
+  // The image + prompt that produced the current answer — save persists THIS
+  // pairing, not whatever was swapped in after the run.
+  const lastRun = useRef<{ image: string; prompt: string } | null>(null);
+
   async function handleRun() {
     if (!image) {
       toast.error("Attach an image first");
       return;
     }
     setSaved(false);
+    lastRun.current = { image, prompt };
     await run("");
   }
 
   // Keep the answer: image + response become an Idea (like quick-capture).
   async function saveAsIdea() {
-    if (!output || !image) return;
+    if (!output || !lastRun.current) return;
     setSaving(true);
     try {
+      const snap = lastRun.current;
       const res = await fetch("/api/ideas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: prompt.trim().slice(0, 80) || "Image note",
-          topic: prompt.trim() || "image capture",
+          title: snap.prompt.trim().slice(0, 80) || "Image note",
+          topic: snap.prompt.trim() || "image capture",
           content: output,
-          image,
+          image: snap.image,
         }),
       });
       if (!res.ok) {

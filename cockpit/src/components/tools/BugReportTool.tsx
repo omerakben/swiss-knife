@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,12 +45,15 @@ export function BugReportTool() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
+  // The note that produced the current draft — save persists THIS pairing.
+  const lastRunNote = useRef("");
 
   async function run() {
     if (!note.trim()) return;
     setBusy(true);
     setSavedId(null);
     setSecs(0);
+    lastRunNote.current = note;
     const startedAt = Date.now();
     const timer = setInterval(() => setSecs(Math.round((Date.now() - startedAt) / 1000)), 500);
     try {
@@ -78,7 +81,7 @@ export function BugReportTool() {
       const res = await fetch("/api/bug-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note, report }),
+        body: JSON.stringify({ note: lastRunNote.current, report }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");

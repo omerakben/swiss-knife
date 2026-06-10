@@ -73,7 +73,12 @@ export async function GET(req: Request) {
   // not just the listing page — selecting a result used to drop the user on
   // an unfiltered page to hunt for it again.
   const results: SearchResult[] = [
-    ...prompts.map((p) => ({ type: "Prompt" as const, id: p.id, title: p.title || "Untitled prompt", href: "/tools/prompt-library" })),
+    ...prompts.map((p) => ({
+      type: "Prompt" as const,
+      id: p.id,
+      title: p.title || "Untitled prompt",
+      href: `/tools/prompt-library?q=${encodeURIComponent((p.title || "").slice(0, 60))}`,
+    })),
     ...ideas.map((i) => ({
       type: "Idea" as const,
       id: i.id,
@@ -94,7 +99,12 @@ export async function GET(req: Request) {
       subtitle: f.key ? f.value.slice(0, 70) : undefined,
       href: `/tools/memory?q=${encodeURIComponent((f.key || f.value.slice(0, 40)).trim())}`,
     })),
-    ...emails.map((e) => ({ type: "Email" as const, id: e.id, title: e.title || e.brief?.slice(0, 70) || "Email draft", href: "/tools/email-writer" })),
+    ...emails.map((e) => ({
+      type: "Email" as const,
+      id: e.id,
+      title: e.title || e.brief?.slice(0, 70) || "Email draft",
+      href: `/tools/email-writer?draftId=${e.id}`,
+    })),
     ...sessions.map((s) => ({
       type: "QA" as const,
       id: s.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -60,6 +60,9 @@ export function RecentItems({
   const router = useRouter();
   const [editing, setEditing] = useState<RecentItem | null>(null);
   const [query, setQuery] = useState("");
+  // Scroll to the highlighted item ONCE — an inline callback ref re-fires on
+  // every render and would keep yanking the scroll position back.
+  const scrolledTo = useRef<string | null>(null);
   const canEdit = !!editBase && !!editFields && editFields.length > 0;
 
   if (items.length === 0) return null;
@@ -108,7 +111,10 @@ export function RecentItems({
             ref={
               it.id === highlightId
                 ? (el) => {
-                    el?.scrollIntoView({ block: "center" })
+                    if (el && scrolledTo.current !== it.id) {
+                      scrolledTo.current = it.id;
+                      el.scrollIntoView({ block: "center" });
+                    }
                   }
                 : undefined
             }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Square } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,6 +49,9 @@ export function AiToolShell({
   const [input, setInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // The input that produced the current output — save persists THIS pairing,
+  // not whatever is in the box now (editable again after the run finishes).
+  const lastRunInput = useRef("");
   const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
     endpoint,
     buildBody: (i) => buildBody(i),
@@ -57,6 +60,7 @@ export function AiToolShell({
 
   async function handleRun() {
     setSaved(false);
+    lastRunInput.current = input;
     await run(input);
   }
 
@@ -64,7 +68,7 @@ export function AiToolShell({
     if (!onSaveResult || !output) return;
     setSaving(true);
     try {
-      await onSaveResult(output, input);
+      await onSaveResult(output, lastRunInput.current);
       setSaved(true);
       toast.success(savedMessage);
     } catch (e) {

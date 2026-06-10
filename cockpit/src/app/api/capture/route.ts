@@ -52,7 +52,15 @@ export async function POST(req: Request) {
     return Response.json({ error: "Image too large (max ~15 MB)." }, { status: 413 });
   }
 
-  const pid = typeof projectId === "string" && projectId ? projectId : null;
+  // Validate the project — a stale Shortcut id would FK-fail the create with a
+  // raw 500; an unknown project degrades to a global capture instead.
+  let pid: string | null = null;
+  if (typeof projectId === "string" && projectId) {
+    const exists = await prisma.project
+      .findUnique({ where: { id: projectId }, select: { id: true } })
+      .catch(() => null);
+    pid = exists ? projectId : null;
+  }
 
   // Image capture → Idea with a vision description + the saved file path.
   if (hasImage) {

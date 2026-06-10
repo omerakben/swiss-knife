@@ -59,6 +59,9 @@ export function QaSessionView({
           story: session.story,
           draftFeature: latest.draftFeature,
           expectedVerdict,
+          // Attribute the golden to THIS session's project (deep links can
+          // open sessions outside the active project).
+          sessionId: session.id,
         }),
       });
       if (!res.ok) throw new Error("Failed");
