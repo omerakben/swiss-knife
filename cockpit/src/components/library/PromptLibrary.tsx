@@ -64,12 +64,15 @@ function tagList(tags: string | null): string[] {
 export function PromptLibrary({
   prompts,
   templates,
+  initialQuery = "",
 }: {
   prompts: LibPrompt[];
   templates: LibTemplate[];
+  /** Seed for the search box (the ⌘K search deep link: /tools/prompt-library?q=…). */
+  initialQuery?: string;
 }) {
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [editing, setEditing] = useState<LibPrompt | null>(null);
   const [useTemplate, setUseTemplate] = useState<LibTemplate | null>(null);
   const [tmplSeed, setTmplSeed] = useState<TemplateSeed | null>(null);
