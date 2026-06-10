@@ -426,12 +426,16 @@ export async function applyMerge(proposalId: string, targetId: string, mergedVal
     const [v] = await embedDocuments([mergedValue]);
     embedding = serializeVector(v);
   } catch {
-    // Keep the old embedding; a later reindex will refresh it.
+    // Embed failure → store NULL, never keep the old vector: the fact's
+    // wording just changed, so the old embedding ranks it by its old meaning,
+    // and reindexFacts only scans embedding:null (same contract as the
+    // PATCH-edit path).
+    embedding = null;
   }
   await prisma.$transaction([
     prisma.memoryFact.update({
       where: { id: targetId },
-      data: embedding ? { value: mergedValue, embedding } : { value: mergedValue },
+      data: { value: mergedValue, embedding },
     }),
     prisma.memoryFact.delete({ where: { id: proposalId } }),
   ]);

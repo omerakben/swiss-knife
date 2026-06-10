@@ -6,7 +6,14 @@
 // no recursion, and no sort is a hallucination worth flagging. Reuses the
 // codeSmells lexer (strings/comments stripped, functions located).
 
-import { findFunctions, ownBody, stripCode, type SmellResult } from "@/lib/codeSmells";
+import {
+  findFunctions,
+  ownBody,
+  parseDiffHunks,
+  stripCode,
+  type SmellIssue,
+  type SmellResult,
+} from "@/lib/codeSmells";
 
 export type FnComplexity = {
   name: string;
@@ -113,41 +120,61 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/**
- * Append free growth-mechanism WARNs to a smell-scan result (code mode): deep
- * nested iteration is an algorithmic smell the style rules don't see — the
- * nesting rule fires on braces, not on "this is probably O(n³)". Zero model
- * calls; lives here (not codeSmells) because complexity already imports the
- * codeSmells lexer and the reverse import would be a cycle.
- */
-export function withGrowthWarnings(result: SmellResult, code: string): SmellResult {
-  if (result.summary.mode !== "code") return result;
-  let scan: ComplexityScan;
-  try {
-    scan = scanComplexity(code);
-  } catch {
-    return result; // advisory only — never break the scan
-  }
-  const issues = [...result.issues];
+/** Growth WARNs for one scanned region; `mapLine` translates fragment lines
+ * (diff hunks) to new-file lines. */
+function collectGrowthWarnings(
+  scan: ComplexityScan,
+  mapLine: (line: number) => number,
+  out: SmellIssue[]
+): void {
   let flaggedFn = false;
   for (const fn of scan.functions) {
     if (fn.loopDepth >= 3) {
       flaggedFn = true;
-      issues.push({
+      out.push({
         severity: "WARN",
-        line: fn.line,
+        line: mapLine(fn.line),
         rule: "growth",
         message: `\`${fn.name}\` nests iteration ${fn.loopDepth} deep — likely O(n^${fn.loopDepth}) growth. Confirm with the Big-O estimate.`,
       });
     }
   }
   if (!flaggedFn && scan.maxLoopDepth >= 3) {
-    issues.push({
+    out.push({
       severity: "WARN",
-      line: 1,
+      line: mapLine(1),
       rule: "growth",
       message: `Iteration nests ${scan.maxLoopDepth} deep — likely O(n^${scan.maxLoopDepth}) growth. Confirm with the Big-O estimate.`,
     });
+  }
+}
+
+/**
+ * Append free growth-mechanism WARNs to a smell-scan result: deep nested
+ * iteration is an algorithmic smell the style rules don't see — the nesting
+ * rule fires on braces, not on "this is probably O(n³)". Works on raw code
+ * AND unified diffs (per reconstructed hunk, reported at new-file lines —
+ * diffs are this tool's primary daily input). Zero model calls; lives here
+ * (not codeSmells) because complexity already imports the codeSmells lexer
+ * and the reverse import would be a cycle.
+ */
+export function withGrowthWarnings(result: SmellResult, code: string): SmellResult {
+  const issues = [...result.issues];
+  try {
+    if (result.summary.mode === "code") {
+      collectGrowthWarnings(scanComplexity(code), (l) => l, issues);
+    } else {
+      for (const hunk of parseDiffHunks(code)) {
+        if (hunk.added.size === 0) continue; // pure deletions can't add growth
+        collectGrowthWarnings(
+          scanComplexity(hunk.fragment),
+          (l) => hunk.map[l - 1] ?? l,
+          issues
+        );
+      }
+    }
+  } catch {
+    return result; // advisory only — never break the scan
   }
   if (issues.length === result.issues.length) return result;
   issues.sort((a, b) => a.line - b.line || (a.severity === b.severity ? 0 : a.severity === "ERROR" ? -1 : 1));

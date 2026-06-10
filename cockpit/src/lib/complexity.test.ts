@@ -146,11 +146,34 @@ describe("withGrowthWarnings", () => {
     expect(growth[0].line).toBe(1);
   });
 
-  it("stays silent below 3-deep and on diffs", () => {
+  it("stays silent below 3-deep and on growth-free diffs", () => {
     const double = `function d(xs) {\n  for (const a of xs) {\n    for (const b of xs) { use(a, b); }\n  }\n}`;
     expect(withGrowthWarnings(scanCode(double), double).issues.filter((i) => i.rule === "growth")).toHaveLength(0);
     const diff = `--- a/f.ts\n+++ b/f.ts\n@@ -1,1 +1,1 @@\n+const x = 1;\n`;
     const diffScan = scanCode(diff);
     expect(withGrowthWarnings(diffScan, diff)).toBe(diffScan);
+  });
+
+  it("flags 3-deep iteration introduced by a diff, at new-file lines", () => {
+    // Diffs are Code Review's primary daily input — growth detection must not
+    // be a raw-paste-only feature.
+    const added = [
+      "function hot(xs) {",
+      "  for (const a of xs) {",
+      "    for (const b of xs) {",
+      "      for (const c of xs) {",
+      "        use(a, b, c);",
+      "      }",
+      "    }",
+      "  }",
+      "}",
+    ];
+    const diff =
+      `--- a/f.ts\n+++ b/f.ts\n@@ -1,0 +120,9 @@\n` + added.map((l) => `+${l}`).join("\n") + "\n";
+    const out = withGrowthWarnings(scanCode(diff), diff);
+    const growth = out.issues.filter((i) => i.rule === "growth");
+    expect(growth).toHaveLength(1);
+    expect(growth[0].message).toMatch(/O\(n\^3\)/);
+    expect(growth[0].line).toBe(120); // new-file line of the function header
   });
 });
