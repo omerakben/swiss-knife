@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db";
 import { applyMerge } from "@/lib/memoryLoop";
+import { embedDocuments, serializeVector } from "@/lib/embeddings";
+import { normalizeCategory } from "@/lib/memory";
+import { logActivity } from "@/lib/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +16,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     pinned?: boolean;
     value?: string;
     key?: string;
+    category?: string;
+    projectId?: string | null;
     restore?: boolean;
   };
 
@@ -31,11 +36,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // existing active fact, and it runs only on an explicit accept.
   if (body.status === "active") {
     const fact = await prisma.memoryFact
-      .findUnique({ where: { id }, select: { id: true, value: true, mergedIntoId: true } })
+      .findUnique({ where: { id }, select: { id: true, value: true, mergedIntoId: true, projectId: true } })
       .catch(() => null);
     if (fact?.mergedIntoId) {
       try {
         await applyMerge(fact.id, fact.mergedIntoId, fact.value);
+        await logActivity({
+          entity: "fact",
+          action: "merge-accepted",
+          summary: fact.value.slice(0, 120),
+          projectId: fact.projectId,
+        });
         return Response.json({ merged: true, targetId: fact.mergedIntoId });
       } catch {
         return Response.json({ error: "Merge target no longer exists." }, { status: 404 });
@@ -48,9 +59,33 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof body.pinned === "boolean") data.pinned = body.pinned;
   if (typeof body.value === "string") data.value = body.value.trim();
   if (typeof body.key === "string") data.key = body.key.trim() || null;
+  if (typeof body.category === "string") data.category = normalizeCategory(body.category);
+  if ("projectId" in body) {
+    if (body.projectId === null) {
+      data.projectId = null;
+    } else if (typeof body.projectId === "string") {
+      const exists = await prisma.project
+        .findUnique({ where: { id: body.projectId }, select: { id: true } })
+        .catch(() => null);
+      if (!exists) return Response.json({ error: "Project not found." }, { status: 400 });
+      data.projectId = body.projectId;
+    }
+  }
 
   if (Object.keys(data).length === 0) {
     return Response.json({ error: "Nothing to update." }, { status: 400 });
+  }
+
+  // An edited fact must rank by its NEW meaning: re-embed on value change.
+  // On embed failure store null so Reindex (which only scans embedding:null)
+  // can pick it up later — never leave the stale vector in place.
+  if (typeof data.value === "string" && data.value) {
+    try {
+      const [v] = await embedDocuments([data.value]);
+      data.embedding = serializeVector(v);
+    } catch {
+      data.embedding = null;
+    }
   }
 
   // Guard against soft-deleted rows: a generic PATCH must not silently
@@ -62,6 +97,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return Response.json({ error: "Fact not found." }, { status: 404 });
   }
   const fact = await prisma.memoryFact.findUnique({ where: { id } });
+  // A pending → active flip is the human accept — the loop's key event.
+  if (data.status === "active" && fact) {
+    await logActivity({
+      entity: "fact",
+      action: "accepted",
+      summary: fact.value.slice(0, 120),
+      projectId: fact.projectId,
+    });
+  }
   return Response.json({ fact });
 }
 

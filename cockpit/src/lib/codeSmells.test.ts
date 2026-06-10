@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   countDecisions,
+  detectForeignLanguage,
   findFunctions,
   looksLikeDiff,
   parseDiffHunks,
@@ -227,5 +228,34 @@ describe("scanCode — diff mode", () => {
     const dup = r.issues.find((i) => i.rule === "duplicate");
     expect(dup).toBeDefined();
     expect(dup!.message).toMatch(/duplicate lines 101–104/);
+  });
+});
+
+describe("detectForeignLanguage + language guard", () => {
+  it("flags a Python paste with one honest WARN", () => {
+    const py = `def total(orders):\n    s = 0\n    for o in orders:\n        s += o.price\n    return s`;
+    expect(detectForeignLanguage(py)).toBe("Python");
+    const r = scanCode(py);
+    const lang = r.issues.filter((i) => i.rule === "language");
+    expect(lang).toHaveLength(1);
+    expect(lang[0].message).toMatch(/Python/);
+  });
+
+  it("does not flag normal TS", () => {
+    expect(detectForeignLanguage(`const x = (a: number) => a + 1;`)).toBeNull();
+  });
+});
+
+describe("magic-number allowlist", () => {
+  it("does not warn on HTTP status codes or round timeouts", () => {
+    const code = `function h(res) {\n  res.status(404).send();\n  setTimeout(retry, 1000);\n}`;
+    const r = scanCode(code);
+    expect(r.issues.filter((i) => i.rule === "magic-number")).toHaveLength(0);
+  });
+
+  it("still warns on opaque business numbers", () => {
+    const code = `function f(x) {\n  return x * 0.85;\n}`;
+    const r = scanCode(code);
+    expect(r.issues.some((i) => i.rule === "magic-number" && /0\.85/.test(i.message))).toBe(true);
   });
 });
