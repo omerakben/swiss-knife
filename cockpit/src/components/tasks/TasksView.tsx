@@ -32,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePersisted } from "@/hooks/usePersisted";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { BoardColumn } from "./BoardColumn";
-import { TaskCard } from "./TaskCard";
+import { TaskCard, PRIORITY_VARIANT } from "./TaskCard";
 import { TaskAiTools } from "./TaskAiTools";
 import { EditTaskDialog } from "./EditTaskDialog";
 
@@ -614,7 +614,7 @@ export function TasksView({
                   </Badge>
                   <button
                     type="button"
-                    className={cn(badgeVariants({ variant: "secondary" }), "shrink-0 cursor-pointer text-[10px]")}
+                    className={cn(badgeVariants({ variant: PRIORITY_VARIANT[t.priority] }), "shrink-0 cursor-pointer text-[10px]")}
                     title={`Filter by ${t.priority} priority`}
                     onClick={() => setPriorityFilter(t.priority)}
                   >

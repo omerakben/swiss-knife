@@ -23,12 +23,12 @@ export function AiOutput({
   const streaming = status === "streaming";
 
   return (
-    <Card className="mt-6 min-w-0">
+    <Card className="mt-6 min-w-0 shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 py-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           {label}
           {streaming && (
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
           )}
         </CardTitle>
         <div className="flex items-center gap-1">

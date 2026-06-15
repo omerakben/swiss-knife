@@ -425,7 +425,7 @@ export function QaPipeline({ initialSessionId = null }: { initialSessionId?: str
         {bench && bench.agreementPct !== null && (
           <span className="text-sm text-muted-foreground">
             {bench.agree}/{bench.total} goldens agree ·{" "}
-            <span className={bench.agreementPct >= 80 ? "text-green-600" : "text-destructive"}>
+            <span className={bench.agreementPct >= 80 ? "text-[hsl(var(--badge-success-fg))]" : "text-destructive"}>
               {bench.agreementPct}%
             </span>
           </span>
