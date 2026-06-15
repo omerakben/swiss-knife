@@ -224,7 +224,12 @@ function Invoke-Doctor {
   if ($whisperModel -and (Test-Path $whisperModel)) {
     Write-Ok "whisper model present (mounted into the Docker cockpit for voice)"
   } else {
-    Write-Note "whisper model missing - voice capture stays off (everything else works)" "mkdir `"$env:USERPROFILE\.cache\whisper`" -Force; curl.exe -L -o `"$env:USERPROFILE\.cache\whisper\ggml-base.en.bin`" https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin"
+    # --ssl-revoke-best-effort: behind a corporate TLS-inspection proxy the
+    # revocation (CRL/OCSP) endpoint is usually unreachable, so a plain curl.exe
+    # dies with CRYPT_E_NO_REVOCATION_CHECK. The flag keeps full cert-trust
+    # validation and only tolerates an unreachable revocation server (safe on
+    # open networks too — unlike --ssl-no-revoke, which skips revocation entirely).
+    Write-Note "whisper model missing - voice capture stays off (everything else works)" "mkdir `"$env:USERPROFILE\.cache\whisper`" -Force; curl.exe -L --ssl-revoke-best-effort -o `"$env:USERPROFILE\.cache\whisper\ggml-base.en.bin`" https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin"
   }
   $whisperBin = if ($env:WHISPER_BIN) { $env:WHISPER_BIN } else { "whisper-cli" }
   $ffmpegBin  = if ($env:FFMPEG_BIN)  { $env:FFMPEG_BIN }  else { "ffmpeg" }
