@@ -66,12 +66,12 @@ export function SidebarNav() {
           href={t.href}
           aria-current={active ? "page" : undefined}
           className={
-            "flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm " +
-            (active ? "font-medium text-primary" : "text-foreground/70 group-hover:text-foreground")
+            "flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset " +
+            (active ? "font-medium text-brand" : "text-foreground/70 group-hover:text-foreground")
           }
         >
           <Icon
-            className={"h-4 w-4 shrink-0 " + (active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}
+            className={"h-4 w-4 shrink-0 " + (active ? "text-brand" : "text-muted-foreground group-hover:text-foreground")}
           />
           <span className="truncate">{t.label}</span>
         </Link>
@@ -80,7 +80,7 @@ export function SidebarNav() {
           aria-label={fav ? `Unfavorite ${t.label}` : `Favorite ${t.label}`}
           title={fav ? "Unfavorite" : "Favorite"}
           className={
-            "mr-1 shrink-0 rounded p-1 transition-opacity " +
+            "mr-1 shrink-0 rounded p-1 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 " +
             (fav
               ? "text-yellow-500"
               : "text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100")
@@ -98,7 +98,7 @@ export function SidebarNav() {
     <div className="flex flex-col gap-0.5">
       {hasFavs && (
         <>
-          <div className="px-2.5 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+          <div className="px-2.5 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Favorites
           </div>
           {favItems.map(renderItem)}
@@ -107,14 +107,14 @@ export function SidebarNav() {
       )}
 
       <div className="flex items-center justify-between px-2.5 pb-0.5 pt-0.5">
-        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {hasFavs ? "Tools" : "Menu"}
         </span>
         <button
           onClick={cycleSort}
           title={`${sortTitle} — click to change`}
           aria-label={sortTitle}
-          className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+          className="rounded p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           {sort === "az" ? (
             <ArrowDownAZ className="h-3.5 w-3.5" />
@@ -129,7 +129,7 @@ export function SidebarNav() {
       {ungrouped.map(renderItem)}
       {groups.map((g) => (
         <div key={g.id} className="mt-1">
-          <div className="px-2.5 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/50">
+          <div className="px-2.5 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {g.label}
           </div>
           {g.items.map(renderItem)}

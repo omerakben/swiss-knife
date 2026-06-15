@@ -22,6 +22,9 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
+        // Accent-as-text (links, active nav). Darker than --primary in light,
+        // brighter in dark — so colored TEXT clears AA where a solid fill can't.
+        brand: "hsl(var(--brand))",
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",

@@ -29,8 +29,16 @@
 
     /* Brand — a single restrained accent (Apple blue). Used for the primary
        action per screen, links, active nav, focus rings. */
-    --primary: 211 100% 50%;          /* Apple blue      #007AFF */
+    --primary: 211 100% 43%;          /* Apple blue, deep enough for white CTA text (AA 5.1:1) */
     --primary-foreground: 0 0% 100%;
+
+    /* Accent-as-text + badge labels — a touch darker than solid --primary so
+       COLORED TEXT clears WCAG AA on light surfaces (a tinted fill can't). */
+    --brand: 211 100% 43%;            /* links, active nav text */
+    --badge-primary-fg: 211 100% 42%;
+    --badge-success-fg: 145 63% 30%;
+    --badge-warning-fg: 35 100% 30%;
+    --badge-destructive-fg: 4 86% 44%;
 
     /* Neutrals — chips, hover surfaces, secondary text. */
     --secondary: 240 11% 95%;
@@ -51,7 +59,7 @@
     /* Lines & rings. */
     --border: 240 13% 90%;            /* hairline separators */
     --input: 240 11% 87%;             /* input borders (a touch darker) */
-    --ring: 211 100% 50%;             /* focus ring = brand blue */
+    --ring: 211 100% 43%;             /* focus ring = brand blue */
 
     /* Geometry — softer, friendlier Apple radii. */
     --radius: 0.75rem;                /* 12px → buttons/inputs; cards rounded-2xl */
@@ -81,8 +89,15 @@
     --popover: 240 7% 9%;
     --popover-foreground: 240 9% 96%;
 
-    --primary: 211 100% 60%;          /* brighter blue reads better on dark */
+    --primary: 211 100% 47%;          /* deep enough for white CTA text on dark (AA 4.5:1) */
     --primary-foreground: 0 0% 100%;
+
+    /* Bright accent-as-text + badge labels for the dark canvas (AA on --card). */
+    --brand: 211 100% 72%;            /* links, active nav text */
+    --badge-primary-fg: 211 100% 74%;
+    --badge-success-fg: 145 60% 62%;
+    --badge-warning-fg: 40 95% 62%;
+    --badge-destructive-fg: 4 90% 72%;
 
     --secondary: 240 5% 16%;
     --secondary-foreground: 240 9% 96%;
@@ -98,9 +113,9 @@
     --warning: 35 100% 56%;
     --warning-foreground: 38 92% 10%;
 
-    --border: 240 5% 19%;             /* separators sit just above the card */
-    --input: 240 5% 23%;
-    --ring: 211 100% 60%;
+    --border: 240 5% 24%;             /* separators sit clearly above the card */
+    --input: 240 5% 28%;
+    --ring: 211 100% 62%;
 
     /* Dark shadows lean on opacity over black to keep depth without halos. */
     --shadow-xs: 0 1px 1.5px 0 hsl(0 0% 0% / 0.40);

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { formatDueDay } from "@/lib/dates";
 import type { Task } from "./TasksView";
 
-const PRIORITY_VARIANT = {
+export const PRIORITY_VARIANT = {
   low: "secondary",
   medium: "warning",
   high: "destructive",
