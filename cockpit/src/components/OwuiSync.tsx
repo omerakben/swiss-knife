@@ -48,7 +48,7 @@ export function OwuiSync() {
       </p>
       <div className="space-y-1.5">
         <Label htmlFor="owui-key">
-          API key {hasKey && <span className="text-success">(set)</span>}
+          API key {hasKey && <span className="text-[hsl(var(--badge-success-fg))]">(set)</span>}
         </Label>
         <div className="flex gap-2">
           <Input

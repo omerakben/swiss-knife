@@ -8,9 +8,9 @@ tune tokens.
 
 ## How control works
 
-```
+```text
 globals.css  (the tokens: color, radius, shadow, motion — light + dark)
-     │  defined as bare HSL triplets:  --primary: 211 100% 50%;
+     │  defined as bare HSL triplets:  --primary: 211 100% 43%;
      ▼
 tailwind.config.ts  (maps tokens → utilities: bg-primary, shadow-md, ease-apple…)
      ▼
@@ -33,10 +33,11 @@ Tokens are stored as `H S% L%` (not `#hex`) so one value composes two ways:
 | `--background` | app canvas (the gray behind cards) | `240 14% 97%` / `240 8% 6%` |
 | `--card` | cards, panels, fields | `0 0% 100%` / `240 6% 11%` |
 | `--foreground` | primary text | `240 6% 11%` / `240 9% 96%` |
-| `--primary` | **the one accent** — CTAs, links, active nav, focus | `211 100% 50%` (Apple blue) / `211 100% 60%` |
+| `--primary` | **the one accent** — filled CTAs, app icon, focus rings | `211 100% 43%` (Apple blue) / `211 100% 45%` |
+| `--brand` | accent **as text** — links, active nav (tuned for AA on its backdrop) | `211 100% 40%` / `211 100% 72%` |
 | `--muted-foreground` | secondary text | `240 4% 44%` / `240 5% 64%` |
-| `--success` / `--warning` / `--destructive` | status hues (green/orange/red) | Apple system colors |
-| `--border` | hairline separators | `240 13% 90%` / `240 5% 19%` |
+| `--success` / `--warning` / `--destructive` | status hues (green/orange/red); `--badge-*-fg` are the AA-safe text variants | Apple system colors |
+| `--border` | hairline separators | `240 13% 90%` / `240 5% 24%` |
 | `--radius` | corner softness (buttons/inputs; cards are `rounded-2xl`) | `0.75rem` (12px) |
 | `--shadow-*` | the soft ambient+key elevation scale | see file |
 | `--ease-apple` / `--ease-spring` | motion curves | `cubic-bezier(...)` |

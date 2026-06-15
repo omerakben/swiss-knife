@@ -31,7 +31,7 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
         <DialogContent
           showClose={false}
           aria-describedby={undefined}
-          className="left-0 top-0 flex h-full w-72 max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-r border-border p-0 sm:rounded-none"
+          className="left-0 top-0 flex h-full w-72 max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-r border-border bg-card p-0 sm:rounded-none"
         >
           <DialogTitle className="sr-only">Mobile navigation</DialogTitle>
           <div className="flex justify-end px-2 pt-2">

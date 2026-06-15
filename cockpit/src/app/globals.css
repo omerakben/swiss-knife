@@ -34,7 +34,7 @@
 
     /* Accent-as-text + badge labels — a touch darker than solid --primary so
        COLORED TEXT clears WCAG AA on light surfaces (a tinted fill can't). */
-    --brand: 211 100% 43%;            /* links, active nav text */
+    --brand: 211 100% 40%;            /* links, active nav text (6.0:1 on white) */
     --badge-primary-fg: 211 100% 42%;
     --badge-success-fg: 145 63% 30%;
     --badge-warning-fg: 35 100% 30%;
@@ -89,7 +89,7 @@
     --popover: 240 7% 9%;
     --popover-foreground: 240 9% 96%;
 
-    --primary: 211 100% 47%;          /* deep enough for white CTA text on dark (AA 4.5:1) */
+    --primary: 211 100% 45%;          /* deep enough for white CTA text on dark (AA 4.8:1) */
     --primary-foreground: 0 0% 100%;
 
     /* Bright accent-as-text + badge labels for the dark canvas (AA on --card). */
