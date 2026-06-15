@@ -96,7 +96,7 @@ export function ProjectHubEditor({ project }: { project: EditableProject }) {
             id="p-owui"
             value={owuiUrl}
             onChange={(e) => setOwuiUrl(e.target.value)}
-            placeholder="http://localhost:3001/workspace/knowledge/…"
+            placeholder="http://localhost:4142/workspace/knowledge/…"
           />
           <p className="text-xs text-muted-foreground">
             Paste the link to this project&apos;s Open WebUI knowledge base for one-click RAG.

@@ -18,7 +18,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 
-$Base = if ($env:SK_BASE) { $env:SK_BASE } else { "http://localhost:3000" }
+$Base = if ($env:SK_BASE) { $env:SK_BASE } else { "http://localhost:4141" }
 
 if (-not $Text) {
   try { $Text = Get-Clipboard -Raw } catch { $Text = "" }

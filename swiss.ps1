@@ -29,9 +29,11 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 
-$EngineUrl  = "http://localhost:11434"
-$CockpitUrl = "http://localhost:3000"
-$OwuiUrl    = "http://localhost:3001"
+$EngineUrl   = "http://localhost:11434"
+$CockpitPort = if ($env:COCKPIT_PORT) { $env:COCKPIT_PORT } else { "4141" }
+$OwuiPort    = if ($env:OWUI_PORT)    { $env:OWUI_PORT }    else { "4142" }
+$CockpitUrl  = "http://localhost:$CockpitPort"
+$OwuiUrl     = "http://localhost:$OwuiPort"
 # Guarded: LOCALAPPDATA always exists on Windows, but null-safe init lets the
 # script at least parse/run for help on other shells (and in CI).
 $OllamaAppExe = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama app.exe" } else { $null }
@@ -205,12 +207,12 @@ function Invoke-Doctor {
   } elseif ($null -ne $h) {
     Write-Bad "Cockpit is up but unhealthy (reason: $($h.reason))" "fix the engine findings above, then refresh"
   } else {
-    Write-Note "Cockpit not responding on :3000" ".\swiss.ps1 up   (Docker)  -  or local dev: cd cockpit; npm run dev"
+    Write-Note "Cockpit not responding at $CockpitUrl" ".\swiss.ps1 up   (Docker)  -  or local dev: cd cockpit; npm run dev"
   }
   if (Test-Owui) {
     Write-Ok "Open WebUI responding at $OwuiUrl"
   } else {
-    Write-Note "Open WebUI not responding on :3001" ".\swiss.ps1 up   (first boot downloads its embedder - give it a few minutes)"
+    Write-Note "Open WebUI not responding at $OwuiUrl" ".\swiss.ps1 up   (first boot downloads its embedder - give it a few minutes)"
   }
 
   Write-Host ""
