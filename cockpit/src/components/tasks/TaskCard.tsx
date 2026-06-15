@@ -12,7 +12,7 @@ import type { Task } from "./TasksView";
 
 const PRIORITY_VARIANT = {
   low: "secondary",
-  medium: "outline",
+  medium: "warning",
   high: "destructive",
 } as const;
 

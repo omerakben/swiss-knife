@@ -23,7 +23,7 @@ export function AiOutput({
   const streaming = status === "streaming";
 
   return (
-    <Card className="mt-6 min-w-0">
+    <Card className="mt-6 min-w-0 shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 py-3">
         <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           {label}
