@@ -6,6 +6,11 @@ FROM base AS deps
 # .npmrc carries legacy-peer-deps (the ajv@8 pin needs it); npm ci installs the
 # exact committed lockfile identically on every teammate's machine.
 COPY package.json package-lock.json .npmrc ./
+# The `postinstall` hook runs `prisma generate` during `npm ci`, which needs the
+# schema present — so copy it first. Without this a cold-cache build fails at
+# `npm ci` ("Could not find Prisma Schema"); we don't use --ignore-scripts
+# because better-sqlite3's install script must still fetch its native binary.
+COPY prisma ./prisma
 RUN npm ci
 
 FROM base AS build
@@ -51,6 +56,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.mjs ./next.config.mjs
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
