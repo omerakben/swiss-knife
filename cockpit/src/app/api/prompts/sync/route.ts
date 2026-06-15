@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const OWUI_BASE = process.env.OWUI_BASE_URL || "http://localhost:3001";
+const OWUI_BASE = process.env.OWUI_BASE_URL || "http://localhost:4142";
 
 /**
  * One-way push of saved prompts into Open WebUI's prompt library. Needs an

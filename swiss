@@ -15,8 +15,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 ENGINE_URL="http://localhost:11434"
-COCKPIT_URL="http://localhost:3000"
-OWUI_URL="http://localhost:3001"
+COCKPIT_URL="http://localhost:${COCKPIT_PORT:-4141}"
+OWUI_URL="http://localhost:${OWUI_PORT:-4142}"
 OLLAMA_APP="/Applications/Ollama.app"
 
 FAILS=0
@@ -110,12 +110,12 @@ cmd_doctor() {
   elif [ -n "$h" ]; then
     bad "Cockpit is up but unhealthy: $h" "fix the engine findings above, then refresh"
   else
-    note "Cockpit not responding on :3000" "./swiss up  (Docker)  ·  or local dev: cd cockpit && npm run dev"
+    note "Cockpit not responding at $COCKPIT_URL" "./swiss up  (Docker)  ·  or local dev: cd cockpit && npm run dev"
   fi
   if owui_responds; then
     ok "Open WebUI responding at $OWUI_URL"
   else
-    note "Open WebUI not responding on :3001" "./swiss up  (first boot downloads its embedder — give it a few minutes)"
+    note "Open WebUI not responding at $OWUI_URL" "./swiss up  (first boot downloads its embedder — give it a few minutes)"
   fi
 
   echo

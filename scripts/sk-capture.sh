@@ -10,7 +10,7 @@
 #   sk-capture.sh "idea text" idea # task | fact | prompt | idea
 set -euo pipefail
 
-BASE="${SK_BASE:-http://localhost:3000}"
+BASE="${SK_BASE:-http://localhost:4141}"
 PY="$(command -v python3 || echo /usr/bin/python3)"
 
 TEXT="${1:-}"

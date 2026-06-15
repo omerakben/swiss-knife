@@ -137,7 +137,7 @@ export function SidebarNav() {
       ))}
 
       <a
-        href="http://localhost:3001"
+        href={process.env.NEXT_PUBLIC_OWUI_URL ?? "http://localhost:4142"}
         target="_blank"
         rel="noreferrer"
         className="group mt-1 flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"

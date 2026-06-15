@@ -3,8 +3,13 @@
 A locally-run, private "daily cockpit" powered by **local Gemma 4** via Ollama
 (light `gemma4:e4b` default + a 12B quality tier). Two surfaces, one engine:
 
-- **Cockpit** (`http://localhost:3000`) — your custom Next.js app (Prompt Optimizer today; later: email writer, todo, Kanban, knowledge base).
-- **Open WebUI** (`http://localhost:3001`) — off-the-shelf chat + document RAG + prompt library + multimodal.
+- **Cockpit** (`http://localhost:4141`) — your custom Next.js app (Prompt Optimizer today; later: email writer, todo, Kanban, knowledge base).
+- **Open WebUI** (`http://localhost:4142`) — off-the-shelf chat + document RAG + prompt library + multimodal.
+
+> Dedicated ports (not the universal `3000`/`3001`) so the always-on stack never
+> collides with your other dev servers. Override per machine with `COCKPIT_PORT`
+> / `OWUI_PORT` (e.g. `COCKPIT_PORT=3000 ./swiss up`). A local `npm run dev` for
+> hacking on the cockpit still uses Next's default `3000`.
 
 Everything stays on your machine. No third-party logging.
 
@@ -86,7 +91,7 @@ Windows (PowerShell or cmd, from the repo folder):
 
 `up` starts native Ollama if needed, pulls the model tiers plus the embedder,
 then builds & launches the cockpit + Open WebUI containers.
-Then open **http://localhost:3000**.
+Then open **http://localhost:4141**.
 
 Also there for you (same on Windows with `.\swiss`):
 

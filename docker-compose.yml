@@ -9,7 +9,10 @@ services:
     image: ghcr.io/open-webui/open-webui:main
     container_name: swissknife-openwebui
     ports:
-      - "3001:8080"
+      # Dedicated host port (override with OWUI_PORT). Swiss Knife runs all the
+      # time, so it stays off the universal dev ports 3000/3001. The container
+      # still listens on 8080 internally.
+      - "${OWUI_PORT:-4142}:8080"
     environment:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - WEBUI_AUTH=False          # single-user local; set True before sharing externally
@@ -24,9 +27,14 @@ services:
     build: ./cockpit
     container_name: swissknife-cockpit
     ports:
-      - "3000:3000"
+      # Dedicated host port (override with COCKPIT_PORT). Container still
+      # listens on 3000 internally — only the published host port moves.
+      - "${COCKPIT_PORT:-4141}:3000"
     environment:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+      # Browser-facing Open WebUI URL (sidebar link + project deep-links).
+      # Defaults to the dedicated host port; override if you remap OWUI_PORT.
+      - NEXT_PUBLIC_OWUI_URL=${NEXT_PUBLIC_OWUI_URL:-http://localhost:${OWUI_PORT:-4142}}
       # Full Docker stack runs Open WebUI too, so default to the LIGHT model to
       # avoid a 12B + containers nearly filling RAM. Override per .env:
       #   OLLAMA_MODEL=gemma4:12b-mlx  (quality — Apple Silicon ONLY, MLX)

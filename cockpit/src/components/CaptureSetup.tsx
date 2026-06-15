@@ -31,10 +31,10 @@ export function CaptureSetup() {
   }
 
   // The test command must target THIS server — on the Docker stack that's
-  // :3000, but a local `npm run dev` port differs and a hardcoded URL fails.
-  // (The Shortcut recipes below stay on :3000: they target the long-running
+  // :4141, but a local `npm run dev` port differs and a hardcoded URL fails.
+  // (The Shortcut recipes below stay on :4141: they target the long-running
   // stack, not a dev server.) Effect-set so SSR and first paint agree.
-  const [origin, setOrigin] = useState("http://localhost:3000");
+  const [origin, setOrigin] = useState("http://localhost:4141");
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time external read (window.location)
     setOrigin(window.location.origin);
@@ -110,7 +110,7 @@ export function CaptureSetup() {
         <ol className="ml-4 mt-2 list-decimal space-y-1">
           <li>Open Shortcuts and create a new shortcut (or Quick Action that receives text).</li>
           <li>
-            Add a “Get Contents of URL” action. URL: http://localhost:3000/api/capture. Method:
+            Add a “Get Contents of URL” action. URL: http://localhost:4141/api/capture. Method:
             POST.
           </li>
           <li>Add a header: x-capture-token = your token above.</li>
@@ -132,7 +132,7 @@ export function CaptureSetup() {
             followed by the encoded result.
           </li>
           <li>
-            Add “Get Contents of URL” → POST to http://localhost:3000/api/capture, header
+            Add “Get Contents of URL” → POST to http://localhost:4141/api/capture, header
             x-capture-token = your token, Request Body JSON with{" "}
             <code className="rounded bg-muted px-1">image</code> set to that Text.
           </li>
@@ -166,7 +166,7 @@ export function CaptureSetup() {
           <li>
             One-off test without the script:{" "}
             <code className="rounded bg-muted px-1">
-              curl.exe -X POST http://localhost:3000/api/capture -H &quot;x-capture-token:
+              curl.exe -X POST http://localhost:4141/api/capture -H &quot;x-capture-token:
               &lt;token&gt;&quot; -H &quot;Content-Type: application/json&quot; -d
               &quot;{`{\\"text\\":\\"hello from windows\\"}`}&quot;
             </code>{" "}
