@@ -1,50 +1,114 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
+/* ───────────────────────────────────────────────────────────────────────────
+   Swiss Knife design system — one file controls the whole look.
+
+   Apple design principles: Clarity (clean type, clear hierarchy, whitespace),
+   Deference (content first, chrome recedes, translucent materials), Depth
+   (soft layered shadows, smooth motion). Edit a value here and it cascades to
+   every shadcn primitive and every tool page.
+
+   Tokens are bare HSL triplets ("H S% L%") so they compose two ways:
+     hsl(var(--token))          → solid color (wired in tailwind.config.ts)
+     hsl(var(--token) / 0.5)    → same hue at 50% alpha (materials, rings)
+   ─────────────────────────────────────────────────────────────────────────── */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    color-scheme: light;
+
+    /* Surfaces — a faint cool-gray canvas under white cards (Apple "grouped"
+       depth: the lightness gap + a soft shadow makes content float). */
+    --background: 240 14% 97%;        /* app canvas      #F4F4F7 */
+    --foreground: 240 6% 11%;         /* primary text    #1A1A1E */
+    --card: 0 0% 100%;                /* cards / panels  #FFFFFF */
+    --card-foreground: 240 6% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.5rem;
+    --popover-foreground: 240 6% 11%;
+
+    /* Brand — a single restrained accent (Apple blue). Used for the primary
+       action per screen, links, active nav, focus rings. */
+    --primary: 211 100% 50%;          /* Apple blue      #007AFF */
+    --primary-foreground: 0 0% 100%;
+
+    /* Neutrals — chips, hover surfaces, secondary text. */
+    --secondary: 240 11% 95%;
+    --secondary-foreground: 240 6% 14%;
+    --muted: 240 12% 95.5%;
+    --muted-foreground: 240 4% 44%;   /* secondary label #6E6E78 */
+    --accent: 240 12% 94%;            /* hover surface */
+    --accent-foreground: 240 6% 12%;
+
+    /* Status. */
+    --destructive: 4 86% 57%;         /* Apple red       #FF453A */
+    --destructive-foreground: 0 0% 100%;
+    --success: 145 63% 42%;           /* Apple green     #34C759 */
+    --success-foreground: 0 0% 100%;
+    --warning: 35 100% 50%;           /* Apple orange    #FF9500 */
+    --warning-foreground: 38 92% 12%;
+
+    /* Lines & rings. */
+    --border: 240 13% 90%;            /* hairline separators */
+    --input: 240 11% 87%;             /* input borders (a touch darker) */
+    --ring: 211 100% 50%;             /* focus ring = brand blue */
+
+    /* Geometry — softer, friendlier Apple radii. */
+    --radius: 0.75rem;                /* 12px → buttons/inputs; cards rounded-2xl */
+
+    /* Depth — soft, layered ambient+key shadows. */
+    --shadow-xs: 0 1px 1.5px 0 hsl(240 12% 18% / 0.04);
+    --shadow-sm: 0 1px 2px 0 hsl(240 12% 18% / 0.05), 0 1px 1px -0.5px hsl(240 12% 18% / 0.04);
+    --shadow: 0 1px 3px 0 hsl(240 12% 18% / 0.07), 0 1px 2px -1px hsl(240 12% 18% / 0.05);
+    --shadow-md: 0 4px 14px -3px hsl(240 12% 18% / 0.10), 0 2px 5px -2px hsl(240 12% 18% / 0.06);
+    --shadow-lg: 0 14px 34px -10px hsl(240 14% 16% / 0.16), 0 6px 12px -6px hsl(240 14% 16% / 0.08);
+    --shadow-xl: 0 24px 56px -16px hsl(240 16% 14% / 0.22), 0 10px 20px -10px hsl(240 16% 14% / 0.10);
+
+    /* Motion — Apple's gentle ease-out + a soft spring for overshoot. */
+    --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    color-scheme: dark;
+
+    /* Near-black canvas with genuinely elevated card surfaces (not pure black,
+       not flat — Apple dark layers light onto a deep base). */
+    --background: 240 8% 6%;          /* canvas          #0E0E11 */
+    --foreground: 240 9% 96%;         /* primary text    #F2F2F5 */
+    --card: 240 6% 11%;               /* elevated card   #1A1A1E */
+    --card-foreground: 240 9% 96%;
+    --popover: 240 7% 9%;
+    --popover-foreground: 240 9% 96%;
+
+    --primary: 211 100% 60%;          /* brighter blue reads better on dark */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 16%;
+    --secondary-foreground: 240 9% 96%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 64%;
+    --accent: 240 5% 19%;
+    --accent-foreground: 240 9% 96%;
+
+    --destructive: 4 86% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 145 58% 47%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 100% 56%;
+    --warning-foreground: 38 92% 10%;
+
+    --border: 240 5% 19%;             /* separators sit just above the card */
+    --input: 240 5% 23%;
+    --ring: 211 100% 60%;
+
+    /* Dark shadows lean on opacity over black to keep depth without halos. */
+    --shadow-xs: 0 1px 1.5px 0 hsl(0 0% 0% / 0.40);
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.50), 0 1px 1px -0.5px hsl(0 0% 0% / 0.40);
+    --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.55), 0 1px 2px -1px hsl(0 0% 0% / 0.45);
+    --shadow-md: 0 4px 16px -3px hsl(0 0% 0% / 0.60), 0 2px 6px -2px hsl(0 0% 0% / 0.48);
+    --shadow-lg: 0 16px 40px -12px hsl(0 0% 0% / 0.68), 0 6px 14px -6px hsl(0 0% 0% / 0.50);
+    --shadow-xl: 0 28px 64px -16px hsl(0 0% 0% / 0.78), 0 12px 24px -12px hsl(0 0% 0% / 0.60);
   }
 }
 
@@ -52,7 +116,78 @@
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      "Segoe UI", "Inter", system-ui, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv01", "ss01";
+  }
+
+  /* Display headings get the tighter optical tracking of SF Pro Display. */
+  h1, h2, h3 {
+    letter-spacing: -0.014em;
+  }
+
+  /* Selection carries the brand. */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.20);
+  }
+
+  /* Quiet, thin scrollbars (Apple overlay style). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--foreground) / 0.18) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--foreground) / 0.16);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--foreground) / 0.28);
+  }
+}
+
+@layer components {
+  /* Translucent "material" — the recede-into-the-background chrome Apple uses
+     for sidebars, command bars, sticky headers and popovers. Falls back to a
+     solid surface where backdrop-filter is unsupported. */
+  .glass {
+    background-color: hsl(var(--card) / 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .glass-strong {
+    background-color: hsl(var(--popover) / 0.85);
+    backdrop-filter: saturate(180%) blur(28px);
+    -webkit-backdrop-filter: saturate(180%) blur(28px);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass { background-color: hsl(var(--card)); }
+    .glass-strong { background-color: hsl(var(--popover)); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
