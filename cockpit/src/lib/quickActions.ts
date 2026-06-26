@@ -16,6 +16,9 @@ export type QuickInput = {
   optional?: boolean;
 };
 
+// A one-tap example: a short label plus inputs that fill the form and run for real.
+export type QuickActionExample = { label: string; inputs: Record<string, string> };
+
 export type QuickAction = {
   id: string;
   title: string;
@@ -23,6 +26,7 @@ export type QuickAction = {
   category: QuickActionCategory;
   icon: string; // lucide icon name, resolved in the UI
   inputs: QuickInput[];
+  examples?: QuickActionExample[];
   system: string;
   buildPrompt: (inputs: Record<string, string>) => string;
 };
@@ -260,6 +264,147 @@ export const QUICK_ACTIONS: QuickAction[] = [
       `Make a practical packing list for: ${v(i, "trip")}.${v(i, "notes") ? ` Notes: ${v(i, "notes")}.` : ""} Group it into sections and keep it realistic.`,
   },
 ];
+
+// Examples live in one block (rather than inline on each action) so they're easy
+// to scan and edit. Each fills its action's inputs and is validated by the tests.
+// They're attached to the actions at module load.
+const EXAMPLES: Record<string, QuickActionExample[]> = {
+  "reply-to-message": [
+    {
+      label: "School bake sale",
+      inputs: {
+        message:
+          "Hi! We'd love to have you join the school bake sale committee. Our first meeting is this Wednesday at 6pm in the library. Can you make it?",
+        intent: "happy to help but I can't do Wednesdays, ask if there's another day",
+      },
+    },
+  ],
+  "polite-message": [
+    {
+      label: "Ask the landlord",
+      inputs: { to: "my landlord", about: "the kitchen tap has been dripping for a week and I'd like someone to look at it" },
+    },
+  ],
+  "thank-you-note": [{ label: "A birthday gift", inputs: { who: "Aunt Mary", for: "the lovely birthday scarf" } }],
+  "notes-to-list": [
+    {
+      label: "A meeting brain-dump",
+      inputs: {
+        notes:
+          "call the printer about the proofs, Sam owes me the quote, book the venue for the 12th, follow up with Dana, order more business cards",
+      },
+    },
+  ],
+  summarize: [
+    {
+      label: "A long email",
+      inputs: {
+        text:
+          "Hi team, following our review we've decided to push the launch to next month to give QA more time. Marketing should hold the announcement. Finance flagged that the vendor invoice is overdue. Please confirm your availability for a sync on Thursday and send updated timelines by end of day Friday. Thanks.",
+      },
+    },
+  ],
+  "key-points": [
+    {
+      label: "A wordy update",
+      inputs: {
+        text:
+          "So basically the project is going okay but we hit a snag with the API, the client wants more features which will push the timeline, the team is a bit stretched, and we need to decide on hosting before next week or we'll be blocked.",
+      },
+    },
+  ],
+  "plan-week": [
+    {
+      label: "A busy week",
+      inputs: {
+        plate:
+          "finish the proposal, dentist on Tuesday, kids' recital Thursday, taxes due Friday, hit the gym, call mom, grocery shop, fix the leaky tap",
+      },
+    },
+  ],
+  "meal-plan": [
+    { label: "Quick vegetarian", inputs: { preferences: "vegetarian, quick weeknight dinners, no mushrooms", days: "5" } },
+  ],
+  "study-plan": [{ label: "A cert exam", inputs: { topic: "the AWS Solutions Architect exam", deadline: "in 3 weeks" } }],
+  "make-friendlier": [
+    { label: "A blunt note", inputs: { text: "I need the report by tomorrow. Don't be late this time." } },
+  ],
+  "make-professional": [
+    {
+      label: "A casual message",
+      inputs: { text: "hey so i can't make the call thing tomorrow, something came up, can we do it another time maybe?" },
+    },
+  ],
+  "fix-writing": [
+    {
+      label: "Typos & grammar",
+      inputs: {
+        text: "Their going to send the documents tommorow, i seen the email but its not arrived yet. Please could you check you're inbox.",
+      },
+    },
+  ],
+  "make-shorter": [
+    {
+      label: "Trim a paragraph",
+      inputs: {
+        text:
+          "I wanted to reach out and let you know that, after giving it quite a lot of thought and consideration over the past few days, I've come to the conclusion that it would probably be best for everyone involved if we went ahead and rescheduled the meeting to a later date.",
+      },
+    },
+  ],
+  "explain-simply": [
+    {
+      label: "Legal jargon",
+      inputs: {
+        text:
+          "The lessee shall indemnify and hold harmless the lessor from any and all liabilities, claims, or damages arising from the lessee's use of the premises, except those resulting from the lessor's gross negligence.",
+      },
+    },
+  ],
+  "find-action-items": [
+    {
+      label: "An email thread",
+      inputs: {
+        text:
+          "Thanks all. Priya, can you send the updated deck by Wednesday? I'll book the room. We still need someone to follow up with the vendor, Tom can you take that? And let's all review the budget before Friday's call.",
+      },
+    },
+  ],
+  "social-post": [
+    {
+      label: "A product launch",
+      inputs: {
+        topic: "we just launched a local-first AI app that keeps your data on your own computer",
+        vibe: "excited but down-to-earth",
+      },
+    },
+  ],
+  apology: [
+    {
+      label: "A late delivery",
+      inputs: { to: "a customer", what: "their order shipped three days late because of a warehouse mix-up" },
+    },
+  ],
+  "packing-list": [
+    {
+      label: "A work trip",
+      inputs: { trip: "4 days in Chicago for a conference", notes: "it'll be cold, bringing a laptop, one nice dinner" },
+    },
+  ],
+};
+
+for (const a of QUICK_ACTIONS) {
+  a.examples = EXAMPLES[a.id] ?? [];
+}
+
+/** The single curated example shown as the featured "see it work" demo on the home. */
+export const FEATURED_DEMO = { actionId: "reply-to-message", exampleIndex: 0 };
+
+export function getFeaturedDemo(): { action: QuickAction; example: QuickActionExample } | null {
+  const action = getQuickAction(FEATURED_DEMO.actionId);
+  const example = action?.examples?.[FEATURED_DEMO.exampleIndex];
+  return action && example ? { action, example } : null;
+}
 
 export function getQuickAction(id: string): QuickAction | undefined {
   return QUICK_ACTIONS.find((a) => a.id === id);
