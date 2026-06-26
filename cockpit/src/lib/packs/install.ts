@@ -23,6 +23,7 @@ export type TemplateData = {
   variables: string;
   category: string | null;
   builtin: boolean;
+  archived: boolean;
   projectId: string | null;
 };
 
@@ -79,6 +80,7 @@ export function buildInstallPlan(pack: PluginManifest, projectId: string | null)
       variables: t.variables ?? "[]",
       category: t.category ?? null,
       builtin: false,
+      archived: false,
       projectId,
     };
     return { slug: t.slug, create: data, update: data };

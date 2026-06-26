@@ -34,6 +34,12 @@ describe("buildInstallPlan", () => {
     expect("completedAt" in task.update).toBe(false);
   });
 
+  it("un-archives a pack template on reinstall (archived:false on create and update)", () => {
+    const plan = buildInstallPlan(smallBusinessOpsPack, null);
+    expect(plan.templates[0].create.archived).toBe(false);
+    expect(plan.templates[0].update.archived).toBe(false);
+  });
+
   it("applies the target projectId to create and update rows (null = global)", () => {
     const g = buildInstallPlan(smallBusinessOpsPack, null);
     for (const t of g.templates) expect(t.create.projectId).toBeNull();
