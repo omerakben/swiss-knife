@@ -54,10 +54,14 @@ export function DashboardToolGrid() {
     } catch {
       favs = new Set<string>();
     }
+    // The professional QA/dev tools never card on the dashboard — a non-technical
+    // user shouldn't be led with them. They live behind the sidebar's
+    // "Professional" disclosure and ⌘K. (Hidden even if one was favorited.)
+    const visible = FEATURED_TOOLS.filter((t) => !t.professional);
     // Favorites float to their own section; the rest stay grouped by nav section
     // (so a starred tool isn't shown twice), mirroring the sidebar.
-    const favItems = FEATURED_TOOLS.filter((t) => favs.has(t.href));
-    const rest = FEATURED_TOOLS.filter((t) => !favs.has(t.href));
+    const favItems = visible.filter((t) => favs.has(t.href));
+    const rest = visible.filter((t) => !favs.has(t.href));
     const groups = NAV_GROUPS.map((g) => ({ ...g, items: rest.filter((t) => t.group === g.id) })).filter(
       (g) => g.items.length > 0,
     );
