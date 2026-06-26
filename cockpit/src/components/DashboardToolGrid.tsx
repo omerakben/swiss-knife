@@ -9,10 +9,12 @@ import { usePersisted } from "@/hooks/usePersisted";
 
 /**
  * The dashboard tool grid, grouped by the persona-first nav sections (Favorites
- * first, then Today / Capture / Write / Projects / Packs / Settings). The flat
- * grid used to dump every tool at equal weight, so a non-technical user saw QA
- * Pipeline next to Email Writer; sectioning keeps the everyday surfaces on top
- * and the professional tools in a clearly-labelled section lower down.
+ * first, then the everyday tool groups: Today / Capture / Write / Projects /
+ * Packs). The flat grid used to dump every tool at equal weight, so a
+ * non-technical user saw QA Pipeline next to Email Writer. Now the professional
+ * QA/dev tools are excluded from the dashboard entirely — they live behind the
+ * sidebar's "Professional" disclosure and ⌘K — and the meta Settings group is
+ * sidebar-only, keeping the home focused on everyday work.
  */
 function ToolCard({ t }: { t: NavItem }) {
   const Icon = t.icon;

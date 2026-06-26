@@ -115,7 +115,8 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
     let ids: string[] = [];
     try {
       const a = JSON.parse(recentsJson);
-      ids = Array.isArray(a) ? a : [];
+      // Coerce to a clean string[] so hand-corrupted storage can't consume cap slots.
+      ids = Array.isArray(a) ? a.filter((x): x is string => typeof x === "string") : [];
     } catch {
       ids = [];
     }

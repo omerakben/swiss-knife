@@ -52,6 +52,9 @@ export function SidebarNav() {
   // Each group splits into everyday tools (shown inline) and professional QA/dev
   // tools (tucked behind a collapsible "Professional" disclosure, collapsed by
   // default). A favorited pro tool still floats up to Favorites above.
+  // `proOpen` is deliberately ONE global switch ("show professional tools"), not
+  // per-group — today only the Packs group carries pro items; if another group
+  // ever does, the single toggle reveals both, which is the intended semantics.
   const groups = NAV_GROUPS.map((g) => {
     const items = applySort(rest.filter((i) => i.group === g.id));
     return { ...g, regular: items.filter((i) => !i.professional), pro: items.filter((i) => i.professional) };
