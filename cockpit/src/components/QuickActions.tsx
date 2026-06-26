@@ -131,6 +131,14 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
     await run("", { actionId: active.id, inputs: values });
   }
 
+  // Tap an example: fill the visible form AND run, passing the inputs straight to
+  // run so we don't depend on the just-set (async) state.
+  async function runWith(inputs: Record<string, string>) {
+    if (!active) return;
+    setValues(inputs);
+    await run("", { actionId: active.id, inputs });
+  }
+
   return (
     <div className="max-w-3xl">
       <button
@@ -150,6 +158,23 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
           <p className="mt-0.5 text-sm text-muted-foreground">{active.blurb}</p>
         </div>
       </div>
+
+      {active.examples && active.examples.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Try an example:</span>
+          {active.examples.map((ex, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => runWith(ex.inputs)}
+              disabled={isRunning}
+              className="rounded-full border border-border px-2.5 py-1 text-xs transition-colors hover:border-primary/40 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-60"
+            >
+              {ex.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mt-6 space-y-4">
         {active.inputs.map((inp) => (

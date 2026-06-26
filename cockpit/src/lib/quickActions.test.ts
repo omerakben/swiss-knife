@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { QUICK_ACTIONS, getQuickAction, missingInputs, buildMessages } from "./quickActions";
+import { QUICK_ACTIONS, getQuickAction, missingInputs, buildMessages, getFeaturedDemo } from "./quickActions";
 
 describe("quickActions", () => {
   it("every action has a unique id, at least one input, and a system prompt", () => {
@@ -49,5 +49,27 @@ describe("quickActions", () => {
       const filled = Object.fromEntries(a.inputs.map((i) => [i.name, "sample value"]));
       expect(a.buildPrompt(filled).trim().length, `${a.id} prompt empty`).toBeGreaterThan(0);
     }
+  });
+
+  it("every action has at least one example", () => {
+    for (const a of QUICK_ACTIONS) {
+      expect(a.examples?.length ?? 0, `${a.id} has no example`).toBeGreaterThan(0);
+    }
+  });
+
+  it("every example has a label and fills its action's required inputs", () => {
+    for (const a of QUICK_ACTIONS) {
+      for (const ex of a.examples ?? []) {
+        expect(ex.label.trim().length, `${a.id} example label empty`).toBeGreaterThan(0);
+        expect(missingInputs(a, ex.inputs), `${a.id} example "${ex.label}" is missing inputs`).toEqual([]);
+      }
+    }
+  });
+
+  it("the featured demo resolves to a real action and a valid example", () => {
+    const f = getFeaturedDemo();
+    expect(f).not.toBeNull();
+    expect(f!.action.id).toBeTruthy();
+    expect(missingInputs(f!.action, f!.example.inputs)).toEqual([]);
   });
 });
