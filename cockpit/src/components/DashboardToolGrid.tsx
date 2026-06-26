@@ -62,9 +62,12 @@ export function DashboardToolGrid() {
     // (so a starred tool isn't shown twice), mirroring the sidebar.
     const favItems = visible.filter((t) => favs.has(t.href));
     const rest = visible.filter((t) => !favs.has(t.href));
-    const groups = NAV_GROUPS.map((g) => ({ ...g, items: rest.filter((t) => t.group === g.id) })).filter(
-      (g) => g.items.length > 0,
-    );
+    // The home grid is the everyday-tools surface; the meta "Settings" group
+    // (Activity, Settings) lives in the sidebar, not as dashboard cards. Keeps
+    // the home focused on what you actually do.
+    const groups = NAV_GROUPS.filter((g) => g.id !== "settings")
+      .map((g) => ({ ...g, items: rest.filter((t) => t.group === g.id) }))
+      .filter((g) => g.items.length > 0);
     return { favItems, groups };
   }, [favJson]);
 

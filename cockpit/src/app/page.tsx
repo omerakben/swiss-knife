@@ -44,10 +44,14 @@ export default async function Dashboard() {
     firstRun = true;
   }
 
+  const subtitle = firstRun
+    ? "Welcome — this is your private AI workspace. Everything runs on this machine, nothing leaves it."
+    : "Pick a quick action below, or pick up where you left off. Everything stays on this machine.";
+
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="text-3xl font-semibold tracking-tight">{greeting(userName)}</h1>
-      <p className="mt-1.5 text-[15px] text-muted-foreground">Your local AI cockpit. Everything runs on this machine.</p>
+      <p className="mt-1.5 text-[15px] text-muted-foreground">{subtitle}</p>
 
       <div className="mt-6">
         <HealthBanner />
