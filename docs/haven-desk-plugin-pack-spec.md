@@ -96,6 +96,8 @@ These block installation:
 - `maturity` is `L0` and `mcpTools` is non-empty.
 - `permissions.mcpProposeWrites` is `true` and `maturity` is `L0` or `L1`.
 - A `knowledgeSources` entry has neither `path` nor `owuiUrl`.
+- `industry` matches a high-stakes category (`legal`, `medical`, `finance`, `tax`, `immigration`) and `maturity` is above `L1` (high-stakes packs must stay declarative and reviewed).
+- `industry` matches a high-stakes category and `setupChecks` contains no guardrail note.
 
 ### Warnings
 
@@ -103,8 +105,6 @@ These are advisory:
 
 - `maturity` is `L2` or `L3` and `mcpTools` is empty (declared maturity is not backed by any tool).
 - A `routes` entry does not start with `"/"`.
-- `industry` matches a high-stakes category (`legal`, `medical`, `finance`, `tax`, `immigration`) and `maturity` is above `L1`.
-- `industry` matches a high-stakes category and `setupChecks` contains no guardrail note.
 
 ### Result shape
 
@@ -152,10 +152,10 @@ Pack slugs within `sourceKey` values should be namespaced to avoid cross-pack co
 
 The default-deny model means a pack author must explicitly opt in to every elevated capability. No permission is inferred from the maturity level alone.
 
-For packs in high-stakes industries (legal, medical, finance, tax, immigration), two rules apply at all times regardless of maturity:
+For packs in high-stakes industries (legal, medical, finance, tax, immigration), two rules are hard gates (validator ERRORs, so the pack fails to install) regardless of maturity:
 
-1. The pack must stay at L1 or below. A validator WARNING fires if `maturity` is L2 or L3 and `industry` is high-stakes. This is advisory in v1 but will become an ERROR when marketplace publication is added.
-2. The pack's `setupChecks` must include at least one guardrail note. The note is shown to the user at install time. Typical text: `"This pack produces admin checklists and draft letters. It is not legal advice. Review everything with a qualified professional before acting."` The validator issues a WARNING if this note is absent.
+1. The pack must stay at L1 or below. A validator ERROR fires if `maturity` is L2 or L3 and `industry` is high-stakes. These packs carry liability, so they stay declarative and reviewed.
+2. The pack's `setupChecks` must include at least one guardrail note. The note is shown to the user at install time. Typical text: `"This pack produces admin checklists and draft letters. It is not legal advice. Review everything with a qualified professional before acting."` The validator ERRORs if this note is absent.
 
 These two rules are not bureaucratic friction. They are the product promise that makes Haven Desk trustworthy in those categories: the pack organizes, extracts, and drafts, but the user is the decision-maker, and the pack says so up front.
 

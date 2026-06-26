@@ -273,12 +273,15 @@ export function validatePackManifest(input: unknown): PackValidationResult {
   // High-stakes guardrails.
   const industry = typeof m.industry === "string" ? m.industry.toLowerCase() : "";
   const isHighStakes = HIGH_STAKES_INDUSTRY_KEYWORDS.some((k) => industry.includes(k));
+  // High-stakes is a hard gate, not advice: legal/medical/finance/tax/immigration
+  // packs carry liability, so they must stay declarative/reviewed (L0/L1) and must
+  // state a guardrail in setupChecks, or they fail to install.
   if (isHighStakes) {
     if (maturity && levelRank(maturity) > levelRank("L1"))
-      warn("maturity", `High-stakes industry "${m.industry}" should stay at L0/L1 (declarative, reviewed), not ${maturity}.`);
+      err("maturity", `High-stakes industry "${m.industry}" must stay at L0/L1 (declarative, reviewed), not ${maturity}.`);
     const setupChecks = asArray(m.setupChecks).filter(isNonEmptyString).join(" ").toLowerCase();
     if (!GUARDRAIL_HINTS.some((h) => setupChecks.includes(h)))
-      warn("setupChecks", `High-stakes industry "${m.industry}" needs a guardrail note in setupChecks (read-only, reviewed, not advice).`);
+      err("setupChecks", `High-stakes industry "${m.industry}" must declare a guardrail note in setupChecks (read-only, reviewed, not advice).`);
   }
 
   const errors = issues.filter((i) => i.severity === "ERROR").length;

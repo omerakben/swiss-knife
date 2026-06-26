@@ -271,28 +271,34 @@ describe("validatePackManifest — maturity coherence", () => {
   });
 });
 
-describe("validatePackManifest — high-stakes guardrails", () => {
-  it("warns when a high-stakes industry runs above L1", () => {
+describe("validatePackManifest — high-stakes guardrails (hard gate)", () => {
+  it("blocks a high-stakes industry running above L1", () => {
     const m = validManifest();
     m.industry = "legal admin";
     m.maturity = "L2";
     m.mcpTools = ["read.docs"];
     m.setupChecks = ["Stays read-only and human-approved; not legal advice."];
-    expect(warnField(validatePackManifest(m), "maturity")).toBe(true);
+    const r = validatePackManifest(m);
+    expect(errorField(r, "maturity")).toBe(true);
+    expect(r.ok).toBe(false);
   });
 
-  it("warns when a high-stakes industry has no guardrail note", () => {
+  it("blocks a high-stakes industry with no guardrail note in setupChecks", () => {
     const m = validManifest();
     m.industry = "tax preparation";
     m.setupChecks = [];
-    expect(warnField(validatePackManifest(m), "setupChecks")).toBe(true);
+    const r = validatePackManifest(m);
+    expect(errorField(r, "setupChecks")).toBe(true);
+    expect(r.ok).toBe(false);
   });
 
-  it("does not warn about guardrails when setupChecks states one", () => {
+  it("passes a high-stakes industry that declares a guardrail note at L0/L1", () => {
     const m = validManifest();
     m.industry = "tax preparation";
     m.setupChecks = ["Read-only prep and checklists only; not tax advice; user reviews every draft."];
-    expect(warnField(validatePackManifest(m), "setupChecks")).toBe(false);
+    const r = validatePackManifest(m);
+    expect(errorField(r, "setupChecks")).toBe(false);
+    expect(r.ok).toBe(true);
   });
 });
 
