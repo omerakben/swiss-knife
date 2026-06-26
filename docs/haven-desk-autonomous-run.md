@@ -42,3 +42,4 @@ Readiness verdict (see `haven-desk-release-readiness-audit.md`): demo-ready for 
 ## Changelog
 
 - 2026-06-26: Shipped the transition (docs + pack validator), live v1 (rebrand, persona nav, Packs surface, install), a 5-lens readiness audit, and trust hardening. 9 commits. Started the first-impression work with the first-run card rewrite.
+- 2026-06-26 (cont.): Shipped the value proof. `/tools/meeting-notes` turns pasted notes into real Task records (chatJson extraction, a tested deterministic gate, review-and-edit, then a transactional create; the model runs only on extract). Verified live on gemma4:e4b (pasted notes produced 3 dated, owner-tagged tasks that landed in the Tasks board). Codex-reviewed SHIP-READY; its findings (clearable owner/due chips, owner cap, stale-row clear) fixed. Next: dashboard grouping so a non-technical user does not lead with developer tools, then a first-run persona picker.

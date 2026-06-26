@@ -19,6 +19,7 @@ import {
   Activity,
   FolderKanban,
   Package,
+  ClipboardList,
   Settings as SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -59,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   // Today — the daily operational surfaces.
   { href: "/tools/tasks", label: "Tasks", icon: ListTodo, group: "today", desc: "List + Kanban with AI assists.", keywords: "todo kanban board" },
+  { href: "/tools/meeting-notes", label: "Meeting Notes", icon: ClipboardList, group: "today", desc: "Turn meeting notes into real tasks.", keywords: "action items extract standup notes to tasks" },
   { href: "/tools/memory", label: "Memory", icon: Brain, group: "today", desc: "Facts woven into your tools.", keywords: "facts glossary" },
 
   // Capture — input-first tools.
