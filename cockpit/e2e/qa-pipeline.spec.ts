@@ -181,8 +181,13 @@ test.describe("qa pipeline", () => {
     await expect(row).toHaveCount(0);
   });
 
-  test("sidebar links to QA Pipeline", async ({ page }) => {
+  test("sidebar reveals QA Pipeline under the Professional disclosure", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: "QA Pipeline", exact: true })).toBeVisible();
+    const sidebar = page.getByRole("complementary", { name: "Sidebar" });
+    // Professional QA/dev tools are collapsed by default to keep the everyday
+    // surface uncluttered; expanding the disclosure reveals QA Pipeline.
+    await expect(sidebar.getByRole("link", { name: "QA Pipeline", exact: true })).toBeHidden();
+    await sidebar.getByRole("button", { name: /professional/i }).click();
+    await expect(sidebar.getByRole("link", { name: "QA Pipeline", exact: true })).toBeVisible();
   });
 });

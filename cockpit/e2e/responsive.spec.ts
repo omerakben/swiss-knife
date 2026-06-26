@@ -14,10 +14,12 @@ test.describe("responsive sidebar", () => {
 
     await openMenu.click();
     const drawer = page.getByRole("dialog", { name: "Mobile navigation" });
-    await expect(drawer.getByRole("link", { name: "Gherkin Lint", exact: true })).toBeVisible();
+    // Use an everyday tool: the professional QA/dev tools now sit behind a
+    // collapsed "Professional" disclosure (see qa-pipeline.spec for that path).
+    await expect(drawer.getByRole("link", { name: "Prompt Optimizer", exact: true })).toBeVisible();
 
-    await drawer.getByRole("link", { name: "Gherkin Lint", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /gherkin lint/i })).toBeVisible();
+    await drawer.getByRole("link", { name: "Prompt Optimizer", exact: true }).click();
+    await expect(page.getByRole("heading", { name: /prompt optimizer/i })).toBeVisible();
     // Navigation closes the drawer.
     await expect(drawer).toBeHidden();
   });

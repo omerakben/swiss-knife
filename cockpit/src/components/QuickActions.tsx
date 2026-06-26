@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   Square,
+  Search,
+  Clock,
+  Play,
   Reply,
   Mail,
   Heart,
@@ -27,16 +30,23 @@ import {
 } from "lucide-react";
 
 import { useAiTool } from "@/hooks/useAiTool";
+import { usePersisted } from "@/hooks/usePersisted";
 import { Button } from "@/components/ui/button";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import {
   QUICK_ACTIONS,
   QUICK_ACTION_CATEGORIES,
+  CATEGORY_ACCENT,
   getQuickAction,
   missingInputs,
+  searchQuickActions,
+  pushRecent,
+  recentActions,
   type QuickAction,
 } from "@/lib/quickActions";
+
+const RECENTS_KEY = "sk:qa:recents";
 
 const ICONS: Record<string, LucideIcon> = {
   Reply,
@@ -59,16 +69,59 @@ const ICONS: Record<string, LucideIcon> = {
   Luggage,
 };
 
+function ActionCard({ a, onOpen }: { a: QuickAction; onOpen: (a: QuickAction) => void }) {
+  const Icon = ICONS[a.icon] ?? Sparkles;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(a)}
+      className="group flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+    >
+      <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " + CATEGORY_ACCENT[a.category]}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-medium leading-tight">{a.title}</span>
+        <span className="mt-1 block text-xs leading-snug text-muted-foreground">{a.blurb}</span>
+      </span>
+    </button>
+  );
+}
+
 export function QuickActions({ initialActionId }: { initialActionId: string | null }) {
   const [active, setActive] = useState<QuickAction | null>(
     initialActionId ? getQuickAction(initialActionId) ?? null : null,
   );
   const [values, setValues] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState("");
+  const [recentsJson, setRecentsJson] = usePersisted(RECENTS_KEY, "[]");
   const { output, status, error, isRunning, elapsedMs, run, stop, reset } = useAiTool({
     endpoint: "/api/quick-action",
     buildBody: (_input, extra) => extra,
   });
   const secs = Math.round(elapsedMs / 1000);
+
+  const recents = useMemo(() => {
+    try {
+      const a = JSON.parse(recentsJson);
+      return recentActions(Array.isArray(a) ? a : []);
+    } catch {
+      return [];
+    }
+  }, [recentsJson]);
+
+  // Remember an action the moment it's run (front of the list, deduped, capped).
+  function recordRecent(id: string) {
+    let ids: string[] = [];
+    try {
+      const a = JSON.parse(recentsJson);
+      // Coerce to a clean string[] so hand-corrupted storage can't consume cap slots.
+      ids = Array.isArray(a) ? a.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      ids = [];
+    }
+    setRecentsJson(JSON.stringify(pushRecent(ids, id)));
+  }
 
   function open(a: QuickAction) {
     stop(); // abort any in-flight run before switching actions
@@ -84,6 +137,8 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
   }
 
   if (!active) {
+    const trimmed = query.trim();
+    const results = searchQuickActions(query);
     return (
       <div className="max-w-4xl">
         <h1 className="text-2xl font-semibold tracking-tight">Quick actions</h1>
@@ -91,34 +146,63 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
           One-click help for everyday tasks. Pick one, answer a question or two, and get something you
           can use. Everything runs on this machine.
         </p>
-        <div className="mt-6 space-y-7">
-          {QUICK_ACTION_CATEGORIES.map((cat) => (
-            <section key={cat.id}>
-              <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{cat.label}</h2>
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {QUICK_ACTIONS.filter((a) => a.category === cat.id).map((a) => {
-                  const Icon = ICONS[a.icon] ?? Sparkles;
-                  return (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => open(a)}
-                      className="group flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Icon className="h-[18px] w-[18px]" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium leading-tight">{a.title}</span>
-                        <span className="mt-1 block text-xs leading-snug text-muted-foreground">{a.blurb}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+
+        <div className="relative mt-5">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search actions — e.g. email, list, summarize…"
+            aria-label="Search quick actions"
+            className="h-10 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+          />
         </div>
+
+        {trimmed ? (
+          results.length > 0 ? (
+            <div className="mt-5">
+              <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {results.length} {results.length === 1 ? "result" : "results"}
+              </h2>
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {results.map((a) => (
+                  <ActionCard key={a.id} a={a} onOpen={open} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">
+              No actions match “{trimmed}”. Try a simpler word, or clear the search to browse all{" "}
+              {QUICK_ACTIONS.length}.
+            </p>
+          )
+        ) : (
+          <div className="mt-6 space-y-7">
+            {recents.length > 0 && (
+              <section>
+                <h2 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" /> Recently used
+                </h2>
+                <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {recents.map((a) => (
+                    <ActionCard key={a.id} a={a} onOpen={open} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {QUICK_ACTION_CATEGORIES.map((cat) => (
+              <section key={cat.id}>
+                <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{cat.label}</h2>
+                <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {QUICK_ACTIONS.filter((a) => a.category === cat.id).map((a) => (
+                    <ActionCard key={a.id} a={a} onOpen={open} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -128,6 +212,7 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
 
   async function go() {
     if (!active) return;
+    recordRecent(active.id);
     await run("", { actionId: active.id, inputs: values });
   }
 
@@ -135,6 +220,7 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
   // run so we don't depend on the just-set (async) state.
   async function runWith(inputs: Record<string, string>) {
     if (!active) return;
+    recordRecent(active.id);
     setValues(inputs);
     await run("", { actionId: active.id, inputs });
   }
@@ -150,7 +236,7 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
       </button>
 
       <div className="mt-3 flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <span className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " + CATEGORY_ACCENT[active.category]}>
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0">
@@ -160,19 +246,23 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
       </div>
 
       {active.examples && active.examples.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Try an example:</span>
-          {active.examples.map((ex, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => runWith(ex.inputs)}
-              disabled={isRunning}
-              className="rounded-full border border-border px-2.5 py-1 text-xs transition-colors hover:border-primary/40 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-60"
-            >
-              {ex.label}
-            </button>
-          ))}
+        <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> See it instantly — tap one to fill and run:
+            </span>
+            {active.examples.map((ex, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => runWith(ex.inputs)}
+                disabled={isRunning}
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-60"
+              >
+                <Play className="h-3 w-3 text-primary" /> {ex.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

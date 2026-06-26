@@ -97,9 +97,17 @@ export async function DailyBrief() {
             <AlertTriangle className="h-4 w-4" /> Couldn&apos;t load today&apos;s brief — check the database.
           </p>
         ) : clear ? (
-          <p className="flex items-center gap-2 text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 text-[hsl(var(--badge-success-fg))]" /> You&apos;re clear — nothing overdue or due today.
-          </p>
+          <div className="space-y-1.5">
+            <p className="flex items-center gap-2 text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-[hsl(var(--badge-success-fg))]" /> You&apos;re clear — nothing overdue or due today.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Start something:{" "}
+              <Link href="/tools/tasks" className="underline underline-offset-2 hover:text-foreground">add a task</Link>,{" "}
+              <Link href="/tools/meeting-notes" className="underline underline-offset-2 hover:text-foreground">turn notes into tasks</Link>, or{" "}
+              <Link href="/tools/quick-actions" className="underline underline-offset-2 hover:text-foreground">try a quick action</Link>.
+            </p>
+          </div>
         ) : (
           <>
             {overdue.length > 0 && (

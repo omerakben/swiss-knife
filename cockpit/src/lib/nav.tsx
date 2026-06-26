@@ -37,6 +37,12 @@ export type NavItem = {
   group?: NavGroup;
   /** Extra ⌘K match terms (the palette derives from this registry). */
   keywords?: string;
+  /**
+   * QA/dev tools for a technical audience. Hidden from the dashboard grid and
+   * tucked behind a collapsible "Professional" section in the sidebar, so a
+   * non-technical user is not led with them. Still reachable from ⌘K.
+   */
+  professional?: boolean;
 };
 
 // Persona-first groups for the Haven Desk transition (was work/write/qa/dev/system,
@@ -80,14 +86,14 @@ export const NAV_ITEMS: NavItem[] = [
 
   // Packs — installable workflows, including the professional QA + dev tools.
   { href: "/tools/packs", label: "Packs", icon: Package, group: "packs", desc: "Browse and install workflow packs.", keywords: "install pack workflow catalog marketplace small business ops" },
-  { href: "/tools/qa-pipeline", label: "QA Pipeline", icon: ClipboardCheck, group: "packs", desc: "Story → Gherkin → lint → rubric.", keywords: "story rubric test bench golden professional qa pack" },
-  { href: "/tools/gherkin-lint", label: "Gherkin Lint", icon: FlaskConical, group: "packs", desc: "Check .feature files for BDD hygiene.", keywords: "bdd feature professional qa pack" },
-  { href: "/tools/bug-report", label: "Bug Report", icon: Bug, group: "packs", desc: "Rough note → a structured bug report.", keywords: "defect repro severity professional qa pack" },
-  { href: "/tools/rubric-designer", label: "Rubric Designer", icon: ListChecks, group: "packs", desc: "The bar → a gated, weighted eval rubric.", keywords: "eval rubric weights bands score professional qa pack" },
-  { href: "/tools/eval-cases", label: "Eval Cases", icon: TestTubes, group: "packs", desc: "Spec → coverage-gated eval cases.", keywords: "golden test cases coverage adversarial boundary professional qa pack" },
-  { href: "/tools/code-review", label: "Code Review", icon: SearchCode, group: "packs", desc: "Smell scan + AI explanation of findings.", keywords: "smells complexity big-o diff lint professional dev pack" },
-  { href: "/tools/adr", label: "ADR Writer", icon: Scale, group: "packs", desc: "Decision note → a gated MADR record.", keywords: "decision record madr architecture professional dev pack" },
-  { href: "/tools/api-contract", label: "API Contract", icon: Webhook, group: "packs", desc: "Prose → validated OpenAPI 3.1.", keywords: "openapi swagger rest endpoint yaml professional dev pack" },
+  { href: "/tools/qa-pipeline", label: "QA Pipeline", icon: ClipboardCheck, group: "packs", professional: true, desc: "Story → Gherkin → lint → rubric.", keywords: "story rubric test bench golden professional qa pack" },
+  { href: "/tools/gherkin-lint", label: "Gherkin Lint", icon: FlaskConical, group: "packs", professional: true, desc: "Check .feature files for BDD hygiene.", keywords: "bdd feature professional qa pack" },
+  { href: "/tools/bug-report", label: "Bug Report", icon: Bug, group: "packs", professional: true, desc: "Rough note → a structured bug report.", keywords: "defect repro severity professional qa pack" },
+  { href: "/tools/rubric-designer", label: "Rubric Designer", icon: ListChecks, group: "packs", professional: true, desc: "The bar → a gated, weighted eval rubric.", keywords: "eval rubric weights bands score professional qa pack" },
+  { href: "/tools/eval-cases", label: "Eval Cases", icon: TestTubes, group: "packs", professional: true, desc: "Spec → coverage-gated eval cases.", keywords: "golden test cases coverage adversarial boundary professional qa pack" },
+  { href: "/tools/code-review", label: "Code Review", icon: SearchCode, group: "packs", professional: true, desc: "Smell scan + AI explanation of findings.", keywords: "smells complexity big-o diff lint professional dev pack" },
+  { href: "/tools/adr", label: "ADR Writer", icon: Scale, group: "packs", professional: true, desc: "Decision note → a gated MADR record.", keywords: "decision record madr architecture professional dev pack" },
+  { href: "/tools/api-contract", label: "API Contract", icon: Webhook, group: "packs", professional: true, desc: "Prose → validated OpenAPI 3.1.", keywords: "openapi swagger rest endpoint yaml professional dev pack" },
 
   // Settings — meta surfaces.
   { href: "/tools/activity", label: "Activity", icon: Activity, group: "settings", desc: "A timeline of what happened.", keywords: "timeline log history" },

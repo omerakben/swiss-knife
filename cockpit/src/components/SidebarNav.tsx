@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { ExternalLink, Star, ArrowDownAZ, ArrowUpZA, ListFilter } from "lucide-react";
+import { ExternalLink, Star, ArrowDownAZ, ArrowUpZA, ListFilter, Wrench, ChevronRight } from "lucide-react";
 
 import { NAV_GROUPS, NAV_ITEMS, type NavItem } from "@/lib/nav";
 import { usePersisted } from "@/hooks/usePersisted";
 
 const FAV_KEY = "sk:nav:favorites";
 const SORT_KEY = "sk:nav:sort";
+const PRO_KEY = "sk:nav:professional-open";
 
 export function SidebarNav() {
   const pathname = usePathname();
   const [favJson, setFavJson] = usePersisted(FAV_KEY, "[]");
   const [sort, setSort] = usePersisted(SORT_KEY, "default");
+  const [proOpen, setProOpen] = usePersisted(PRO_KEY, "false");
 
   const favorites = useMemo(() => {
     try {
@@ -47,11 +49,18 @@ export function SidebarNav() {
   // Grouped rendering: Dashboard stays ungrouped on top; A-Z sort applies
   // WITHIN each group (so sorting can't shuffle Dashboard between tools).
   const ungrouped = rest.filter((i) => !i.group);
-  const groups = NAV_GROUPS.map((g) => ({
-    ...g,
-    items: applySort(rest.filter((i) => i.group === g.id)),
-  })).filter((g) => g.items.length > 0);
+  // Each group splits into everyday tools (shown inline) and professional QA/dev
+  // tools (tucked behind a collapsible "Professional" disclosure, collapsed by
+  // default). A favorited pro tool still floats up to Favorites above.
+  // `proOpen` is deliberately ONE global switch ("show professional tools"), not
+  // per-group — today only the Packs group carries pro items; if another group
+  // ever does, the single toggle reveals both, which is the intended semantics.
+  const groups = NAV_GROUPS.map((g) => {
+    const items = applySort(rest.filter((i) => i.group === g.id));
+    return { ...g, regular: items.filter((i) => !i.professional), pro: items.filter((i) => i.professional) };
+  }).filter((g) => g.regular.length > 0 || g.pro.length > 0);
   const hasFavs = favItems.length > 0;
+  const isProOpen = proOpen === "true";
 
   function renderItem(t: NavItem) {
     const active = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
@@ -132,7 +141,25 @@ export function SidebarNav() {
           <div className="px-2.5 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {g.label}
           </div>
-          {g.items.map(renderItem)}
+          {g.regular.map(renderItem)}
+          {g.pro.length > 0 && (
+            <>
+              <button
+                onClick={() => setProOpen(isProOpen ? "false" : "true")}
+                aria-expanded={isProOpen}
+                title={isProOpen ? "Hide professional tools" : "Show professional QA & dev tools"}
+                className="group mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
+              >
+                <Wrench className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                <span className="truncate">Professional</span>
+                <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
+                  {g.pro.length}
+                  <ChevronRight className={"h-3.5 w-3.5 transition-transform " + (isProOpen ? "rotate-90" : "")} />
+                </span>
+              </button>
+              {isProOpen && g.pro.map(renderItem)}
+            </>
+          )}
         </div>
       ))}
 
