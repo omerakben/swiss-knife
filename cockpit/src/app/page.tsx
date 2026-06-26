@@ -5,6 +5,7 @@ import { HealthBanner } from "@/components/HealthBanner";
 import { DailyBrief } from "@/components/DailyBrief";
 import { DashboardToolGrid } from "@/components/DashboardToolGrid";
 import { PersonaPicker } from "@/components/PersonaPicker";
+import { DashboardQuickActions } from "@/components/DashboardQuickActions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,12 @@ export default async function Dashboard() {
       </div>
 
       {firstRun && !persona && <PersonaPicker />}
+
+      {!(firstRun && !persona) && (
+        <div className="mt-6">
+          <DashboardQuickActions />
+        </div>
+      )}
 
       <div className="mt-6">
         <DailyBrief />
