@@ -20,6 +20,7 @@ import {
   FolderKanban,
   Package,
   ClipboardList,
+  Sparkles,
   Settings as SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -59,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, keywords: "home brief today" },
 
   // Today — the daily operational surfaces.
+  { href: "/tools/quick-actions", label: "Quick Actions", icon: Sparkles, group: "today", desc: "One-click help for everyday tasks.", keywords: "quick actions one click do something useful write summarize reply plan list" },
   { href: "/tools/tasks", label: "Tasks", icon: ListTodo, group: "today", desc: "List + Kanban with AI assists.", keywords: "todo kanban board" },
   { href: "/tools/meeting-notes", label: "Meeting Notes", icon: ClipboardList, group: "today", desc: "Turn meeting notes into real tasks.", keywords: "action items extract standup notes to tasks" },
   { href: "/tools/memory", label: "Memory", icon: Brain, group: "today", desc: "Facts woven into your tools.", keywords: "facts glossary" },
