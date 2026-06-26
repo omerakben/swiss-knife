@@ -8,15 +8,16 @@ Last updated: 2026-06-26.
 
 Claude runs the buildable work end to end and stops at the gates below for Ozzy. Each unit of work is committed locally per feature, gated (lint, unit, build, and e2e or a live browser check), and recorded here.
 
-What Claude proceeds on without asking: design, build, refactor, tests, local commits, docs, and using Codex as builder/verifier.
+What Claude proceeds on (Ozzy granted push/merge/deploy authority on 2026-06-26): design, build, refactor, tests, docs, using Codex, and pushing, opening PRs, and merging to main once the work is gated and verified. Each feature lands on its own branch, gated (lint, unit, build, and e2e or a live browser check), then merged.
 
-What Claude stops and asks Ozzy for (the gates):
-- Pushing to the remote or opening a pull request.
+What Claude still holds for Ozzy (the gates):
 - Spending money, or any payment or licensing integration.
-- Anything external-facing or published: marketing posts, a website, sending email.
+- Publishing public product claims: a live marketing site or public posts go to Ozzy as a draft to approve first (the positioning is Ozzy's, and published claims are hard to retract).
 - Credentials or secrets.
-- Destructive operations: wiping the dev DB, force-pushing, deleting Ozzy's data.
+- Destructive operations: force-pushing shared branches, history rewrites on main, wiping data.
 - The installer's real-human setup test (needs Ozzy and a few non-technical people).
+
+Deploy note: Haven Desk is local-first, so there is no cloud to deploy the app to. Hosting the cockpit publicly would break the privacy promise, and it cannot run without local Ollama and local storage. "Deploy" here means merging to main (done) and, when the positioning is set, building a draft early-access landing page and previewing it for Ozzy before it goes public.
 
 ## Where things stand (verified)
 
