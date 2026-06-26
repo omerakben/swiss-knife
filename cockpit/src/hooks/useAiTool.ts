@@ -21,6 +21,8 @@ export type UseAiToolReturn = {
   run: (input: string, extra?: Record<string, unknown>) => Promise<boolean>;
   stop: () => void;
   reset: () => void;
+  /** Restore a prior output as a finished result (e.g. revert a failed refine). */
+  restore: (value: string) => void;
 };
 
 export function useAiTool({ endpoint, buildBody }: UseAiToolOptions): UseAiToolReturn {
@@ -116,6 +118,13 @@ export function useAiTool({ endpoint, buildBody }: UseAiToolOptions): UseAiToolR
     setStatus("idle");
     setElapsedMs(0);
   }, []);
+  // Put a known-good prior output back as a finished result. Used to revert a
+  // failed/stopped refine so the draft the user already had is never lost.
+  const restore = useCallback((value: string) => {
+    setOutput(value);
+    setError(null);
+    setStatus("done");
+  }, []);
 
-  return { output, status, error, isRunning: status === "streaming", elapsedMs, run, stop, reset };
+  return { output, status, error, isRunning: status === "streaming", elapsedMs, run, stop, reset, restore };
 }

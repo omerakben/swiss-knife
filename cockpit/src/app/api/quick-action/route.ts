@@ -23,6 +23,14 @@ export async function POST(req: Request) {
     if (!text || !instruction) {
       return Response.json({ error: "Nothing to refine." }, { status: 400 });
     }
+    // Match the app's free-text caps (cf. adr-writer): "More detail" feeds the
+    // growing output back in, and a hand-crafted POST is otherwise unbounded.
+    if (text.length > 80_000) {
+      return Response.json({ error: "That draft is too long to refine." }, { status: 413 });
+    }
+    if (instruction.length > 500) {
+      return Response.json({ error: "Refine instruction is too long." }, { status: 400 });
+    }
     const notReady = await assertOllamaReady();
     if (notReady) return notReady;
     return streamTextResponse({ messages: buildRefineMessages(text, instruction) });

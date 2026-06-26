@@ -29,6 +29,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { toast } from "sonner";
+
 import { useAiTool } from "@/hooks/useAiTool";
 import { usePersisted } from "@/hooks/usePersisted";
 import { Button } from "@/components/ui/button";
@@ -96,7 +98,7 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
   const [values, setValues] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [recentsJson, setRecentsJson] = usePersisted(RECENTS_KEY, "[]");
-  const { output, status, error, isRunning, elapsedMs, run, stop, reset } = useAiTool({
+  const { output, status, error, isRunning, elapsedMs, run, stop, reset, restore } = useAiTool({
     endpoint: "/api/quick-action",
     buildBody: (_input, extra) => extra,
   });
@@ -228,9 +230,16 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
 
   // One-tap refine: re-run the model over the current result with a plain tweak.
   // Iterative — the refined text replaces the result, so a second tap refines it.
+  // The source IS the current output, so on a failed/stopped refine we restore
+  // it: the local 12B can error mid-stream and a draft must never be lost.
   async function refineWith(instruction: string) {
     if (!output) return;
-    await run("", { refine: { text: output, instruction } });
+    const prev = output;
+    const ok = await run("", { refine: { text: prev, instruction } });
+    if (!ok) {
+      restore(prev);
+      toast.info("Kept your previous draft.");
+    }
   }
 
   return (
