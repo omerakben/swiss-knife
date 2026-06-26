@@ -97,8 +97,8 @@ export function InboxTool() {
     <div className="max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Smart Inbox</h1>
       <p className="mt-1 text-muted-foreground">
-        Drop a file or paste anything. Gherkin lints right here; everything else is sorted into a
-        task, fact, or idea automatically.
+        Drop a file or paste anything — a note, a list, a message — and it&apos;s sorted into a task,
+        fact, or idea automatically. Paste a <code>.feature</code>{" "}file and it&apos;s checked for issues too.
       </p>
 
       <div
@@ -121,7 +121,7 @@ export function InboxTool() {
             // editing invalidates both.
             setLint(null);
           }}
-          placeholder="Drop a .feature / .txt / .md / .csv here, or paste text…"
+          placeholder="Paste a note, a list, anything — or drop a .txt / .md / .csv / .feature file…"
           textareaClassName="border-0 focus-visible:ring-0"
           disabled={busy}
         />
