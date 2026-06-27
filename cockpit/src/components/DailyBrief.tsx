@@ -3,7 +3,7 @@ import { AlertTriangle, CalendarClock, Loader2, Brain, CheckCircle2, ListTodo } 
 
 import { prisma } from "@/lib/db";
 import { getActiveProjectId } from "@/lib/project";
-import { dueDayString, localDayString, utcNoonOfLocalDay } from "@/lib/dates";
+import { dueDayString, localDayString, utcNoonOfLocalDay, utcStartOfLocalDay } from "@/lib/dates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type TaskLite = { id: string; title: string };
@@ -37,13 +37,15 @@ export async function DailyBrief() {
 
   // Open to-dos that aren't already flagged as urgent: undated, or due tomorrow
   // or later. Excludes overdue (< today) and due-today (== today) — those have
-  // their own buckets — so nothing is double-counted. This is the real backlog
+  // their own buckets — so nothing is double-counted. The lower bound is the
+  // START of tomorrow's local day (not noon) so a legacy UTC-midnight row due
+  // tomorrow is included, not dropped into no bucket. This is the real backlog
   // the "You're clear" message used to hide.
-  const tomorrowNoon = utcNoonOfLocalDay(new Date(), 1);
+  const tomorrowStart = utcStartOfLocalDay(new Date(), 1);
   const backlogWhere = {
     ...scope,
     status: "todo" as const,
-    OR: [{ dueDate: null }, { dueDate: { gte: tomorrowNoon } }],
+    OR: [{ dueDate: null }, { dueDate: { gte: tomorrowStart } }],
   };
 
   const [dueSoonR, doingR, toDoR, toDoCountR, pendingR, pendingCountR] = await Promise.all([

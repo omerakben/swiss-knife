@@ -5,7 +5,8 @@ import { buildRefineMessages } from "@/lib/quickActions";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_TEXT = 20000;
+// Matches the quick-action refine branch so the same draft refines from any tool.
+const MAX_TEXT = 80000;
 
 // Shared one-tap refine over any AI draft: revise the given text per a plain
 // instruction and return only the revised text. Tool-agnostic (no memory, no

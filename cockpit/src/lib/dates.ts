@@ -46,3 +46,13 @@ export function utcNoonOfLocalDay(now: Date, addDays = 0): Date {
   base.setDate(base.getDate() + addDays);
   return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), 12));
 }
+
+/** A Date at UTC midnight (start) of the given LOCAL calendar day. Use as a
+ * lower bound that includes the WHOLE of that calendar day regardless of whether
+ * a due date is stored at UTC noon (canonical) or UTC midnight (legacy) — gating
+ * on noon would drop a legacy midnight row of that day into no bucket. */
+export function utcStartOfLocalDay(now: Date, addDays = 0): Date {
+  const base = new Date(now);
+  base.setDate(base.getDate() + addDays);
+  return new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate(), 0));
+}
