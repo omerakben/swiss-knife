@@ -183,5 +183,110 @@ export const qaProductOpsPack: PluginManifest = {
   ],
 };
 
+// Second mass-market pack. Content only (L0): the everyday paperwork of running
+// a household and family. Plain-language helpers only — it never gives medical,
+// legal, financial, or tax advice (the industry string stays clear of the
+// high-stakes keywords so the validator's hard gate doesn't apply).
+export const householdFamilyPack: PluginManifest = {
+  slug: "household-family",
+  name: "Household & Family",
+  version: "0.1.0",
+  description:
+    "The everyday admin of home and family: messages to school and services, the week's plan, meals and groceries, appointments, and turning confusing letters into plain language.",
+  audience: "household",
+  industry: "household and family life",
+  maturity: "L0",
+  capabilities: [
+    "Write a clear message to a teacher, school, or service",
+    "Turn a chaotic week into a simple family plan",
+    "Make a few days of meals and a grocery list",
+    "Pull appointments and due dates out of rough notes",
+    "Explain a confusing letter or form in plain language",
+  ],
+  requiredModels: ["gemma4:e4b"],
+  templates: [
+    {
+      slug: "hf-school-message",
+      kind: "prompt",
+      category: "email",
+      name: "Message to school or a service",
+      description: "A short, polite message to a teacher, school, doctor's office, or any service.",
+      body: "Write a short, polite message to {{recipient}}. It is about: {{about}}. Keep it clear and friendly, and do not invent details.",
+      variables: JSON.stringify([
+        { name: "recipient", label: "Who is it to?", type: "text" },
+        { name: "about", label: "What is it about?", type: "textarea" },
+      ]),
+    },
+    {
+      slug: "hf-family-week",
+      kind: "prompt",
+      category: "planning",
+      name: "Plan the family week",
+      description: "Turn a brain-dump of everything going on into a simple day-by-day plan.",
+      body: "Turn these notes about the week into a simple, realistic day-by-day plan for the family. Group things by day, keep each item short, and flag anything that clashes. Only use what the notes say.\n\nNotes:\n{{notes}}",
+      variables: JSON.stringify([{ name: "notes", label: "Everything going on this week", type: "textarea" }]),
+    },
+    {
+      slug: "hf-meal-plan",
+      kind: "prompt",
+      category: "planning",
+      name: "Meal plan and grocery list",
+      description: "A few days of simple meals plus a tidy grocery list.",
+      body: "Make a simple meal plan for {{days}} days for {{people}}. Then give a grocery list grouped by aisle (produce, dairy, pantry, etc.). Keep meals easy and budget-friendly. Notes or preferences: {{notes}}.",
+      variables: JSON.stringify([
+        { name: "days", label: "How many days?", type: "text" },
+        { name: "people", label: "Who for? (e.g. 2 adults, 2 kids)", type: "text" },
+        { name: "notes", label: "Preferences or things to avoid (optional)", type: "text" },
+      ]),
+    },
+    {
+      slug: "hf-appointments",
+      kind: "prompt",
+      category: "planning",
+      name: "Appointments and reminders",
+      description: "Pull dates, times, and what to bring out of rough notes.",
+      body: "Read these notes and list the appointments and reminders. For each: what it is, the date and time if stated, and anything to bring or do beforehand. Only use what the notes say; mark missing details \"unknown\".\n\nNotes:\n{{notes}}",
+      variables: JSON.stringify([{ name: "notes", label: "Notes about appointments", type: "textarea" }]),
+    },
+    {
+      slug: "hf-explain-letter",
+      kind: "prompt",
+      category: "family",
+      name: "Explain this in plain language",
+      description: "Turn a confusing letter, form, or notice into clear everyday language.",
+      body: "Explain the following in plain, everyday language, as if to a busy friend. Say what it is, what it's asking, and what (if anything) I need to do and by when. Do not give legal, medical, tax, or financial advice — just explain what it says.\n\n{{text}}",
+      variables: JSON.stringify([{ name: "text", label: "The letter, form, or notice", type: "textarea" }]),
+    },
+  ],
+  memoryFacts: [
+    {
+      sourceKey: "hf-fact-tone",
+      key: "Family tone",
+      value: "Messages to school, family, and services stay warm, clear, and brief.",
+      category: "preference",
+    },
+    {
+      sourceKey: "hf-fact-rhythm",
+      key: "Weekly rhythm",
+      value: "Groceries on the weekend; the family week gets planned on Sunday evening.",
+      category: "workflow",
+    },
+  ],
+  taskSeeds: [
+    { sourceKey: "hf-task-appointments", title: "Add this week's appointments and due dates", status: "todo" },
+    { sourceKey: "hf-task-week-plan", title: "Plan the family week", status: "todo" },
+  ],
+  knowledgeSources: [],
+  gates: [],
+  routes: [],
+  mcpTools: [],
+  permissions: defaultPermissions(),
+  setupChecks: [
+    "Local model gemma4:e4b is installed.",
+    "Plain-language helper only — it does not give medical, legal, tax, or financial advice.",
+    "No message is sent automatically; every draft is reviewed before use.",
+  ],
+};
+
 /** Reference packs shipped with the app, keyed by slug. */
-export const EXAMPLE_PACKS: PluginManifest[] = [smallBusinessOpsPack, qaProductOpsPack];
+export const EXAMPLE_PACKS: PluginManifest[] = [smallBusinessOpsPack, qaProductOpsPack, householdFamilyPack];
