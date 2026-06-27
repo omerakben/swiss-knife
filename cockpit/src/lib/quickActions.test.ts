@@ -13,9 +13,27 @@ import {
   REFINE_OPTIONS,
   getRefineOption,
   buildRefineMessages,
+  getHeroIds,
+  HERO_IDS_BY_PERSONA,
+  DEFAULT_HERO_IDS,
 } from "./quickActions";
 
 describe("quickActions", () => {
+  it("getHeroIds maps every persona to 6 REAL actions; default otherwise (catches a typo'd id)", () => {
+    const ids = new Set(QUICK_ACTIONS.map((a) => a.id));
+    const check = (list: string[], label: string) => {
+      expect(list, `${label} should have 6 heroes`).toHaveLength(6);
+      for (const h of list) expect(ids.has(h), `${label}: '${h}' is not a real action`).toBe(true);
+    };
+    check(DEFAULT_HERO_IDS, "default");
+    for (const [persona, list] of Object.entries(HERO_IDS_BY_PERSONA)) check(list, persona);
+    // null / unknown / "skipped" fall back to the default; a known persona differs.
+    expect(getHeroIds(null)).toEqual(DEFAULT_HERO_IDS);
+    expect(getHeroIds("skipped")).toEqual(DEFAULT_HERO_IDS);
+    expect(getHeroIds("household")).toEqual(HERO_IDS_BY_PERSONA.household);
+    expect(getHeroIds("small-business")).not.toEqual(DEFAULT_HERO_IDS);
+  });
+
   it("every action has a unique id, at least one input, and a system prompt", () => {
     const ids = new Set<string>();
     for (const a of QUICK_ACTIONS) {

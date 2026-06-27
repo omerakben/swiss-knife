@@ -408,6 +408,32 @@ export function getQuickAction(id: string): QuickAction | undefined {
   return QUICK_ACTIONS.find((a) => a.id === id);
 }
 
+// Dashboard hero actions — the six one-click actions surfaced on the home screen.
+// Tailored to the onboarding persona so the pick finally pays off; falls back to a
+// sensible everyday default for "skipped"/no persona. All ids are real actions
+// above (enforced by a unit test).
+export const DEFAULT_HERO_IDS = [
+  "reply-to-message",
+  "notes-to-list",
+  "summarize",
+  "polite-message",
+  "make-friendlier",
+  "plan-week",
+];
+
+export const HERO_IDS_BY_PERSONA: Record<string, string[]> = {
+  household: ["reply-to-message", "notes-to-list", "plan-week", "meal-plan", "polite-message", "summarize"],
+  "small-business": ["polite-message", "reply-to-message", "find-action-items", "plan-week", "make-professional", "summarize"],
+  student: ["explain-simply", "study-plan", "summarize", "key-points", "notes-to-list", "fix-writing"],
+  creative: ["social-post", "make-friendlier", "notes-to-list", "summarize", "reply-to-message", "key-points"],
+  "personal-admin": ["explain-simply", "polite-message", "summarize", "key-points", "find-action-items", "notes-to-list"],
+};
+
+/** The home-screen hero action ids for a persona ("skipped"/null → default). */
+export function getHeroIds(persona: string | null | undefined): string[] {
+  return (persona && HERO_IDS_BY_PERSONA[persona]) || DEFAULT_HERO_IDS;
+}
+
 /**
  * Free-text search over the gallery (title, blurb, and the category label), so
  * a user can type "email" or "list" instead of scanning four sections. An empty
