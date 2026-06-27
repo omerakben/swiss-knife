@@ -4,6 +4,8 @@ import { getEffectiveConfig } from "@/lib/config";
 import { getMemoryContext } from "@/lib/memory";
 import { getActiveProjectId } from "@/lib/project";
 import { prisma } from "@/lib/db";
+import { compileSpec } from "@/lib/prompts/spec";
+import { TASKS_GENERATE_SPEC } from "@/lib/prompts/tasksGenerate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,20 +23,18 @@ export async function POST(req: Request) {
   const projectId = await getActiveProjectId();
   const memory = await getMemoryContext({ projectId, query: goal.trim() });
 
+  // Engineered spec (role + rules + output contract + 2 few-shot turns); memory,
+  // if any, leads as its own system message (like email).
+  const specMsgs = compileSpec(TASKS_GENERATE_SPEC, goal.trim());
+  const messages = memory ? [{ role: "system" as const, content: memory }, ...specMsgs] : specMsgs;
+
   let text: string;
   try {
-    text = await chat(
-      [
-        {
-          role: "system",
-          content:
-            "You break a goal into concrete, actionable tasks. Return ONLY a plain list, one task per line, 3-7 tasks, no numbering, no headers, no commentary. Each line is a short imperative task.",
-        },
-        ...(memory ? [{ role: "system" as const, content: memory }] : []),
-        { role: "user", content: goal.trim() },
-      ],
-      { model: cfg.model, baseUrl: cfg.baseUrl, temperature: 0.4 }
-    );
+    text = await chat(messages, {
+      model: cfg.model,
+      baseUrl: cfg.baseUrl,
+      temperature: TASKS_GENERATE_SPEC.temperature,
+    });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Couldn't generate tasks." }, { status: 500 });
   }
