@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Haven Desk"
-REPO_URL="${HAVEN_DESK_REPO:-https://github.com/omerakben/swiss-knife.git}"
+REPO_URL="${HAVEN_DESK_REPO:-https://github.com/omerakben/haven-desk.git}"
 BRANCH="${HAVEN_DESK_BRANCH:-main}"
 INSTALL_DIR="${HAVEN_DESK_HOME:-$HOME/HavenDesk}"
 APP_URL="${HAVEN_DESK_URL:-http://localhost:4141}"

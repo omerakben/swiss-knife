@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $AppName = "Haven Desk"
-$RepoUrl = if ($env:HAVEN_DESK_REPO) { $env:HAVEN_DESK_REPO } else { "https://github.com/omerakben/swiss-knife.git" }
+$RepoUrl = if ($env:HAVEN_DESK_REPO) { $env:HAVEN_DESK_REPO } else { "https://github.com/omerakben/haven-desk.git" }
 $Branch = if ($env:HAVEN_DESK_BRANCH) { $env:HAVEN_DESK_BRANCH } else { "main" }
 $InstallDir = if ($env:HAVEN_DESK_HOME) { $env:HAVEN_DESK_HOME } else { Join-Path $HOME "HavenDesk" }
 $AppUrl = if ($env:HAVEN_DESK_URL) { $env:HAVEN_DESK_URL } else { "http://localhost:4141" }
