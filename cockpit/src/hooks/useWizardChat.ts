@@ -5,6 +5,11 @@ import { ERROR_SENTINEL } from "@/lib/ai/sentinel";
 
 export type WizardMessage = { role: "user" | "assistant"; content: string };
 
+// Only the recent tail is ever used (the route keeps the last 8 valid turns);
+// posting the whole on-screen conversation would grow the body unbounded over a
+// long session. A small buffer above the server cap keeps context intact.
+const SEND_TAIL = 12;
+
 // Replace the content of the last assistant message (the one currently
 // streaming) without mutating the array in place.
 function withLastAssistant(list: WizardMessage[], content: string): WizardMessage[] {
@@ -55,7 +60,7 @@ export function useWizardChat() {
         const res = await fetch("/api/wizard", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({ messages: history.slice(-SEND_TAIL) }),
           signal: ctrl.signal,
         });
         if (!res.ok || !res.body) {

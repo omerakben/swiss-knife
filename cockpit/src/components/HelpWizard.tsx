@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageCircleQuestion, X, Send, Square } from "lucide-react";
 
@@ -45,6 +45,17 @@ export function HelpWizard() {
   const [input, setInput] = useState("");
   const { messages, streaming, error, elapsedMs, send, stop } = useWizardChat();
   const secs = Math.round(elapsedMs / 1000);
+
+  // Escape closes the panel. Non-modal by design (no focus trap), so this is a
+  // convenience for keyboard users, not a modal dismissal.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   function submit(text: string) {
     const q = text.trim();

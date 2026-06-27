@@ -41,4 +41,11 @@ test.describe("help wizard", () => {
     await page.getByRole("link", { name: "Prompt Optimizer", exact: true }).click();
     await expect(page).toHaveURL(/\/tools\/prompt-optimizer$/);
   });
+
+  test("Escape closes the panel", async ({ page }) => {
+    await mockWizard(page, "anything");
+    await openGuide(page);
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Hi! I can explain any tool and point you to it.")).toBeHidden();
+  });
 });

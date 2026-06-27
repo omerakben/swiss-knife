@@ -19,7 +19,14 @@ export async function POST(req: Request) {
   const { messages } = (await req.json().catch(() => ({}))) as {
     messages?: { role?: string; content?: string }[];
   };
-  const history: ChatMessage[] = (Array.isArray(messages) ? messages : [])
+  const raw = Array.isArray(messages) ? messages : [];
+  // Reject an absurd payload outright (the repo caps every request body); the
+  // cap also bounds the filter walk below. The model only sees the last
+  // MAX_TURNS valid turns.
+  if (raw.length > 200) {
+    return Response.json({ error: "Conversation too long — start a new one." }, { status: 400 });
+  }
+  const history: ChatMessage[] = raw
     .filter(
       (m) =>
         m &&
