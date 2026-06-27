@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BUILTIN_STARTERS, INBOX_TARGET, INBOX_FIELD } from "./quickActions";
+import { BUILTIN_STARTERS, INBOX_TARGET, IMAGE_TARGET, INBOX_FIELD } from "./quickActions";
 import { buildStarterSeedPlan, parseInputs, validateStarter } from "./starters";
 
 describe("starters", () => {
@@ -34,6 +34,17 @@ describe("starters", () => {
   it("validateStarter requires non-empty text for an inbox starter", () => {
     expect(validateStarter(INBOX_TARGET, "X", { [INBOX_FIELD]: "" }).ok).toBe(false);
     expect(validateStarter(INBOX_TARGET, "X", { [INBOX_FIELD]: "a note" }).ok).toBe(true);
+  });
+
+  it("validateStarter treats an image starter like inbox (non-empty text)", () => {
+    expect(validateStarter(IMAGE_TARGET, "X", { [INBOX_FIELD]: "" }).ok).toBe(false);
+    expect(validateStarter(IMAGE_TARGET, "X", { [INBOX_FIELD]: "Describe it" }).ok).toBe(true);
+  });
+
+  it("every built-in starter passes validation (no unrunnable seed)", () => {
+    for (const s of BUILTIN_STARTERS) {
+      expect(validateStarter(s.target, s.label, s.inputs), `${s.key} invalid`).toEqual({ ok: true });
+    }
   });
 
   it("validateStarter caps label length and inputs size", () => {
