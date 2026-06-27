@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Loader2, Brain, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CalendarClock, Loader2, Brain, CheckCircle2, ListTodo } from "lucide-react";
 
 import { prisma } from "@/lib/db";
 import { getActiveProjectId } from "@/lib/project";
@@ -35,7 +35,18 @@ export async function DailyBrief() {
   const settle = <T,>(p: Promise<T>, fallbackValue: T) =>
     p.then((value) => ({ ok: true, value })).catch(() => ({ ok: false, value: fallbackValue }));
 
-  const [dueSoonR, doingR, pendingR, pendingCountR] = await Promise.all([
+  // Open to-dos that aren't already flagged as urgent: undated, or due tomorrow
+  // or later. Excludes overdue (< today) and due-today (== today) — those have
+  // their own buckets — so nothing is double-counted. This is the real backlog
+  // the "You're clear" message used to hide.
+  const tomorrowNoon = utcNoonOfLocalDay(new Date(), 1);
+  const backlogWhere = {
+    ...scope,
+    status: "todo" as const,
+    OR: [{ dueDate: null }, { dueDate: { gte: tomorrowNoon } }],
+  };
+
+  const [dueSoonR, doingR, toDoR, toDoCountR, pendingR, pendingCountR] = await Promise.all([
     // One query for everything with a due date that could matter today; the
     // overdue/due-today split happens on CALENDAR DAYS (lib/dates.ts), not raw
     // instants — a UTC-midnight-stored task is not "overdue" on its due day.
@@ -63,6 +74,16 @@ export async function DailyBrief() {
       [] as TaskLite[]
     ),
     settle(
+      prisma.task.findMany({
+        where: backlogWhere,
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: { id: true, title: true },
+      }),
+      [] as TaskLite[]
+    ),
+    settle(prisma.task.count({ where: backlogWhere }), 0),
+    settle(
       prisma.memoryFact.findMany({
         where: { ...scope, status: "pending", deletedAt: null },
         orderBy: { createdAt: "desc" },
@@ -73,10 +94,12 @@ export async function DailyBrief() {
     ),
     settle(prisma.memoryFact.count({ where: { ...scope, status: "pending", deletedAt: null } }), 0),
   ]);
-  const failed = !(dueSoonR.ok && doingR.ok && pendingR.ok && pendingCountR.ok);
-  const [dueSoon, doing, pending, pendingCount] = [
+  const failed = !(dueSoonR.ok && doingR.ok && toDoR.ok && toDoCountR.ok && pendingR.ok && pendingCountR.ok);
+  const [dueSoon, doing, toDo, toDoCount, pending, pendingCount] = [
     dueSoonR.value,
     doingR.value,
+    toDoR.value,
+    toDoCountR.value,
     pendingR.value,
     pendingCountR.value,
   ] as const;
@@ -84,7 +107,12 @@ export async function DailyBrief() {
   const overdue = dueSoon.filter((t) => t.dueDate && dueDayString(t.dueDate) < todayStr).slice(0, 5);
   const dueToday = dueSoon.filter((t) => t.dueDate && dueDayString(t.dueDate) === todayStr).slice(0, 5);
 
-  const clear = overdue.length === 0 && dueToday.length === 0 && doing.length === 0 && pendingCount === 0;
+  const clear =
+    overdue.length === 0 &&
+    dueToday.length === 0 &&
+    doing.length === 0 &&
+    toDoCount === 0 &&
+    pendingCount === 0;
 
   return (
     <Card>
@@ -132,6 +160,14 @@ export async function DailyBrief() {
                   <Loader2 className="h-4 w-4" /> {doing.length} in progress
                 </Link>
                 <TaskLines items={doing} />
+              </div>
+            )}
+            {toDoCount > 0 && (
+              <div>
+                <Link href="/tools/tasks" className="flex items-center gap-2 font-medium hover:underline">
+                  <ListTodo className="h-4 w-4" /> {toDoCount} to do
+                </Link>
+                <TaskLines items={toDo} />
               </div>
             )}
             {pendingCount > 0 && (
