@@ -3,6 +3,14 @@ import { test, expect } from "@playwright/test";
 // The memory loop UI, route-mocked so it's model- and DB-state-independent.
 
 test.describe("memory loop", () => {
+  // The page auto-reindexes unranked facts on mount (best-effort). Mock it so the
+  // suite stays hermetic regardless of the dev DB's indexed state or Ollama.
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/memory/reindex", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ indexed: 0, total: 0 }) })
+    );
+  });
+
   test("memory page shows the loop controls", async ({ page }) => {
     await page.goto("/tools/memory");
     await expect(page.getByRole("heading", { name: /memory/i })).toBeVisible();
