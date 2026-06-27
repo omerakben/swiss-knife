@@ -111,6 +111,51 @@ export const QUICK_ACTIONS: QuickAction[] = [
     system: "You write warm, sincere, short thank-you notes. Return only the note.",
     buildPrompt: (i) => `Write a warm, genuine thank-you note to ${v(i, "who")} for ${v(i, "for")}. Keep it short and heartfelt.`,
   },
+  {
+    id: "translate",
+    title: "Translate this",
+    blurb: "Translate text into another language — privately, on your machine.",
+    category: "write",
+    icon: "Languages",
+    inputs: [
+      { name: "text", label: "Text to translate", type: "textarea", placeholder: "Paste the text…" },
+      { name: "language", label: "Into which language?", type: "text", placeholder: "e.g. Spanish, French, Japanese" },
+    ],
+    system:
+      "You are a careful translator. Translate the user's text into the target language, preserving tone and meaning. Return only the translation — no notes, transliteration, or commentary.",
+    buildPrompt: (i) => `Translate the following text into ${v(i, "language")}:\n"""\n${v(i, "text")}\n"""`,
+  },
+  {
+    id: "reply-to-review",
+    title: "Reply to a review",
+    blurb: "A warm, professional reply to a customer review — good or bad.",
+    category: "write",
+    icon: "Star",
+    inputs: [
+      { name: "review", label: "The review", type: "textarea", placeholder: "Paste the customer's review…" },
+      { name: "note", label: "Anything to add? (optional)", type: "text", placeholder: "e.g. offer a refund, thank them by name", optional: true },
+    ],
+    system:
+      "You write short, professional, genuine replies to customer reviews for a small business. Stay gracious even with negative reviews; never be defensive or make excuses. Return only the reply.",
+    buildPrompt: (i) => {
+      const note = v(i, "note");
+      return `Write a reply to this customer review:\n"""\n${v(i, "review")}\n"""\n${note ? `Also keep in mind: ${note}.\n` : ""}Keep it warm, professional, and brief.`;
+    },
+  },
+  {
+    id: "product-description",
+    title: "Write a product description",
+    blurb: "Turn a few details into a clear, appealing product description.",
+    category: "write",
+    icon: "Tag",
+    inputs: [
+      { name: "product", label: "What's the product?", type: "text", placeholder: "e.g. handmade lavender soap" },
+      { name: "details", label: "Key details", type: "textarea", placeholder: "Materials, size, what makes it special…" },
+    ],
+    system:
+      "You write concise, appealing product descriptions for small businesses. Lead with the benefit, keep it honest and easy to scan. Return only the description.",
+    buildPrompt: (i) => `Write a short, appealing product description.\nProduct: ${v(i, "product")}\nKey details: ${v(i, "details")}`,
+  },
   // ── Organize & summarize ─────────────────────────────────────────────────────
   {
     id: "notes-to-list",
@@ -313,6 +358,19 @@ export const BUILTIN_STARTERS: BuiltinStarter[] = [
   // thank-you-note
   { target: "thank-you-note", key: "thank-you-note:gift", label: "A birthday gift",
     inputs: { who: "Aunt Mary", for: "the lovely birthday scarf" } },
+  // translate
+  { target: "translate", key: "translate:spanish-letter", label: "A letter in Spanish",
+    inputs: { text: "Estimada vecina, le aviso que cortarán el agua el martes por la mañana por unas reparaciones. Disculpe las molestias.", language: "English" } },
+  { target: "translate", key: "translate:to-french", label: "Reply in French",
+    inputs: { text: "Thanks so much for your order — it will ship on Monday and arrive by Friday.", language: "French" } },
+  // reply-to-review
+  { target: "reply-to-review", key: "reply-to-review:happy", label: "A 5-star review",
+    inputs: { review: "Absolutely loved the cake for my daughter's birthday — beautiful and delicious. Will order again!", note: "" } },
+  { target: "reply-to-review", key: "reply-to-review:unhappy", label: "An unhappy review",
+    inputs: { review: "Waited 40 minutes for a table even with a reservation. The food was good but the wait was frustrating.", note: "apologize and offer a free dessert on their next visit" } },
+  // product-description
+  { target: "product-description", key: "product-description:soap", label: "Handmade soap",
+    inputs: { product: "handmade lavender soap", details: "olive oil base, dried lavender from a local farm, 100g bar, gentle on sensitive skin" } },
   // notes-to-list
   { target: "notes-to-list", key: "notes-to-list:brain-dump", label: "A meeting brain-dump",
     inputs: { notes: "call the printer about the proofs, Sam owes me the quote, book the venue for the 12th, follow up with Dana, order more business cards" } },
