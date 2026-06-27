@@ -18,4 +18,8 @@ describe("deriveNoteTitle", () => {
   it("trims and caps the derived title", () => {
     expect(deriveNoteTitle("#   Spaced   ", "X")).toBe("Spaced");
   });
+  it("strips ATX closing hashes and guards an empty fallback", () => {
+    expect(deriveNoteTitle("# Title #", "X")).toBe("Title");
+    expect(deriveNoteTitle("", "")).toBe("Saved result");
+  });
 });

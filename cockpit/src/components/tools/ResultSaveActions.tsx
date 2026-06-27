@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ListPlus, StickyNote, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,10 +29,14 @@ export function ResultSaveActions({ text, action }: { text: string; action: Quic
   const [extracting, setExtracting] = useState(false);
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
   const [adding, setAdding] = useState(false);
+  // A synchronous lock: the state flags update async, so a fast double-click can
+  // pass a state-based guard twice and double-write. One in-flight op at a time.
+  const busyRef = useRef(false);
 
   async function saveNote() {
     const snapshot = text;
-    if (!snapshot.trim() || savingNote) return;
+    if (!snapshot.trim() || savedNote || busyRef.current) return;
+    busyRef.current = true;
     setSavingNote(true);
     try {
       const res = await fetch("/api/ideas", {
@@ -49,13 +53,15 @@ export function ResultSaveActions({ text, action }: { text: string; action: Quic
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't save");
     } finally {
+      busyRef.current = false;
       setSavingNote(false);
     }
   }
 
   async function extractTasks() {
     const snapshot = text;
-    if (!snapshot.trim() || extracting) return;
+    if (!snapshot.trim() || busyRef.current) return;
+    busyRef.current = true;
     setExtracting(true);
     try {
       const res = await fetch("/api/result-tasks", {
@@ -63,24 +69,29 @@ export function ResultSaveActions({ text, action }: { text: string; action: Quic
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: snapshot }),
       });
-      const data = (await res.json().catch(() => ({}))) as { tasks?: DraftTask[]; error?: string };
+      const data = (await res.json().catch(() => ({}))) as { tasks?: DraftTask[]; dropped?: number; error?: string };
       if (!res.ok) throw new Error(data.error || "Couldn't read the result");
       const tasks = data.tasks ?? [];
       if (tasks.length === 0) {
         toast.message("No clear to-dos found", { description: "Try “Save as note” to keep this result." });
         return;
       }
+      if ((data.dropped ?? 0) > 0) {
+        toast.message(`Showing the first ${tasks.length} tasks`, { description: `${data.dropped} more didn’t fit.` });
+      }
       setRows(tasks.map((t) => ({ ...t, keep: true })));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't read the result");
     } finally {
+      busyRef.current = false;
       setExtracting(false);
     }
   }
 
   async function addTasks() {
     const keep = (rows ?? []).filter((r) => r.keep && r.title.trim());
-    if (keep.length === 0 || adding) return;
+    if (keep.length === 0 || busyRef.current) return;
+    busyRef.current = true;
     setAdding(true);
     try {
       const res = await fetch("/api/result-tasks", {
@@ -98,6 +109,7 @@ export function ResultSaveActions({ text, action }: { text: string; action: Quic
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't add the tasks");
     } finally {
+      busyRef.current = false;
       setAdding(false);
     }
   }
@@ -116,7 +128,7 @@ export function ResultSaveActions({ text, action }: { text: string; action: Quic
         size="sm"
         className="h-7 px-2 text-xs"
         onClick={saveNote}
-        disabled={!text || savingNote}
+        disabled={!text || savingNote || savedNote}
       >
         {savedNote ? <Check className="mr-1 h-3.5 w-3.5" /> : <StickyNote className="mr-1 h-3.5 w-3.5" />}
         {savedNote ? "Saved" : "Save as note"}

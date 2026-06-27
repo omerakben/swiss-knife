@@ -7,8 +7,8 @@ export function deriveNoteTitle(text: string, fallback: string): string {
   const firstNonEmpty = lines.find((l) => l.trim().length > 0)?.trim() ?? "";
 
   const heading = firstNonEmpty.match(/^#{1,6}\s+(.+)$/);
-  if (heading) return heading[1].trim().slice(0, MAX);
+  if (heading) return heading[1].replace(/\s+#+\s*$/, "").trim().slice(0, MAX);
 
   if (firstNonEmpty && firstNonEmpty.length <= MAX) return firstNonEmpty;
-  return fallback;
+  return fallback.trim() || "Saved result";
 }
