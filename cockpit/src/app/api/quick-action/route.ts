@@ -1,6 +1,6 @@
 import { assertOllamaReady } from "@/lib/health";
 import { streamTextResponse } from "@/lib/ai/streamRoute";
-import { getQuickAction, missingInputs, buildMessages, buildRefineMessages } from "@/lib/quickActions";
+import { getQuickAction, missingInputs, buildMessages, buildRefineMessages, specTemperature } from "@/lib/quickActions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +53,6 @@ export async function POST(req: Request) {
   // default for un-migrated actions with no spec.
   return streamTextResponse({
     messages: buildMessages(action, vals),
-    temperature: action.spec?.temperature,
+    temperature: specTemperature(action.id),
   });
 }
