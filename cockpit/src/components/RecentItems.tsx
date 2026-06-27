@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { NoteActions } from "@/components/tools/NoteActions";
 
 export type RecentItem = {
   id: string;
@@ -46,6 +47,7 @@ export function RecentItems({
   editFields,
   searchable = false,
   highlightId = null,
+  itemActions,
 }: {
   heading: string;
   items: RecentItem[];
@@ -56,6 +58,8 @@ export function RecentItems({
   searchable?: boolean;
   /** Ring + scroll to this item (the ⌘K search deep link). */
   highlightId?: string | null;
+  /** Per-item "act on this" affordances. "notes" → turn into tasks / draft email. */
+  itemActions?: "notes";
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<RecentItem | null>(null);
@@ -173,6 +177,7 @@ export function RecentItems({
               <p className="line-clamp-3 whitespace-pre-wrap text-sm text-muted-foreground">
                 {it.body}
               </p>
+              {itemActions === "notes" && <NoteActions text={it.body} />}
             </CardContent>
           </Card>
         ))}

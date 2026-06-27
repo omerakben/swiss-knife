@@ -70,6 +70,7 @@ export default async function NotesPage({
           deleteBase="/api/ideas"
           editBase="/api/ideas"
           searchable
+          itemActions="notes"
           highlightId={ideaId ?? null}
           editFields={[
             { key: "title", label: "Title" },
