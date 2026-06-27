@@ -48,6 +48,11 @@ describe("quickActions", () => {
     expect(() => buildMessages(a, bad)).not.toThrow();
   });
 
+  it("canSaveTasks is set on exactly the list/plan actions", () => {
+    const flagged = QUICK_ACTIONS.filter((a) => a.canSaveTasks).map((a) => a.id).sort();
+    expect(flagged).toEqual(["find-action-items", "notes-to-list", "plan-week", "study-plan"]);
+  });
+
   it("buildMessages returns a system message then a user message embedding the inputs", () => {
     const a = getQuickAction("summarize")!;
     const msgs = buildMessages(a, { text: "a distinctive phrase to find" });

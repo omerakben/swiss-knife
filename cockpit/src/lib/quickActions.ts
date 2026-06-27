@@ -33,6 +33,8 @@ export type QuickAction = {
   blurb: string;
   category: QuickActionCategory;
   icon: string; // lucide icon name, resolved in the UI
+  /** Result is a list/plan worth turning into real Tasks (shows "Save as tasks"). */
+  canSaveTasks?: boolean;
   inputs: QuickInput[];
   examples?: QuickActionExample[];
   system: string;
@@ -109,6 +111,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   // ── Organize & summarize ─────────────────────────────────────────────────────
   {
     id: "notes-to-list",
+    canSaveTasks: true,
     title: "Turn notes into a to-do list",
     blurb: "Drop a messy brain-dump; get a clean checklist.",
     category: "organize",
@@ -141,6 +144,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   // ── Plan ─────────────────────────────────────────────────────────────────────
   {
     id: "plan-week",
+    canSaveTasks: true,
     title: "Plan my week",
     blurb: "Turn what's on your plate into a simple plan.",
     category: "plan",
@@ -166,6 +170,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   },
   {
     id: "study-plan",
+    canSaveTasks: true,
     title: "Make a study plan",
     blurb: "A plan to learn or revise something by a date.",
     category: "plan",
@@ -231,6 +236,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   },
   {
     id: "find-action-items",
+    canSaveTasks: true,
     title: "Find the action items",
     blurb: "Pull the to-dos out of an email or thread.",
     category: "organize",
