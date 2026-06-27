@@ -5,6 +5,7 @@
 // route and the UI share one source of truth and it stays unit-testable.
 
 import type { ChatMessage } from "@/lib/ollama";
+import { compileSpec, type PromptSpec } from "./prompts/spec";
 
 export type QuickActionCategory = "write" | "organize" | "plan" | "improve";
 
@@ -47,6 +48,8 @@ export type QuickAction = {
   inputs: QuickInput[];
   examples?: QuickActionExample[];
   system: string;
+  /** When set, the engineered prompt: compiled to messages with few-shot turns. */
+  spec?: PromptSpec;
   buildPrompt: (inputs: Record<string, string>) => string;
 };
 
@@ -579,8 +582,10 @@ export function missingInputs(action: QuickAction, inputs: Record<string, string
 }
 
 export function buildMessages(action: QuickAction, inputs: Record<string, string>): ChatMessage[] {
+  const user = action.buildPrompt(inputs);
+  if (action.spec) return compileSpec(action.spec, user);
   return [
     { role: "system", content: action.system },
-    { role: "user", content: action.buildPrompt(inputs) },
+    { role: "user", content: user },
   ];
 }

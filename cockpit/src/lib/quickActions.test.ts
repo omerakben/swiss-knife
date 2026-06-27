@@ -86,13 +86,38 @@ describe("quickActions", () => {
     expect(flagged).toEqual(["find-action-items", "notes-to-list", "plan-week", "study-plan"]);
   });
 
-  it("buildMessages returns a system message then a user message embedding the inputs", () => {
+  it("buildMessages starts with a system message and embeds the inputs in the final user turn", () => {
+    // Spec-agnostic: holds whether or not the action carries an engineered spec
+    // (a spec adds few-shot turns between the system message and the real input).
     const a = getQuickAction("summarize")!;
     const msgs = buildMessages(a, { text: "a distinctive phrase to find" });
-    expect(msgs).toHaveLength(2);
     expect(msgs[0].role).toBe("system");
-    expect(msgs[1].role).toBe("user");
-    expect(msgs[1].content).toContain("a distinctive phrase to find");
+    expect(msgs[msgs.length - 1].role).toBe("user");
+    expect(msgs[msgs.length - 1].content).toContain("a distinctive phrase to find");
+  });
+
+  it("buildMessages uses the spec (few-shot turns) when an action has one", () => {
+    const spec = {
+      role: "You reply.",
+      rules: ["Be kind."],
+      outputContract: "Only the reply.",
+      examples: [{ input: "in1", output: "out1" }],
+    };
+    const a = { ...QUICK_ACTIONS[0], spec, system: "LEGACY", buildPrompt: () => "REAL" };
+    const msgs = buildMessages(a, {});
+    // system, one example pair, then the real user turn — not the legacy 2-message shape
+    expect(msgs.map((m) => m.role)).toEqual(["system", "user", "assistant", "user"]);
+    expect(msgs[0].content).not.toContain("LEGACY");
+    expect(msgs[3].content).toBe("REAL");
+  });
+
+  it("buildMessages falls back to the legacy path when an action has no spec", () => {
+    const a = { ...QUICK_ACTIONS[0], spec: undefined, system: "LEGACY SYS", buildPrompt: () => "U" };
+    const msgs = buildMessages(a, {});
+    expect(msgs).toEqual([
+      { role: "system", content: "LEGACY SYS" },
+      { role: "user", content: "U" },
+    ]);
   });
 
   it("every action's buildPrompt produces non-empty text for filled inputs", () => {
