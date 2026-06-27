@@ -471,6 +471,16 @@ for (const a of QUICK_ACTIONS) {
   a.examples = EXAMPLES_BY_ACTION[a.id] ?? [];
 }
 
+/**
+ * The code built-in starters for a single-text target (inbox / image / email /
+ * meeting-notes), in the `{ label, inputs }` shape StarterChips wants as its
+ * `fallback`. Passing this (instead of `[]`) means the chips render instantly
+ * from code while the live `/api/starters` list loads — no empty-row flash.
+ */
+export function builtinStartersFor(target: string): QuickActionExample[] {
+  return BUILTIN_STARTERS.filter((s) => s.target === target).map((s) => ({ label: s.label, inputs: s.inputs }));
+}
+
 /** The single curated example shown as the featured "see it work" demo on the home. */
 export const FEATURED_DEMO = { actionId: "reply-to-message", exampleIndex: 0 };
 

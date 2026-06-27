@@ -13,7 +13,7 @@ import { StarterChips } from "@/components/StarterChips";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorAlert } from "@/components/ErrorAlert";
-import { IMAGE_TARGET, INBOX_FIELD } from "@/lib/quickActions";
+import { IMAGE_TARGET, INBOX_FIELD, builtinStartersFor } from "@/lib/quickActions";
 
 export default function ImagePage() {
   const isMac = useIsMac();
@@ -149,7 +149,7 @@ export default function ImagePage() {
 
         <StarterChips
           target={IMAGE_TARGET}
-          fallback={[]}
+          fallback={builtinStartersFor(IMAGE_TARGET)}
           current={{ [INBOX_FIELD]: prompt }}
           onPick={(inputs) => setPrompt(inputs[INBOX_FIELD] ?? "")}
           editFields={[{ name: INBOX_FIELD, label: "Question", type: "textarea" }]}
