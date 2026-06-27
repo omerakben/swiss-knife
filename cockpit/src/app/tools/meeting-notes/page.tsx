@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { StarterChips } from "@/components/StarterChips";
-import { MEETING_TARGET, INBOX_FIELD } from "@/lib/quickActions";
+import { MEETING_TARGET, INBOX_FIELD, builtinStartersFor } from "@/lib/quickActions";
 import type { DraftTask } from "@/lib/meetingNotes";
 import { DraftTaskReview, type ReviewRow } from "@/components/tasks/DraftTaskReview";
 
@@ -85,7 +85,7 @@ export default function MeetingNotesPage() {
       <div className="mt-4">
         <StarterChips
           target={MEETING_TARGET}
-          fallback={[]}
+          fallback={builtinStartersFor(MEETING_TARGET)}
           current={{ [INBOX_FIELD]: notes }}
           onPick={(inputs) => setNotes(inputs[INBOX_FIELD] ?? "")}
           editFields={[{ name: INBOX_FIELD, label: "Notes", type: "textarea" }]}

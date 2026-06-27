@@ -19,6 +19,7 @@ import {
   HERO_IDS_BY_PERSONA,
   DEFAULT_HERO_IDS,
   TEXT_STARTER_TARGETS,
+  builtinStartersFor,
 } from "./quickActions";
 
 describe("quickActions", () => {
@@ -151,6 +152,18 @@ describe("quickActions", () => {
         );
       });
     }
+  });
+
+  it("builtinStartersFor returns the code starters for a single-text target (no empty-chip flash)", () => {
+    for (const target of ["inbox", "image", "email", "meeting-notes"]) {
+      const fb = builtinStartersFor(target);
+      expect(fb.length, `${target} has built-in starters as a fallback`).toBeGreaterThan(0);
+      for (const s of fb) {
+        expect(s.label.trim().length).toBeGreaterThan(0);
+        expect(Object.keys(s.inputs).length).toBeGreaterThan(0);
+      }
+    }
+    expect(builtinStartersFor("not-a-target")).toEqual([]);
   });
 
   it("every action's buildPrompt produces non-empty text for filled inputs", () => {
