@@ -2,12 +2,14 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trash2, GripVertical, Pencil } from "lucide-react";
+import { Trash2, GripVertical, Pencil, CalendarPlus } from "lucide-react";
 
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDueDay } from "@/lib/dates";
+import { downloadText } from "@/lib/download";
+import { buildTaskIcs } from "@/lib/ics";
 import type { Task } from "./TasksView";
 
 export const PRIORITY_VARIANT = {
@@ -15,6 +17,11 @@ export const PRIORITY_VARIANT = {
   medium: "warning",
   high: "destructive",
 } as const;
+
+/** Filename-safe slug for the .ics download; falls back to "task". */
+function slug(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "task";
+}
 
 export function TaskCard({
   task,
@@ -99,6 +106,28 @@ export function TaskCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
+          {task.dueDate && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              aria-label="Add to calendar"
+              onClick={() =>
+                downloadText(
+                  `${slug(task.title)}.ics`,
+                  buildTaskIcs({
+                    id: task.id,
+                    title: task.title,
+                    notes: task.notes,
+                    dueDate: task.dueDate as string,
+                  }),
+                  "text/calendar;charset=utf-8",
+                )
+              }
+            >
+              <CalendarPlus className="h-3.5 w-3.5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
