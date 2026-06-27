@@ -100,6 +100,14 @@ describe("quickActions", () => {
     expect(searchQuickActions("zzzz-no-such-thing")).toEqual([]);
   });
 
+  it("searchQuickActions matches across hyphen/space (the 'thank you' → 'thank-you' case)", () => {
+    const hits = searchQuickActions("thank you");
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.some((a) => a.id === "thank-you-note")).toBe(true);
+    // and the reverse: hyphenated query against spaced text
+    expect(searchQuickActions("to-do").some((a) => a.id === "notes-to-list")).toBe(true);
+  });
+
   it("searchQuickActions also matches the category label", () => {
     // "plan" is a category label; at least the meal/week planners should surface.
     expect(searchQuickActions("plan").length).toBeGreaterThan(0);

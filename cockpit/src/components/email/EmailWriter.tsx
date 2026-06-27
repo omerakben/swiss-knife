@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Square } from "lucide-react";
 import { toast } from "sonner";
@@ -23,6 +23,10 @@ import {
 
 const TONES = ["neutral", "formal", "friendly", "direct", "warm", "apologetic"];
 
+/** sessionStorage handoff key: a saved note (or other tool) drops a brief here
+ * and the Email Writer prefills it on mount. */
+export const EMAIL_BRIEF_KEY = "havendesk:email-brief";
+
 export function EmailWriter() {
   const router = useRouter();
   const [mode, setMode] = useState("compose");
@@ -42,6 +46,17 @@ export function EmailWriter() {
     buildBody: () => ({ mode, tone, length, brief, sourceText }),
   });
   const secs = Math.round(elapsedMs / 1000);
+
+  // Consume a one-time brief handed off from a saved note (sessionStorage, not a
+  // state initializer — that would SSR-mismatch the textarea).
+  useEffect(() => {
+    const handoff = sessionStorage.getItem(EMAIL_BRIEF_KEY);
+    if (handoff) {
+      sessionStorage.removeItem(EMAIL_BRIEF_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time external handoff consume
+      setBrief(handoff);
+    }
+  }, []);
 
   async function handleRun() {
     if (!brief.trim()) {

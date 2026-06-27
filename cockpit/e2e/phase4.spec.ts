@@ -2,10 +2,14 @@ import { test, expect } from "@playwright/test";
 
 test.describe("phase 4", () => {
   test("memory page shows add + suggest controls", async ({ page }) => {
+    // The page auto-reindexes unranked facts on mount; mock it for hermeticity.
+    await page.route("**/api/memory/reindex", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ indexed: 0, total: 0 }) })
+    );
     await page.goto("/tools/memory");
     await expect(page.getByRole("heading", { name: /memory/i })).toBeVisible();
     await expect(page.getByPlaceholder(/add a fact/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /suggest from text/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /find facts in text/i })).toBeVisible();
   });
 
   test("image page shows upload + ask controls", async ({ page }) => {

@@ -3,13 +3,21 @@ import { test, expect } from "@playwright/test";
 // The memory loop UI, route-mocked so it's model- and DB-state-independent.
 
 test.describe("memory loop", () => {
+  // The page auto-reindexes unranked facts on mount (best-effort). Mock it so the
+  // suite stays hermetic regardless of the dev DB's indexed state or Ollama.
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/memory/reindex", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ indexed: 0, total: 0 }) })
+    );
+  });
+
   test("memory page shows the loop controls", async ({ page }) => {
     await page.goto("/tools/memory");
     await expect(page.getByRole("heading", { name: /memory/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /suggest from text/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /from activity/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /reindex/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /classify/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /find facts in text/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /learn from my work/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /improve ranking/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /auto-categorize/i })).toBeVisible();
     await expect(page.getByPlaceholder(/search facts/i)).toBeVisible();
     await expect(page.getByRole("combobox", { name: /filter by category/i })).toBeVisible();
     await expect(page.getByText("Relevance preview", { exact: true })).toBeVisible();
@@ -45,7 +53,7 @@ test.describe("memory loop", () => {
       })
     );
     await page.goto("/tools/memory");
-    await page.getByRole("button", { name: /suggest from text/i }).click();
+    await page.getByRole("button", { name: /find facts in text/i }).click();
     await page.getByPlaceholder(/Paste notes/i).fill("POS is the point of sale screen. UOM is unit of measure.");
     await page.getByRole("button", { name: /^learn$/i }).click();
 

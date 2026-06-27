@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Square,
@@ -93,6 +94,7 @@ function ActionCard({ a, onOpen }: { a: QuickAction; onOpen: (a: QuickAction) =>
 }
 
 export function QuickActions({ initialActionId }: { initialActionId: string | null }) {
+  const router = useRouter();
   const [active, setActive] = useState<QuickAction | null>(
     initialActionId ? getQuickAction(initialActionId) ?? null : null,
   );
@@ -138,6 +140,9 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
     setActive(null);
     setValues({});
     reset();
+    // Clear any ?action= so re-selecting the SAME action from ⌘K navigates again
+    // (pushing an identical URL would be a no-op and leave you on the gallery).
+    if (initialActionId) router.replace("/tools/quick-actions");
   }
 
   if (!active) {
