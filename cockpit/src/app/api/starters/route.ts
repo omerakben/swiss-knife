@@ -6,26 +6,29 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Seed the standards once, create-only, when the table is empty. Create-only so
- * a later call never overwrites an edit; gated on an empty table so a deleted
- * standard does not silently reappear on the next read.
+ * Seed a target's standards once, create-only, when that target has no rows.
+ * Per-target (not whole-table) so a NEW target added later — e.g. "image" on an
+ * install that already has inbox/action starters — still seeds. Create-only so a
+ * later call never overwrites an edit; gated on a target with zero rows so a
+ * deleted standard does not reappear (unless every starter for that target is
+ * removed, which re-offers the defaults — a benign per-target edge).
  */
-async function ensureBuiltinStarters() {
-  const count = await prisma.starter.count();
+async function ensureBuiltinStarters(target: string) {
+  const count = await prisma.starter.count({ where: { target } });
   if (count > 0) return;
-  for (const row of buildStarterSeedPlan(BUILTIN_STARTERS)) {
+  for (const row of buildStarterSeedPlan(BUILTIN_STARTERS).filter((r) => r.target === target)) {
     try {
       await prisma.starter.upsert({ where: { sourceKey: row.sourceKey }, create: row, update: {} });
     } catch {
-      // A concurrent first read (e.g. runner + inbox in two tabs) may have just
-      // created this row — ignore the unique-sourceKey conflict.
+      // A concurrent first read (e.g. two tabs) may have just created this row —
+      // ignore the unique-sourceKey conflict.
     }
   }
 }
 
 export async function GET(req: Request) {
-  await ensureBuiltinStarters();
   const target = new URL(req.url).searchParams.get("target") ?? "";
+  await ensureBuiltinStarters(target);
   const rows = await prisma.starter.findMany({
     where: { target },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],

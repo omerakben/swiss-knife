@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import { useAiTool } from "@/hooks/useAiTool";
 import { useIsMac } from "@/hooks/useIsMac";
 import { AiOutput } from "@/components/tools/AiOutput";
+import { StarterChips } from "@/components/StarterChips";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorAlert } from "@/components/ErrorAlert";
+import { IMAGE_TARGET, INBOX_FIELD } from "@/lib/quickActions";
 
 export default function ImagePage() {
   const isMac = useIsMac();
@@ -140,6 +142,15 @@ export default function ImagePage() {
             <input type="file" accept="image/*" className="hidden" onChange={onFile} />
           </label>
         </Button>
+
+        <StarterChips
+          target={IMAGE_TARGET}
+          fallback={[]}
+          current={{ [INBOX_FIELD]: prompt }}
+          onPick={(inputs) => setPrompt(inputs[INBOX_FIELD] ?? "")}
+          editFields={[{ name: INBOX_FIELD, label: "Question", type: "textarea" }]}
+          headline="Not sure what to ask? Tap one:"
+        />
 
         <Textarea
           rows={3}
