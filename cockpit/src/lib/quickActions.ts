@@ -21,6 +21,9 @@ export type QuickActionExample = { label: string; inputs: Record<string, string>
 
 // The Smart Inbox is a starter target too; its single textarea is the "text" field.
 export const INBOX_TARGET = "inbox";
+// The Image tool is a starter target too: its question presets fill the prompt.
+export const IMAGE_TARGET = "image";
+// The single text field shared by the inbox and image starter targets.
 export const INBOX_FIELD = "text";
 
 // A built-in starter: the seed source for the editable Starter rows (lib/starters.ts).
@@ -370,13 +373,22 @@ export const BUILTIN_STARTERS: BuiltinStarter[] = [
     inputs: { [INBOX_FIELD]: "call the printer, send the quote to Sam, book the venue for the 12th, order business cards" } },
   { target: INBOX_TARGET, key: "inbox:remember-fact", label: "A fact to remember",
     inputs: { [INBOX_FIELD]: "Our tax-exempt number is 12-3456789; the accountant is Priya at Maple & Co." } },
+  // Image starters — question presets that fill the "what to ask" box.
+  { target: IMAGE_TARGET, key: "image:describe", label: "Describe it",
+    inputs: { [INBOX_FIELD]: "Describe this image in detail." } },
+  { target: IMAGE_TARGET, key: "image:read-text", label: "Read the text",
+    inputs: { [INBOX_FIELD]: "Read and transcribe all the text in this image, keeping the layout where it matters." } },
+  { target: IMAGE_TARGET, key: "image:receipt", label: "Pull the receipt details",
+    inputs: { [INBOX_FIELD]: "This is a receipt or invoice. Pull out the vendor, date, total, and a spending category. If a field is missing, say \"unknown\"." } },
+  { target: IMAGE_TARGET, key: "image:screenshot", label: "What's in this screenshot?",
+    inputs: { [INBOX_FIELD]: "What is shown in this screenshot, and what is it asking me to do?" } },
 ];
 
 // Group the action-targeted built-ins into the per-action example shape the
 // runner, the attach, and getFeaturedDemo already use (inbox starters excluded).
 const EXAMPLES_BY_ACTION: Record<string, QuickActionExample[]> = {};
 for (const s of BUILTIN_STARTERS) {
-  if (s.target === INBOX_TARGET) continue;
+  if (s.target === INBOX_TARGET || s.target === IMAGE_TARGET) continue;
   (EXAMPLES_BY_ACTION[s.target] ??= []).push({ label: s.label, inputs: s.inputs });
 }
 for (const a of QUICK_ACTIONS) {
