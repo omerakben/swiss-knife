@@ -96,18 +96,21 @@ describe("quickActions", () => {
     expect(msgs[msgs.length - 1].content).toContain("a distinctive phrase to find");
   });
 
-  it("buildMessages uses the spec (few-shot turns) when an action has one", () => {
-    const spec = {
-      role: "You reply.",
-      rules: ["Be kind."],
-      outputContract: "Only the reply.",
-      examples: [{ input: "in1", output: "out1" }],
+  it("buildMessages uses the spec (few-shot turns derived from gold) when an action has one", () => {
+    const spec = { role: "You reply.", rules: ["Be kind."], outputContract: "Only the reply." };
+    const a = {
+      ...QUICK_ACTIONS[0],
+      spec,
+      gold: [{ inputs: { x: "EX" }, output: "out1" }],
+      system: "LEGACY",
+      buildPrompt: (i: Record<string, string>) => (i.x ? `built:${i.x}` : "REAL"),
     };
-    const a = { ...QUICK_ACTIONS[0], spec, system: "LEGACY", buildPrompt: () => "REAL" };
     const msgs = buildMessages(a, {});
-    // system, one example pair, then the real user turn — not the legacy 2-message shape
+    // system, one example pair (input derived via buildPrompt), then the real user turn
     expect(msgs.map((m) => m.role)).toEqual(["system", "user", "assistant", "user"]);
     expect(msgs[0].content).not.toContain("LEGACY");
+    expect(msgs[1].content).toBe("built:EX"); // the gold input ran through buildPrompt
+    expect(msgs[2].content).toBe("out1");
     expect(msgs[3].content).toBe("REAL");
   });
 
@@ -120,31 +123,25 @@ describe("quickActions", () => {
     ]);
   });
 
-  it("batch-1 actions carry a 2-example spec with a non-empty output contract", () => {
-    for (const id of ["reply-to-message", "reply-to-review", "summarize", "plan-week"]) {
-      const a = getQuickAction(id)!;
-      expect(a.spec, `${id} has a spec`).toBeTruthy();
-      expect(a.spec!.examples.length, `${id} has 2 examples`).toBe(2);
-      expect(a.spec!.outputContract.trim().length, `${id} has a contract`).toBeGreaterThan(0);
-      expect(a.spec!.role.trim().length, `${id} has a role`).toBeGreaterThan(0);
+  it("every action with a spec has a role, a contract, and at least 2 gold pairs", () => {
+    // Generic: auto-covers every engineered flow, not a hardcoded batch list.
+    for (const a of QUICK_ACTIONS.filter((x) => x.spec)) {
+      expect(a.spec!.role.trim().length, `${a.id} role`).toBeGreaterThan(0);
+      expect(a.spec!.outputContract.trim().length, `${a.id} contract`).toBeGreaterThan(0);
+      expect(a.gold?.length ?? 0, `${a.id} gold pairs`).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it("each batch-1 spec example input matches that action's buildPrompt shape (few-shot mirrors real input)", () => {
-    // The few-shot the model sees must look exactly like the real templated input,
-    // so format transfer is perfect. We don't know the exact starter values here,
-    // but every example input must contain the action's invariant prompt scaffolding.
-    const scaffold: Record<string, string> = {
-      "reply-to-message": "Write a reply. What I want to say:",
-      "reply-to-review": "Write a reply to this customer review:",
-      summarize: "Summarize this in 3 to 5 sentences",
-      "plan-week": "group it into Must do, Should do, and Can wait",
-    };
-    for (const [id, needle] of Object.entries(scaffold)) {
-      const a = getQuickAction(id)!;
-      for (const ex of a.spec!.examples) {
-        expect(ex.input, `${id} example mirrors buildPrompt`).toContain(needle);
-      }
+  it("every spec's few-shot example input is exactly that action's buildPrompt over the gold inputs (mirroring by construction)", () => {
+    for (const a of QUICK_ACTIONS.filter((x) => x.spec && x.gold?.length)) {
+      const msgs = buildMessages(a, { _probe: "real" });
+      a.gold!.forEach((g, i) => {
+        const exampleUserTurn = msgs[1 + i * 2]; // system, then (user, assistant) pairs
+        expect(exampleUserTurn.role).toBe("user");
+        expect(exampleUserTurn.content, `${a.id} example ${i} mirrors buildPrompt`).toBe(
+          a.buildPrompt(g.inputs),
+        );
+      });
     }
   });
 

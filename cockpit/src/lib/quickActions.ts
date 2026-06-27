@@ -5,7 +5,7 @@
 // route and the UI share one source of truth and it stays unit-testable.
 
 import type { ChatMessage } from "@/lib/ollama";
-import { compileSpec, type PromptSpec } from "./prompts/spec";
+import { compileSpec, examplesFromGold, type PromptSpec, type GoldPair } from "./prompts/spec";
 import {
   REPLY_TO_MESSAGE_GOLD,
   REPLY_TO_REVIEW_GOLD,
@@ -54,8 +54,11 @@ export type QuickAction = {
   inputs: QuickInput[];
   examples?: QuickActionExample[];
   system: string;
-  /** When set, the engineered prompt: compiled to messages with few-shot turns. */
-  spec?: PromptSpec;
+  /** When set, the engineered prompt (role/rules/contract/temp). Few-shot
+   * examples are derived from `gold` via this action's own buildPrompt. */
+  spec?: Omit<PromptSpec, "examples">;
+  /** Gold few-shot pairs as form inputs + ideal output. */
+  gold?: GoldPair[];
   buildPrompt: (inputs: Record<string, string>) => string;
 };
 
@@ -105,9 +108,9 @@ export const QUICK_ACTIONS: QuickAction[] = [
         "Keep it about as long as the situation needs; usually 2–5 sentences.",
       ],
       outputContract: "Return only the reply text — no preamble, no greeting label, no surrounding quotes.",
-      examples: REPLY_TO_MESSAGE_GOLD,
       temperature: 0.4,
     },
+    gold: REPLY_TO_MESSAGE_GOLD,
     buildPrompt: (i) =>
       `Here is a message I received:\n"""\n${v(i, "message")}\n"""\n\nWrite a reply. What I want to say: ${v(i, "intent")}. Keep it natural and appropriately polite.`,
   },
@@ -171,9 +174,9 @@ export const QUICK_ACTIONS: QuickAction[] = [
         "Keep it brief — 2–4 sentences.",
       ],
       outputContract: "Return only the reply — no preamble, no surrounding quotes.",
-      examples: REPLY_TO_REVIEW_GOLD,
       temperature: 0.4,
     },
+    gold: REPLY_TO_REVIEW_GOLD,
     buildPrompt: (i) => {
       const note = v(i, "note");
       return `Write a reply to this customer review:\n"""\n${v(i, "review")}\n"""\n${note ? `Also keep in mind: ${note}.\n` : ""}Keep it warm, professional, and brief.`;
@@ -222,9 +225,9 @@ export const QUICK_ACTIONS: QuickAction[] = [
         "Keep every bullet to one line; no filler, no repetition of the prose summary.",
       ],
       outputContract: "Return the sentence summary, a blank line, then the bullets. Nothing else.",
-      examples: SUMMARIZE_GOLD,
       temperature: 0.3,
     },
+    gold: SUMMARIZE_GOLD,
     buildPrompt: (i) => `Summarize this in 3 to 5 sentences, then list the key points as bullets:\n\n${v(i, "text")}`,
   },
   {
@@ -255,9 +258,9 @@ export const QUICK_ACTIONS: QuickAction[] = [
         "End with one short 'Sensible order' paragraph suggesting a realistic sequence around the fixed dates.",
       ],
       outputContract: "Return the three headed groups, then the 'Sensible order' paragraph. Keep it short.",
-      examples: PLAN_WEEK_GOLD,
       temperature: 0.3,
     },
+    gold: PLAN_WEEK_GOLD,
     buildPrompt: (i) =>
       `Here's what's on my plate this week:\n${v(i, "plate")}\n\nMake a simple plan: group it into Must do, Should do, and Can wait, and suggest a sensible order. Keep it short.`,
   },
@@ -633,7 +636,12 @@ export function missingInputs(action: QuickAction, inputs: Record<string, string
 
 export function buildMessages(action: QuickAction, inputs: Record<string, string>): ChatMessage[] {
   const user = action.buildPrompt(inputs);
-  if (action.spec) return compileSpec(action.spec, user);
+  if (action.spec) {
+    // The few-shot input is the action's own buildPrompt over the gold inputs —
+    // so it mirrors the real runtime input exactly, by construction.
+    const examples = examplesFromGold(action.buildPrompt, action.gold ?? []);
+    return compileSpec({ ...action.spec, examples }, user);
+  }
   return [
     { role: "system", content: action.system },
     { role: "user", content: user },

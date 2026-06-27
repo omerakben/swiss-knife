@@ -7,6 +7,19 @@ import type { ChatMessage } from "@/lib/ollama";
 
 export type FewShot = { input: string; output: string };
 
+// A gold pair authored as the form inputs + the ideal output. The few-shot
+// `input` the model sees is derived by running the flow's own buildPrompt over
+// these inputs (examplesFromGold), so it mirrors the real runtime input exactly
+// — by construction, never by hand. Author only the inputs and the answer.
+export type GoldPair = { inputs: Record<string, string>; output: string };
+
+export function examplesFromGold(
+  buildPrompt: (inputs: Record<string, string>) => string,
+  gold: GoldPair[],
+): FewShot[] {
+  return gold.map((g) => ({ input: buildPrompt(g.inputs), output: g.output }));
+}
+
 export type PromptSpec = {
   /** "You are X. Your only job is Y." */
   role: string;

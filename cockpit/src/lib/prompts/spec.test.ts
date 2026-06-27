@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { compileSpec, HOUSE_RULES, type PromptSpec } from "./spec";
+import { compileSpec, examplesFromGold, HOUSE_RULES, type PromptSpec } from "./spec";
 
 const base: PromptSpec = {
   role: "You are a careful assistant.",
@@ -45,5 +45,19 @@ describe("compileSpec", () => {
     const msgs = compileSpec({ ...base, examples: [] }, "only me");
     expect(msgs.map((m) => m.role)).toEqual(["system", "user"]);
     expect(msgs[1].content).toBe("only me");
+  });
+});
+
+describe("examplesFromGold", () => {
+  it("derives each few-shot input by running buildPrompt over the gold inputs", () => {
+    const buildPrompt = (i: Record<string, string>) => `Q: ${i.q ?? ""}`;
+    const out = examplesFromGold(buildPrompt, [
+      { inputs: { q: "one" }, output: "A1" },
+      { inputs: { q: "two" }, output: "A2" },
+    ]);
+    expect(out).toEqual([
+      { input: "Q: one", output: "A1" },
+      { input: "Q: two", output: "A2" },
+    ]);
   });
 });
