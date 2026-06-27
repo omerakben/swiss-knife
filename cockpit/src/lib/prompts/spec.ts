@@ -1,0 +1,62 @@
+// The everyday prompt kit. A PromptSpec is a contract for a local 4B: who it is,
+// the exact rules, the output shape, and two worked examples. compileSpec renders
+// the examples as real conversation turns — the single biggest reliability lever
+// on a small instruction-tuned model. See
+// docs/superpowers/specs/2026-06-27-everyday-prompt-kit-design.md
+import type { ChatMessage } from "@/lib/ollama";
+
+export type FewShot = { input: string; output: string };
+
+// A gold pair authored as the form inputs + the ideal output. The few-shot
+// `input` the model sees is derived by running the flow's own buildPrompt over
+// these inputs (examplesFromGold), so it mirrors the real runtime input exactly
+// — by construction, never by hand. Author only the inputs and the answer.
+export type GoldPair = { inputs: Record<string, string>; output: string };
+
+export function examplesFromGold(
+  buildPrompt: (inputs: Record<string, string>) => string,
+  gold: GoldPair[],
+): FewShot[] {
+  return gold.map((g) => ({ input: buildPrompt(g.inputs), output: g.output }));
+}
+
+export type PromptSpec = {
+  /** "You are X. Your only job is Y." */
+  role: string;
+  /** Explicit constraints — no vague qualifiers ("≤4 sentences", never "be concise"). */
+  rules: string[];
+  /** Exact output shape, e.g. "Return only the reply. No preamble, no quotes." */
+  outputContract: string;
+  /** Two worked examples, rendered as user/assistant turns. */
+  examples: FewShot[];
+  /** Extraction → 0; everyday writing → 0.3–0.4. */
+  temperature?: number;
+  /** Opt out of the shared safety block when a flow needs a different stance. */
+  omitHouseRules?: boolean;
+};
+
+// The shared safety block — the safe/private promise, applied to every everyday
+// spec. Borrowed from the agency-agents Prompt Engineer (explicit constraints,
+// ground-or-ask) and the high-stakes pack guardrails.
+export const HOUSE_RULES: string[] = [
+  "Use only what the user gave you or what appears in your context. Never make up names, numbers, dates, prices, or facts that aren't there.",
+  "If something needed is missing, write the rest and leave a clearly marked blank rather than guessing.",
+  "Write in plain, everyday language. Do not act as a lawyer, doctor, or accountant; if asked for that, suggest checking a professional.",
+];
+
+export function compileSpec(spec: PromptSpec, userInput: string): ChatMessage[] {
+  const rules = spec.omitHouseRules ? spec.rules : [...spec.rules, ...HOUSE_RULES];
+  const system = [
+    `## Role\n${spec.role}`,
+    `## Rules\n${rules.map((r) => `- ${r}`).join("\n")}`,
+    `## Output\n${spec.outputContract}`,
+  ].join("\n\n");
+
+  const messages: ChatMessage[] = [{ role: "system", content: system }];
+  for (const ex of spec.examples) {
+    messages.push({ role: "user", content: ex.input });
+    messages.push({ role: "assistant", content: ex.output });
+  }
+  messages.push({ role: "user", content: userInput });
+  return messages;
+}

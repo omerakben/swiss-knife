@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { QUICK_ACTION_ICONS } from "./quickActionIcons";
+import { QUICK_ACTION_SPECS } from "./prompts/quickActionSpecs";
 import {
   QUICK_ACTIONS,
   getQuickAction,
@@ -86,13 +87,70 @@ describe("quickActions", () => {
     expect(flagged).toEqual(["find-action-items", "notes-to-list", "plan-week", "study-plan"]);
   });
 
-  it("buildMessages returns a system message then a user message embedding the inputs", () => {
+  it("buildMessages starts with a system message and embeds the inputs in the final user turn", () => {
+    // Spec-agnostic: holds whether or not the action carries an engineered spec
+    // (a spec adds few-shot turns between the system message and the real input).
     const a = getQuickAction("summarize")!;
     const msgs = buildMessages(a, { text: "a distinctive phrase to find" });
-    expect(msgs).toHaveLength(2);
     expect(msgs[0].role).toBe("system");
+    expect(msgs[msgs.length - 1].role).toBe("user");
+    expect(msgs[msgs.length - 1].content).toContain("a distinctive phrase to find");
+  });
+
+  it("buildMessages uses the engineered registry spec (few-shot turns from gold) for a migrated action", () => {
+    // summarize is in the registry; its messages must be system + example pairs + real input.
+    const a = getQuickAction("summarize")!;
+    const msgs = buildMessages(a, { text: "a distinctive phrase to find" });
+    expect(msgs.length).toBeGreaterThan(2); // system + at least one example pair + real
+    expect(msgs[0].role).toBe("system");
+    expect(msgs[0].content).toContain("## Role");
     expect(msgs[1].role).toBe("user");
-    expect(msgs[1].content).toContain("a distinctive phrase to find");
+    expect(msgs[2].role).toBe("assistant");
+    expect(msgs[msgs.length - 1].content).toContain("a distinctive phrase to find");
+  });
+
+  it("buildMessages falls back to the legacy path for an action with no registry spec", () => {
+    const a = getQuickAction("meal-plan"); // not yet engineered
+    if (a && !QUICK_ACTION_SPECS["meal-plan"]) {
+      const msgs = buildMessages(a, { preferences: "vegetarian" });
+      expect(msgs).toHaveLength(2);
+      expect(msgs[0]).toEqual({ role: "system", content: a.system });
+    }
+  });
+
+  it("every registry spec targets a real action and has a role, contract, and ≥2 gold pairs", () => {
+    for (const [id, entry] of Object.entries(QUICK_ACTION_SPECS)) {
+      expect(getQuickAction(id), `${id} is a real action`).toBeTruthy();
+      expect(entry.spec.role.trim().length, `${id} role`).toBeGreaterThan(0);
+      expect(entry.spec.outputContract.trim().length, `${id} contract`).toBeGreaterThan(0);
+      expect(entry.gold.length, `${id} gold pairs`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("every registry gold pair's inputs only reference fields the action actually has", () => {
+    for (const [id, entry] of Object.entries(QUICK_ACTION_SPECS)) {
+      const action = getQuickAction(id)!;
+      const fields = new Set(action.inputs.map((i) => i.name));
+      for (const g of entry.gold) {
+        for (const key of Object.keys(g.inputs)) {
+          expect(fields.has(key), `${id} gold input field '${key}' is not an action input`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("every registry spec's few-shot input is exactly buildPrompt over the gold inputs (mirroring by construction)", () => {
+    for (const [id, entry] of Object.entries(QUICK_ACTION_SPECS)) {
+      const action = getQuickAction(id)!;
+      const msgs = buildMessages(action, { _probe: "real" });
+      entry.gold.forEach((g, i) => {
+        const exampleUserTurn = msgs[1 + i * 2]; // system, then (user, assistant) pairs
+        expect(exampleUserTurn.role).toBe("user");
+        expect(exampleUserTurn.content, `${id} example ${i} mirrors buildPrompt`).toBe(
+          action.buildPrompt(g.inputs),
+        );
+      });
+    }
   });
 
   it("every action's buildPrompt produces non-empty text for filled inputs", () => {

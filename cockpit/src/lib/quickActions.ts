@@ -5,6 +5,8 @@
 // route and the UI share one source of truth and it stays unit-testable.
 
 import type { ChatMessage } from "@/lib/ollama";
+import { compileSpec, examplesFromGold } from "./prompts/spec";
+import { QUICK_ACTION_SPECS } from "./prompts/quickActionSpecs";
 
 export type QuickActionCategory = "write" | "organize" | "plan" | "improve";
 
@@ -579,8 +581,21 @@ export function missingInputs(action: QuickAction, inputs: Record<string, string
 }
 
 export function buildMessages(action: QuickAction, inputs: Record<string, string>): ChatMessage[] {
+  const user = action.buildPrompt(inputs);
+  const engineered = QUICK_ACTION_SPECS[action.id];
+  if (engineered) {
+    // The few-shot input is the action's own buildPrompt over the gold inputs —
+    // so it mirrors the real runtime input exactly, by construction.
+    const examples = examplesFromGold(action.buildPrompt, engineered.gold);
+    return compileSpec({ ...engineered.spec, examples }, user);
+  }
   return [
     { role: "system", content: action.system },
-    { role: "user", content: action.buildPrompt(inputs) },
+    { role: "user", content: user },
   ];
+}
+
+/** The engineered per-action temperature, if this action has a spec (else undefined). */
+export function specTemperature(actionId: string): number | undefined {
+  return QUICK_ACTION_SPECS[actionId]?.spec.temperature;
 }
