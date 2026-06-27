@@ -23,8 +23,14 @@ export type QuickActionExample = { label: string; inputs: Record<string, string>
 export const INBOX_TARGET = "inbox";
 // The Image tool is a starter target too: its question presets fill the prompt.
 export const IMAGE_TARGET = "image";
-// The single text field shared by the inbox and image starter targets.
+// Email Writer and Meeting Notes are single-text starter targets too (the brief
+// and the pasted notes) — killing the last blank-box openings.
+export const EMAIL_TARGET = "email";
+export const MEETING_TARGET = "meeting-notes";
+// The single text field shared by the single-text starter targets above.
 export const INBOX_FIELD = "text";
+// The single-text (no action schema) starter targets.
+export const TEXT_STARTER_TARGETS = [INBOX_TARGET, IMAGE_TARGET, EMAIL_TARGET, MEETING_TARGET];
 
 // A built-in starter: the seed source for the editable Starter rows (lib/starters.ts).
 // `key` is the stable sourceKey; `target` is a QuickAction id or INBOX_TARGET.
@@ -440,13 +446,23 @@ export const BUILTIN_STARTERS: BuiltinStarter[] = [
     inputs: { [INBOX_FIELD]: "This is a receipt or invoice. Pull out the vendor, date, total, and a spending category. If a field is missing, say \"unknown\"." } },
   { target: IMAGE_TARGET, key: "image:screenshot", label: "What's in this screenshot?",
     inputs: { [INBOX_FIELD]: "What is shown in this screenshot, and what is it asking me to do?" } },
+  // Email Writer starters — fill the brief.
+  { target: EMAIL_TARGET, key: "email:overdue-invoice", label: "Chase an overdue invoice",
+    inputs: { [INBOX_FIELD]: "Politely remind a client their invoice (#1042, $1,200) is two weeks overdue, and ask when I can expect payment." } },
+  { target: EMAIL_TARGET, key: "email:decline", label: "Decline politely",
+    inputs: { [INBOX_FIELD]: "Turn down an invitation to speak at an event because I'm fully booked that month, but offer to help another time." } },
+  { target: EMAIL_TARGET, key: "email:intro", label: "Introduce two people",
+    inputs: { [INBOX_FIELD]: "Introduce my colleague Dana (a designer) to my friend Sam (starting a bakery and needs branding), and explain why they should connect." } },
+  // Meeting Notes starters — fill the notes box.
+  { target: MEETING_TARGET, key: "meeting:rough", label: "Rough meeting notes",
+    inputs: { [INBOX_FIELD]: "Standup: Sam to send the client quote by Friday. Dana finishing the logo, needs feedback by Wed. Book the venue for the 12th. Order more business cards. Follow up with the printer about the proofs." } },
 ];
 
 // Group the action-targeted built-ins into the per-action example shape the
 // runner, the attach, and getFeaturedDemo already use (inbox starters excluded).
 const EXAMPLES_BY_ACTION: Record<string, QuickActionExample[]> = {};
 for (const s of BUILTIN_STARTERS) {
-  if (s.target === INBOX_TARGET || s.target === IMAGE_TARGET) continue;
+  if (TEXT_STARTER_TARGETS.includes(s.target)) continue;
   (EXAMPLES_BY_ACTION[s.target] ??= []).push({ label: s.label, inputs: s.inputs });
 }
 for (const a of QUICK_ACTIONS) {
