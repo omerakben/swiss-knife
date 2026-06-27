@@ -19,6 +19,11 @@ export type UseAiToolReturn = {
   elapsedMs: number;
   /** Returns true on a clean completion (used to flash "saved"). */
   run: (input: string, extra?: Record<string, unknown>) => Promise<boolean>;
+  /**
+   * One-tap refine over the CURRENT output via the shared /api/refine. Iterative
+   * and tool-agnostic; restores the prior draft on a failed/stopped refine.
+   */
+  refine: (instruction: string) => Promise<boolean>;
   stop: () => void;
   reset: () => void;
   /** Restore a prior output as a finished result (e.g. revert a failed refine). */
@@ -44,71 +49,76 @@ export function useAiTool({ endpoint, buildBody }: UseAiToolOptions): UseAiToolR
     []
   );
 
-  const run = useCallback(
-    async (input: string, extra?: Record<string, unknown>): Promise<boolean> => {
-      setOutput("");
-      setError(null);
-      setStatus("streaming");
-      setElapsedMs(0);
-      const startedAt = Date.now();
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => setElapsedMs(Date.now() - startedAt), 250);
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildBody(input, extra)),
-          signal: ctrl.signal,
-        });
+  // The streaming core, shared by run() and refine(): clear, stream from `url`
+  // with `body`, surface an in-band ERROR_SENTINEL, and settle status.
+  const runStream = useCallback(async (url: string, body: unknown): Promise<boolean> => {
+    setOutput("");
+    setError(null);
+    setStatus("streaming");
+    setElapsedMs(0);
+    const startedAt = Date.now();
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setElapsedMs(Date.now() - startedAt), 250);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: ctrl.signal,
+      });
 
-        // Non-streaming error path (validation 400, health 503): JSON { error }.
-        if (!res.ok || !res.body) {
-          let msg = `Request failed (${res.status})`;
-          try {
-            const data = await res.json();
-            if (data?.error) msg = data.error;
-          } catch {
-            /* keep default message */
-          }
-          throw new Error(msg);
+      // Non-streaming error path (validation 400, health 503): JSON { error }.
+      if (!res.ok || !res.body) {
+        let msg = `Request failed (${res.status})`;
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {
+          /* keep default message */
         }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let acc = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          acc += decoder.decode(value, { stream: true });
-          // The server may inject an in-band error after partial output.
-          if (acc.includes(ERROR_SENTINEL)) {
-            const [text, err] = acc.split(ERROR_SENTINEL);
-            setOutput(text);
-            throw new Error(err?.trim() || "Stream error");
-          }
-          setOutput(acc);
-        }
-        setStatus("done");
-        return true;
-      } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") {
-          setStatus("idle");
-          return false;
-        }
-        setError(e instanceof Error ? e.message : "Something went wrong");
-        setStatus("error");
-        return false;
-      } finally {
-        abortRef.current = null;
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
+        throw new Error(msg);
       }
-    },
-    [endpoint, buildBody]
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        // The server may inject an in-band error after partial output.
+        if (acc.includes(ERROR_SENTINEL)) {
+          const [text, err] = acc.split(ERROR_SENTINEL);
+          setOutput(text);
+          throw new Error(err?.trim() || "Stream error");
+        }
+        setOutput(acc);
+      }
+      setStatus("done");
+      return true;
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setStatus("idle");
+        return false;
+      }
+      setError(e instanceof Error ? e.message : "Something went wrong");
+      setStatus("error");
+      return false;
+    } finally {
+      abortRef.current = null;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  }, []);
+
+  const run = useCallback(
+    (input: string, extra?: Record<string, unknown>): Promise<boolean> =>
+      runStream(endpoint, buildBody(input, extra)),
+    [endpoint, buildBody, runStream]
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
@@ -126,5 +136,19 @@ export function useAiTool({ endpoint, buildBody }: UseAiToolOptions): UseAiToolR
     setStatus("done");
   }, []);
 
-  return { output, status, error, isRunning: status === "streaming", elapsedMs, run, stop, reset, restore };
+  // One-tap refine over the current output via the shared /api/refine. Iterative
+  // (the refined text replaces the output, so a second tap refines it). On a
+  // failed/stopped refine the prior draft is restored.
+  const refine = useCallback(
+    async (instruction: string): Promise<boolean> => {
+      const prev = output;
+      if (!prev) return false;
+      const ok = await runStream("/api/refine", { text: prev, instruction });
+      if (!ok) restore(prev);
+      return ok;
+    },
+    [output, runStream, restore]
+  );
+
+  return { output, status, error, isRunning: status === "streaming", elapsedMs, run, refine, stop, reset, restore };
 }

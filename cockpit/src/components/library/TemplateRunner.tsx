@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
 import { AiOutput } from "@/components/tools/AiOutput";
+import { RefineRow } from "@/components/tools/RefineRow";
 import { ContextUsed } from "@/components/tools/ContextUsed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +54,7 @@ export function TemplateRunner({
   // The values that produced the current output — save persists THIS pairing.
   const lastRunValues = useRef(values);
 
-  const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
+  const { output, status, error, isRunning, elapsedMs, run, refine, stop } = useAiTool({
     endpoint: "/api/templates/run",
     buildBody: () => ({ templateId: template.id, values }),
   });
@@ -153,6 +154,15 @@ export function TemplateRunner({
 
       {error && <ErrorAlert title="Run failed" message={error} />}
       <AiOutput output={output} status={status} label="Result" />
+      {output && status === "done" && (
+        <RefineRow
+          onRefine={(instruction) => {
+            setSaved(false);
+            refine(instruction);
+          }}
+          busy={isRunning}
+        />
+      )}
       {output && status === "done" && (
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={saveResult} disabled={saving || saved}>

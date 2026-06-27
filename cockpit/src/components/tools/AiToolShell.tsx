@@ -8,6 +8,7 @@ import { useAiTool } from "@/hooks/useAiTool";
 import { Button } from "@/components/ui/button";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { AiOutput } from "@/components/tools/AiOutput";
+import { RefineRow } from "@/components/tools/RefineRow";
 import { ErrorAlert } from "@/components/ErrorAlert";
 
 export type AiToolShellProps = {
@@ -27,6 +28,8 @@ export type AiToolShellProps = {
   onSaveResult?: (output: string, input: string) => Promise<void>;
   saveLabel?: string;
   savedMessage?: string;
+  /** Show the universal one-tap refine row under the result. Default true. */
+  refinable?: boolean;
 };
 
 /**
@@ -45,6 +48,7 @@ export function AiToolShell({
   onSaveResult,
   saveLabel = "Save to library",
   savedMessage = "Saved to library",
+  refinable = true,
 }: AiToolShellProps) {
   const [input, setInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -52,7 +56,7 @@ export function AiToolShell({
   // The input that produced the current output — save persists THIS pairing,
   // not whatever is in the box now (editable again after the run finishes).
   const lastRunInput = useRef("");
-  const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
+  const { output, status, error, isRunning, elapsedMs, run, refine, stop } = useAiTool({
     endpoint,
     buildBody: (i) => buildBody(i),
   });
@@ -112,6 +116,18 @@ export function AiToolShell({
       {error && <ErrorAlert className="mt-4" title="Run failed" message={error} />}
 
       <AiOutput output={output} status={status} label={outputLabel} />
+
+      {refinable && status === "done" && output && (
+        <div className="mt-3">
+          <RefineRow
+            onRefine={(instruction) => {
+              setSaved(false);
+              refine(instruction);
+            }}
+            busy={isRunning}
+          />
+        </div>
+      )}
 
       {onSaveResult && status === "done" && output && (
         <div className="mt-3">

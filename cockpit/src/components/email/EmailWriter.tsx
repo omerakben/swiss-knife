@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
 import { AiOutput } from "@/components/tools/AiOutput";
+import { RefineRow } from "@/components/tools/RefineRow";
 import { ContextUsed } from "@/components/tools/ContextUsed";
 import { Button } from "@/components/ui/button";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
@@ -36,7 +37,7 @@ export function EmailWriter() {
   // not whatever the form says now (editable again after the run finishes).
   const lastRun = useRef({ mode, tone, length, brief, sourceText });
 
-  const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
+  const { output, status, error, isRunning, elapsedMs, run, refine, stop } = useAiTool({
     endpoint: "/api/email",
     buildBody: () => ({ mode, tone, length, brief, sourceText }),
   });
@@ -167,6 +168,17 @@ export function EmailWriter() {
 
       {error && <ErrorAlert className="mt-4" title="Draft failed" message={error} />}
       <AiOutput output={output} status={status} label="Draft" />
+      {output && status === "done" && (
+        <div className="mt-3">
+          <RefineRow
+            onRefine={(instruction) => {
+              setSaved(false);
+              refine(instruction);
+            }}
+            busy={isRunning}
+          />
+        </div>
+      )}
       {output && status === "done" && (
         <div className="mt-3">
           <Button variant="outline" onClick={saveDraft} disabled={saving || saved}>
