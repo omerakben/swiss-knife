@@ -20,6 +20,13 @@ test.describe("image tool result actions", () => {
     await expect(page.getByText("Make it:")).toBeVisible(); // universal refine row
     await expect(page.getByRole("button", { name: /save as note/i })).toBeVisible();
 
+    // Refine replaces the answer in place (exercises the image refine wiring).
+    await page.route("**/api/refine", (route) =>
+      route.fulfill({ contentType: "text/plain", body: "Call the plumber and buy groceries." }),
+    );
+    await page.getByRole("button", { name: "Shorter", exact: true }).click();
+    await expect(page.getByText("Call the plumber and buy groceries.")).toBeVisible();
+
     // Turn into tasks → review → add (extract + create both mocked).
     await page.route("**/api/result-tasks", (route) => {
       const body = route.request().method() === "POST" ? (route.request().postDataJSON() as { create?: unknown[] }) : {};

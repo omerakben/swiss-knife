@@ -16,6 +16,7 @@ import {
   getHeroIds,
   HERO_IDS_BY_PERSONA,
   DEFAULT_HERO_IDS,
+  TEXT_STARTER_TARGETS,
 } from "./quickActions";
 
 describe("quickActions", () => {
@@ -32,6 +33,13 @@ describe("quickActions", () => {
     expect(getHeroIds("skipped")).toEqual(DEFAULT_HERO_IDS);
     expect(getHeroIds("household")).toEqual(HERO_IDS_BY_PERSONA.household);
     expect(getHeroIds("small-business")).not.toEqual(DEFAULT_HERO_IDS);
+  });
+
+  it("no single-text starter target collides with a real action id (validateStarter would shadow it)", () => {
+    const actionIds = new Set(QUICK_ACTIONS.map((a) => a.id));
+    for (const target of TEXT_STARTER_TARGETS) {
+      expect(actionIds.has(target), `target '${target}' must not also be an action id`).toBe(false);
+    }
   });
 
   it("every action has a unique id, at least one input, and a system prompt", () => {

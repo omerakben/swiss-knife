@@ -80,7 +80,7 @@ export default function ImagePage() {
   }
 
   // Keep the answer: image + response become an Idea (like quick-capture).
-  async function saveAsIdea() {
+  async function saveAsNote() {
     if (!output || !lastRun.current) return;
     setSaving(true);
     try {
@@ -196,7 +196,7 @@ export default function ImagePage() {
       )}
       {output && status === "done" && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={saveAsIdea} disabled={saving || saved}>
+          <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={saveAsNote} disabled={saving || saved}>
             {saved ? "Saved ✓" : saving ? "Saving…" : "Save as note"}
           </Button>
           <ExtractTasksButton text={output} label="Turn into tasks" />
