@@ -4,6 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { CommandPalette } from "@/components/CommandPalette";
+import { HelpWizard } from "@/components/HelpWizard";
 
 export const metadata: Metadata = {
   title: "Haven Desk",
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <Toaster />
           <CommandPalette />
+          <HelpWizard />
         </ThemeProvider>
       </body>
     </html>
