@@ -67,13 +67,13 @@ export const PLAN_WEEK_GOLD: FewShot[] = [
 export const EMAIL_GOLD: FewShot[] = [
   {
     input:
-      `Write the email. What it needs to say / notes:\nPolitely remind a client their invoice (#1042, $1,200) is two weeks overdue, and ask when I can expect payment.`,
+      `Intent / notes for the email:\nPolitely remind a client their invoice (#1042, $1,200) is two weeks overdue, and ask when I can expect payment.`,
     output:
       "Subject: Invoice #1042 — a quick payment reminder\n\nHello,\n\nI hope you're doing well. I wanted to check in on invoice #1042 for $1,200, which is now about two weeks overdue. Could you let me know when I can expect payment? I'm happy to resend the invoice if that's helpful.\n\nThank you,\n[your name]",
   },
   {
     input:
-      `Write the email. What it needs to say / notes:\nTurn down an invitation to speak at an event because I'm fully booked that month, but offer to help another time.`,
+      `Intent / notes for the email:\nTurn down an invitation to speak at an event because I'm fully booked that month, but offer to help another time.`,
     output:
       "Subject: Thank you for the invitation\n\nHello,\n\nThank you so much for thinking of me to speak at your event — it genuinely means a lot. Unfortunately my calendar is full that month, so I won't be able to take it on this time. I'd welcome the chance to help in the future, though, so please do keep me in mind for a later date.\n\nWith thanks,\n[your name]",
   },

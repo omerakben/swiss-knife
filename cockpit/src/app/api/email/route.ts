@@ -2,6 +2,8 @@ import { assertOllamaReady } from "@/lib/health";
 import { streamTextResponse } from "@/lib/ai/streamRoute";
 import { prisma } from "@/lib/db";
 import { getActiveProjectId } from "@/lib/project";
+import { compileSpec } from "@/lib/prompts/spec";
+import { emailSpec } from "@/lib/prompts/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
   const notReady = await assertOllamaReady();
   if (notReady) return notReady;
 
-  const system = `You write clear, effective emails. Write a ${t} email that is ${LENGTHS[lenKey]}. Return ONLY the email itself — you may start with a "Subject:" line. No preamble, no commentary, and avoid bracketed placeholders unless truly necessary.`;
+  const spec = emailSpec(t, LENGTHS[lenKey]);
 
   const parts = [`Intent / notes for the email:\n${brief.trim()}`];
   if (isReply && typeof sourceText === "string" && sourceText.trim()) {
@@ -73,9 +75,7 @@ export async function POST(req: Request) {
     injectMemory: true,
     memoryProjectId: projectId,
     memoryQuery: brief.trim(),
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: parts.join("\n") },
-    ],
+    temperature: spec.temperature,
+    messages: compileSpec(spec, parts.join("\n")),
   });
 }
