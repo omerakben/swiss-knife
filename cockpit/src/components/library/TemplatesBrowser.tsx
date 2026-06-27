@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, Play, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ export type BrowseTemplate = {
 };
 
 export function TemplatesBrowser({ templates, initialRunId }: { templates: BrowseTemplate[]; initialRunId?: string | null }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   // Deep-link (?run=<id> from ⌘K): open the dialog from initial state (no effect)
   // for the given id, from the already-fetched list. The page keys this component
@@ -121,7 +123,13 @@ export function TemplatesBrowser({ templates, initialRunId }: { templates: Brows
       <TemplateRunDialog
         template={running}
         open={running !== null}
-        onOpenChange={(o) => !o && setRunning(null)}
+        onOpenChange={(o) => {
+          if (o) return;
+          setRunning(null);
+          // Arrived via ?run=: clear the param on close so re-selecting the SAME
+          // template from ⌘K is a real none→id transition that remounts + reopens.
+          if (initialRunId) router.replace("/tools/templates", { scroll: false });
+        }}
         savedLabel="Saved to library"
       />
     </div>

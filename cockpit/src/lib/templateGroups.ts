@@ -8,7 +8,10 @@ export type TemplateGroup<T> = { label: string; templates: T[] };
 const SOURCE_BUILTIN = "Built-in";
 const SOURCE_USER = "Your templates";
 
-const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+// Lowercase then capitalize each word, so "EMAIL"/"email" merge into one group
+// and multi-word categories read cleanly (and never collide with the fixed-case
+// source-fallback labels like "Built-in").
+const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
 /**
  * Group templates by category (title-cased); anything with no category falls
