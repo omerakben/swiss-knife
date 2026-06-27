@@ -62,6 +62,7 @@ export async function POST(req: Request) {
   record("bugs", await upsertAll(m.bugReport, data.bugs));
   record("goldens", await upsertAll(m.goldenCase, data.goldens));
   record("adrs", await upsertAll(m.adr, data.adrs));
+  record("starters", await upsertAll(m.starter, data.starters));
 
   let qa = 0;
   let qaFailed = 0;
