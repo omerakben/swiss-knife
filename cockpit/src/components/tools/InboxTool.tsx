@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
+import { StarterChips } from "@/components/StarterChips";
 import { GHERKIN_PREFILL_KEY } from "@/lib/gherkinPrefill";
+import { INBOX_TARGET, INBOX_FIELD } from "@/lib/quickActions";
 
 const isGherkin = (t: string) => /^\s*(Feature|Scenario|Scenario Outline|Example):/m.test(t);
 
@@ -100,6 +102,18 @@ export function InboxTool() {
         Drop a file or paste anything — a note, a list, a message — and it&apos;s sorted into a task,
         fact, or idea automatically. Paste a <code>.feature</code>{" "}file and it&apos;s checked for issues too.
       </p>
+
+      <StarterChips
+        target={INBOX_TARGET}
+        fallback={[]}
+        current={{ [INBOX_FIELD]: text }}
+        onPick={(inputs) => {
+          setText(inputs[INBOX_FIELD] ?? "");
+          setLint(null);
+        }}
+        editFields={[{ name: INBOX_FIELD, label: "Text", type: "textarea" }]}
+        headline="Start from a saved snippet — tap to fill:"
+      />
 
       <div
         onDragOver={(e) => {

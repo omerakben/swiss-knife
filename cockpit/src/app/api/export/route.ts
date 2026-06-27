@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // POST /api/import (upsert by id). The whole pitch is "your data stays on your
 // machine" — this is the escape hatch for a new Mac or an engine upgrade.
 export async function GET() {
-  const [prompts, templates, emails, ideas, tasks, facts, qaSessions, projects, bugs, goldens, adrs] =
+  const [prompts, templates, emails, ideas, tasks, facts, qaSessions, projects, bugs, goldens, adrs, starters] =
     await Promise.all([
       prisma.prompt.findMany(),
       prisma.template.findMany(),
@@ -23,6 +23,7 @@ export async function GET() {
       prisma.bugReport.findMany(),
       prisma.goldenCase.findMany(),
       prisma.adr.findMany(),
+      prisma.starter.findMany(),
     ]);
 
   const body = JSON.stringify({
@@ -40,8 +41,9 @@ export async function GET() {
       bugs: bugs.length,
       goldens: goldens.length,
       adrs: adrs.length,
+      starters: starters.length,
     },
-    data: { prompts, templates, emails, ideas, tasks, facts, qaSessions, projects, bugs, goldens, adrs },
+    data: { prompts, templates, emails, ideas, tasks, facts, qaSessions, projects, bugs, goldens, adrs, starters },
   });
 
   return new Response(body, {
