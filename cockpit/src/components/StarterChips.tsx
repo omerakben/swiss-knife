@@ -136,7 +136,7 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
             <button
               type="button"
               onClick={() => onPick(s.inputs)}
-              className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="inline-flex items-center gap-1 rounded-full border border-primary/45 bg-primary/10 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               <Play className="h-3 w-3 text-primary" /> {s.label}
             </button>
