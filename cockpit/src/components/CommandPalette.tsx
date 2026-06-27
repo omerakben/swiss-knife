@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VoiceButton } from "@/components/tools/VoiceButton";
 import { NAV_ITEMS } from "@/lib/nav";
+import { searchQuickActions } from "@/lib/quickActions";
 import { useIsMac } from "@/hooks/useIsMac";
 import type { SearchResult } from "@/app/api/search/route";
 
@@ -144,6 +145,15 @@ export function CommandPalette() {
     return ACTIONS.filter((a) => `${a.label} ${a.keywords}`.toLowerCase().includes(term));
   }, [q]);
 
+  // Quick Actions matched by what the user typed ("thank you" → the thank-you
+  // note action). The highest-value everyday features, previously unreachable
+  // from search. Gated to 2+ chars so the empty palette isn't flooded.
+  const quickActionMatches = useMemo(() => {
+    const term = q.trim();
+    if (term.length < 2) return [];
+    return searchQuickActions(term).slice(0, 6);
+  }, [q]);
+
   type Item =
     | { kind: "nav"; label: string; badge: string; href: string; sub?: string }
     | { kind: "result"; label: string; badge: string; href: string; sub?: string }
@@ -167,6 +177,12 @@ export function CommandPalette() {
     const live = term.length >= 2 ? results : [];
     const base: Item[] = [
       ...navMatches.map((n) => ({ kind: "nav" as const, label: n.label, badge: "Go", href: n.href })),
+      ...quickActionMatches.map((a) => ({
+        kind: "nav" as const,
+        label: a.title,
+        badge: "Action",
+        href: `/tools/quick-actions?action=${a.id}`,
+      })),
       ...actionMatches.map((a) => ({ kind: "action" as const, label: a.label, badge: "Run", id: a.id })),
       ...live.map((r) => ({ kind: "result" as const, label: r.title, sub: r.subtitle, badge: r.type, href: r.href })),
     ];
@@ -180,7 +196,7 @@ export function CommandPalette() {
       ];
     }
     return base;
-  }, [navMatches, actionMatches, results, q, mode, projects]);
+  }, [navMatches, quickActionMatches, actionMatches, results, q, mode, projects]);
 
   useEffect(() => {
     listRef.current?.querySelector<HTMLElement>(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" });

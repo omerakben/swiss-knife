@@ -9,5 +9,8 @@ export default async function QuickActionsPage({
 }) {
   const sp = await searchParams;
   const initialActionId = typeof sp.action === "string" ? sp.action : null;
-  return <QuickActions initialActionId={initialActionId} />;
+  // Key by the deep-linked action so a ⌘K jump to a specific action opens it even
+  // when already on this page (a same-route ?action= change won't re-run the
+  // component's useState initializer otherwise). No key churn on in-page clicks.
+  return <QuickActions key={initialActionId ?? "home"} initialActionId={initialActionId} />;
 }

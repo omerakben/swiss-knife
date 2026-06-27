@@ -414,10 +414,13 @@ export function getQuickAction(id: string): QuickAction | undefined {
  * or whitespace query returns every action (the full gallery).
  */
 export function searchQuickActions(query: string): QuickAction[] {
-  const q = query.trim().toLowerCase();
+  // Normalize hyphens to spaces on BOTH sides so "thank you" matches the
+  // "thank-you note" action (and "to do" matches "to-do list").
+  const norm = (s: string) => s.toLowerCase().replace(/-/g, " ");
+  const q = norm(query.trim());
   if (!q) return QUICK_ACTIONS;
   const labelOf = (c: QuickActionCategory) => QUICK_ACTION_CATEGORIES.find((x) => x.id === c)?.label ?? "";
-  return QUICK_ACTIONS.filter((a) => `${a.title} ${a.blurb} ${labelOf(a.category)}`.toLowerCase().includes(q));
+  return QUICK_ACTIONS.filter((a) => norm(`${a.title} ${a.blurb} ${labelOf(a.category)}`).includes(q));
 }
 
 /** How many recently-used actions we remember. */

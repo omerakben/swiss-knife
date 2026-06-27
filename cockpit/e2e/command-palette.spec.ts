@@ -66,6 +66,22 @@ test.describe("command palette", () => {
     await expect(page.getByText(/Fact queued for review: Staging DB resets nightly/i)).toBeVisible();
   });
 
+  test("surfaces a Quick Action and opens it (hyphen-insensitive)", async ({ page }) => {
+    await page.route("**/api/search*", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ results: [] }) })
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: /search/i }).first().click();
+    const dialog = page.getByRole("dialog", { name: /command palette/i });
+    // "thank you" (space) must match the "thank-you note" action (hyphen).
+    await dialog.getByPlaceholder(/search prompts/i).fill("thank you");
+    const hit = dialog.getByText("Write a thank-you note", { exact: true });
+    await expect(hit).toBeVisible();
+    await hit.click();
+    await expect(page).toHaveURL(/\/tools\/quick-actions\?action=thank-you-note$/);
+    await expect(page.getByRole("heading", { name: "Write a thank-you note" })).toBeVisible();
+  });
+
   test("searches content across entities (mocked)", async ({ page }) => {
     await page.route("**/api/search*", (route) =>
       route.fulfill({
