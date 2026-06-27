@@ -20,7 +20,7 @@ export async function GET() {
   return new Response(JSON.stringify(payload, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": 'attachment; filename="swiss-knife-prompts.json"',
+      "Content-Disposition": 'attachment; filename="haven-desk-prompts.json"',
     },
   });
 }

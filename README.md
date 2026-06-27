@@ -1,4 +1,4 @@
-# 🔧 Swiss Knife — Local AI Daily Runner
+# 🛡️ Haven Desk — Private AI Daily Runner
 
 A locally-run, private "daily cockpit" powered by **local Gemma 4** via Ollama
 (light `gemma4:e4b` default + a 12B quality tier). Two surfaces, one engine:
@@ -15,13 +15,9 @@ Everything stays on your machine. No third-party logging.
 
 ---
 
-## Product direction: Haven Desk
+## Product narrative
 
-`Swiss Knife` is the repo and developer edition. The product direction for a
-wider, non-technical audience is **Haven Desk** — a local-first private AI daily
-runner ("Private AI for the work of daily life"). The repo name, ports, scripts,
-and local-first rules are unchanged; Haven Desk is the public product story plus
-a declarative pack system layered on top.
+**Haven Desk** is a local-first private AI daily runner ("Private AI for the work of daily life"). The repo name, ports, scripts, and local-first rules are fully focused on providing a secure, offline-first workspace for daily tasks, email drafting, brainstorming, and project operations.
 
 The strategy, roadmap, and implementation specs live under [`docs/`](docs/README.md):
 
@@ -56,12 +52,12 @@ via `host.docker.internal`.
 
 ```bash
 # macOS (needs Homebrew):
-git clone <repo-url> && cd swiss-knife && ./swiss setup && ./swiss up
+git clone <repo-url> && cd haven-desk && ./swiss setup && ./swiss up
 ```
 
 ```powershell
 # Windows 10/11 (PowerShell):
-git clone <repo-url>; cd swiss-knife; .\swiss setup; .\swiss up
+git clone <repo-url>; cd haven-desk; .\swiss setup; .\swiss up
 ```
 
 `setup` installs the two prerequisites below (skipping anything already

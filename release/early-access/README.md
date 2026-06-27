@@ -4,16 +4,16 @@ This folder contains pilot-friendly launchers for handpicked early-access users.
 
 ## Hosted one-line setup
 
-After the GitHub Pages site is published from `omerakben/swiss-knife`, approved macOS pilots can run:
+After the GitHub Pages site is published from `omerakben/haven-desk`, approved macOS pilots can run:
 
 ```bash
-curl -fsSL https://omerakben.github.io/swiss-knife/install.sh | bash
+curl -fsSL https://omerakben.github.io/haven-desk/install.sh | bash
 ```
 
 Approved Windows pilots can run this in PowerShell:
 
 ```powershell
-irm https://omerakben.github.io/swiss-knife/install.ps1 | iex
+irm https://omerakben.github.io/haven-desk/install.ps1 | iex
 ```
 
 These commands download or update the repo into `~/HavenDesk`, run the same setup/start scripts,

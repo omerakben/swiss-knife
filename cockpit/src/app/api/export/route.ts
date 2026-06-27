@@ -49,7 +49,7 @@ export async function GET() {
   return new Response(body, {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="swiss-knife-export.json"`,
+      "Content-Disposition": `attachment; filename="haven-desk-export.json"`,
     },
   });
 }
