@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { validateStarter } from "@/lib/starters";
+import { parseInputs, validateStarter } from "@/lib/starters";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,14 +17,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       ? (body.inputs as Record<string, string>)
       : null;
 
-  // Validate against the row's target whenever inputs change; a label-only edit
-  // still needs a non-empty label.
-  if (inputs) {
-    const v = validateStarter(existing.target, label, inputs);
-    if (!v.ok) return Response.json({ error: v.error }, { status: 400 });
-  } else if (!label) {
-    return Response.json({ error: "A starter needs a label." }, { status: 400 });
-  }
+  // Always run the full gate against the effective inputs (new or existing), so a
+  // label-only edit can't bypass the label/size caps the create path enforces.
+  const effectiveInputs = inputs ?? parseInputs(existing.inputs) ?? {};
+  const v = validateStarter(existing.target, label, effectiveInputs);
+  if (!v.ok) return Response.json({ error: v.error }, { status: 400 });
 
   const data: Record<string, unknown> = { label };
   if (inputs) data.inputs = JSON.stringify(inputs);

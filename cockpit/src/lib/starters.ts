@@ -56,6 +56,11 @@ export type StarterValidation = { ok: boolean; error?: string };
 export function validateStarter(target: string, label: string, inputs: Record<string, string>): StarterValidation {
   if (!label || !label.trim()) return { ok: false, error: "A starter needs a label." };
   if (label.length > MAX_LABEL) return { ok: false, error: "That label is too long." };
+  // Every value must be text (symmetry with parseInputs, which rejects on read):
+  // a non-string optional value would otherwise store and then read back as {}.
+  for (const val of Object.values(inputs)) {
+    if (typeof val !== "string") return { ok: false, error: "Starter answers must be text." };
+  }
   if (JSON.stringify(inputs).length > MAX_INPUTS_BYTES) return { ok: false, error: "That starter is too long." };
 
   if (target === INBOX_TARGET) {

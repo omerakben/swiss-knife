@@ -58,6 +58,7 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
   const [saveOpen, setSaveOpen] = useState(false);
   const [editing, setEditing] = useState<StarterDto | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   // Loading starts true (initial state); on a target change the parent remounts
   // this component (keyed by target), so we never flash a stale target's list.
@@ -84,6 +85,8 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
   const canSave = Object.values(current).some((v) => typeof v === "string" && v.trim().length > 0);
 
   async function mutate(url: string, method: string, body?: unknown): Promise<boolean> {
+    if (busy) return false; // ignore a rapid second click (e.g. double-delete → 404)
+    setBusy(true);
     try {
       const res = await fetch(url, {
         method,
@@ -96,6 +99,8 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
       return false;
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -149,9 +154,10 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
                 <button
                   type="button"
                   onClick={() => deleteStarter(s.id)}
+                  disabled={busy}
                   aria-label={`Delete ${s.label}`}
                   title="Delete"
-                  className="rounded p-1 text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="rounded p-1 text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -174,7 +180,7 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
 
       {manage && (
         <div className="mt-2 flex items-center gap-2 border-t border-primary/15 pt-2">
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setResetOpen(true)}>
+          <Button variant="ghost" size="sm" disabled={busy} className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setResetOpen(true)}>
             <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset to defaults
           </Button>
         </div>

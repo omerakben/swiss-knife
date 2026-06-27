@@ -62,7 +62,34 @@ export async function POST(req: Request) {
   record("bugs", await upsertAll(m.bugReport, data.bugs));
   record("goldens", await upsertAll(m.goldenCase, data.goldens));
   record("adrs", await upsertAll(m.adr, data.adrs));
-  record("starters", await upsertAll(m.starter, data.starters));
+
+  // Starters need a key-aware restore: built-ins carry a stable @unique
+  // sourceKey but a fresh id per machine, and they auto-seed — so a merge into
+  // an already-seeded DB must upsert built-ins BY sourceKey (id-by-id would miss
+  // the locally-seeded twin and silently drop the user's edit). User starters
+  // (null sourceKey) go by id like everything else.
+  const starterModel = m.starter as unknown as {
+    upsert: (a: { where: Record<string, unknown>; update: Record<string, unknown>; create: Record<string, unknown> }) => Promise<unknown>;
+  };
+  let stOk = 0;
+  let stFailed = 0;
+  for (const s of Array.isArray(data.starters) ? data.starters : []) {
+    if (!s || typeof s !== "object" || typeof (s as Row).id !== "string") {
+      stFailed += 1;
+      continue;
+    }
+    const { id, ...rest } = s as Row;
+    const sk = (s as Row).sourceKey;
+    try {
+      const where = typeof sk === "string" && sk ? { sourceKey: sk } : { id };
+      await starterModel.upsert({ where, update: rest, create: s as Row });
+      stOk += 1;
+    } catch {
+      stFailed += 1;
+    }
+  }
+  imported.starters = stOk;
+  if (stFailed > 0) skipped.starters = stFailed;
 
   let qa = 0;
   let qaFailed = 0;

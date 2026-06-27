@@ -14,7 +14,12 @@ async function ensureBuiltinStarters() {
   const count = await prisma.starter.count();
   if (count > 0) return;
   for (const row of buildStarterSeedPlan(BUILTIN_STARTERS)) {
-    await prisma.starter.upsert({ where: { sourceKey: row.sourceKey }, create: row, update: {} });
+    try {
+      await prisma.starter.upsert({ where: { sourceKey: row.sourceKey }, create: row, update: {} });
+    } catch {
+      // A concurrent first read (e.g. runner + inbox in two tabs) may have just
+      // created this row — ignore the unique-sourceKey conflict.
+    }
   }
 }
 
