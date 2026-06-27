@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { usePersisted } from "@/hooks/usePersisted";
@@ -340,22 +340,39 @@ export function MemoryManager({
     }
   }
 
-  async function reindex() {
+  async function reindex({ silent = false }: { silent?: boolean } = {}) {
     setReindexing(true);
     try {
       const res = await fetch("/api/memory/reindex", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      toast.success(
-        data.indexed > 0 ? `Indexed ${data.indexed} fact(s) for relevance` : "All facts already indexed"
-      );
-      router.refresh();
+      if (!silent) {
+        toast.success(
+          data.indexed > 0 ? `Ranked ${data.indexed} fact(s) by relevance` : "Facts are already ranked"
+        );
+      }
+      if (data.indexed > 0) router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      if (!silent) toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setReindexing(false);
     }
   }
+
+  // Self-heal: facts added via the API already embed, but seeded/imported facts
+  // don't — so the relevance ranking would silently fall back to recency until a
+  // manual click. Rank them once, quietly, when the page opens. Only fires when
+  // something is unranked (the steady state makes no model call).
+  const didAutoIndex = useRef(false);
+  useEffect(() => {
+    if (didAutoIndex.current) return;
+    if (facts.some((f) => f.status === "active" && !f.indexed)) {
+      didAutoIndex.current = true;
+      // Defer off the synchronous effect tick (reindex flips a loading flag).
+      void Promise.resolve().then(() => reindex({ silent: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reindex is stable enough; runs once via the ref guard
+  }, [facts]);
 
   async function learnActivity() {
     setActivityBusy(true);
@@ -439,8 +456,9 @@ export function MemoryManager({
     <div className="max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Memory</h1>
       <p className="mt-1 text-muted-foreground">
-        Facts about you and your work, woven into the email, brainstorming, task, and QA tools. The
-        model proposes; you approve. Facts are ranked by relevance to each task.
+        Things worth remembering about you and your work — your tone, how you run things, key terms.
+        Haven Desk weaves them into your writing and planning tools. You stay in control: it suggests,
+        you decide what to keep.
       </p>
 
       <div className="mt-6 flex flex-wrap gap-2">
@@ -462,20 +480,20 @@ export function MemoryManager({
         <Button onClick={add} disabled={!value.trim()}>
           <Plus className="mr-1 h-4 w-4" /> Add
         </Button>
-        <Button variant="outline" onClick={() => setSuggestOpen(true)}>
-          <Sparkles className="mr-1 h-4 w-4" /> Suggest from text
+        <Button variant="outline" onClick={() => setSuggestOpen(true)} title="Paste text and the app pulls out facts worth remembering">
+          <Sparkles className="mr-1 h-4 w-4" /> Find facts in text
         </Button>
-        <Button variant="outline" onClick={learnActivity} disabled={activityBusy} title="Capture facts from your recent ideas, QA sessions, and task notes">
+        <Button variant="outline" onClick={learnActivity} disabled={activityBusy} title="Pull facts from your recent notes, tasks, and saved work">
           <History className="mr-1 h-4 w-4" />
-          {activityBusy ? "Scanning…" : "From activity"}
+          {activityBusy ? "Scanning…" : "Learn from my work"}
         </Button>
-        <Button variant="outline" onClick={reindex} disabled={reindexing} title="Embed facts so they can be ranked by relevance">
+        <Button variant="outline" onClick={() => reindex()} disabled={reindexing} title="Rank facts by how well they match each task (usually automatic)">
           <RefreshCw className={"mr-1 h-4 w-4 " + (reindexing ? "animate-spin" : "")} />
-          {reindexing ? "Indexing…" : "Reindex"}
+          {reindexing ? "Ranking…" : "Improve ranking"}
         </Button>
-        <Button variant="outline" onClick={classify} disabled={classifying} title="Assign a category to any uncategorized facts">
+        <Button variant="outline" onClick={classify} disabled={classifying} title="Sort any uncategorized facts into a category">
           <Tags className="mr-1 h-4 w-4" />
-          {classifying ? "Classifying…" : "Classify"}
+          {classifying ? "Sorting…" : "Auto-categorize"}
         </Button>
       </div>
 
@@ -526,9 +544,15 @@ export function MemoryManager({
             </SelectContent>
           </Select>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {indexedCount}/{active.length} active facts indexed for relevance
-        </span>
+        {active.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {indexedCount === active.length
+              ? "Ranked by relevance"
+              : reindexing
+                ? "Ranking facts…"
+                : `${active.length - indexedCount} fact${active.length - indexedCount === 1 ? "" : "s"} not yet ranked`}
+          </span>
+        )}
       </div>
 
       {/* Relevance inspector — the facts a tool would see for a given task. */}
@@ -561,7 +585,7 @@ export function MemoryManager({
             <p className="text-xs text-muted-foreground">
               {previewRanked
                 ? "Ranked by relevance (cosine similarity)."
-                : "Recency fallback — Reindex the facts to enable relevance ranking."}
+                : "Showing the most recent facts — use Improve ranking to sort by relevance."}
             </p>
             {preview.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">No facts in scope.</p>
