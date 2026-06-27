@@ -1,5 +1,11 @@
 # 🛡️ Haven Desk — Private AI Daily Runner
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![GitHub Issues](https://img.shields.io/github/issues/omerakben/haven-desk)](https://github.com/omerakben/haven-desk/issues)
+
+> **Open-source.** Built with local models. Runs entirely on your machine. Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 A locally-run, private "daily cockpit" powered by **local Gemma 4** via Ollama
 (light `gemma4:e4b` default + a 12B quality tier). Two surfaces, one engine:
 
@@ -244,3 +250,25 @@ npm run dev            # uses cockpit/.env (OLLAMA_*, DATABASE_URL)
 Quality gates: `npm run lint`, `npm run test:unit`, and `npm run test:e2e`
 (Playwright tests are model-independent, so they pass even without Ollama
 running). `npm run clean` removes `.next` cross-platform.
+
+---
+
+## Community
+
+**This project is open-source (MIT) and welcomes contributions.**
+
+| How to get involved | Link |
+|---|---|
+| 🐛 Report a bug | [Open an issue](https://github.com/omerakben/haven-desk/issues) |
+| 💡 Suggest a feature | [Start a discussion](https://github.com/omerakben/haven-desk/discussions) |
+| 🧩 Build a pack | See [pack spec](docs/haven-desk-plugin-pack-spec.md) |
+| 📝 Improve docs | PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) |
+| ❓ Ask a question | [Open a discussion](https://github.com/omerakben/haven-desk/discussions) |
+
+### What we especially need help with
+
+- **One-click installer** — a native app that bundles everything (no Docker, no terminal)
+- **Packs** — household, student, freelancer, small business workflow packs
+- **macOS Shortcut** — capture from anywhere via the documented API
+- **Testing on different hardware** — Windows, Linux, Intel Macs
+- **Translations** — docs and UI in other languages
