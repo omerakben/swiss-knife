@@ -49,6 +49,10 @@ export const MANUAL: Record<string, ManualEntry> = {
     howTo: "Pick a thinking technique (alternatives, pros & cons, premortem…) and run it on your topic; results save as ideas.",
     examples: ["Pros & cons of two options", "A premortem on a plan"],
   },
+  "/tools/notes": {
+    howTo: "Find everything you've saved — results, brainstorms, captures, quick notes — in one searchable place; edit or copy any of them.",
+    examples: ["Search your saved notes", "Edit a note you kept"],
+  },
   "/tools/projects": {
     howTo: "Group your prompts, tasks, ideas, and memory by project; pick the active one in the sidebar so new work files there.",
     examples: ["Create a project for a client", "Switch the active project"],

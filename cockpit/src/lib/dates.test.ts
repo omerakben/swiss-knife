@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { dueDayString, formatDueDay, localDayString, parseDueDateInput, utcNoonOfLocalDay } from "./dates";
+import {
+  dueDayString,
+  formatDueDay,
+  localDayString,
+  parseDueDateInput,
+  utcNoonOfLocalDay,
+  utcStartOfLocalDay,
+} from "./dates";
 
 describe("parseDueDateInput", () => {
   it("stores a date-only string at UTC noon of that day", () => {
@@ -51,6 +58,28 @@ describe("utcNoonOfLocalDay", () => {
   it("rolls over month boundaries", () => {
     const now = new Date(2026, 5, 30, 8, 0);
     expect(utcNoonOfLocalDay(now, 1).toISOString()).toBe("2026-07-01T12:00:00.000Z");
+  });
+});
+
+describe("utcStartOfLocalDay", () => {
+  it("returns UTC midnight of the local day, with day offsets", () => {
+    const now = new Date(2026, 5, 9, 22, 30); // local June 9
+    expect(utcStartOfLocalDay(now, 0).toISOString()).toBe("2026-06-09T00:00:00.000Z");
+    expect(utcStartOfLocalDay(now, 1).toISOString()).toBe("2026-06-10T00:00:00.000Z");
+  });
+
+  it("as a backlog lower bound, includes the WHOLE of tomorrow but excludes today", () => {
+    // The DailyBrief "to do" partition: open todos due >= tomorrowStart are the
+    // backlog; today/overdue have their own buckets. This pins the boundary that
+    // used to drop a legacy UTC-midnight row due tomorrow into no bucket.
+    const now = new Date(2026, 5, 9, 9, 0); // local June 9
+    const tomorrowStart = utcStartOfLocalDay(now, 1).getTime();
+    const tomorrowMidnight = new Date("2026-06-10T00:00:00.000Z").getTime(); // legacy
+    const tomorrowNoon = new Date("2026-06-10T12:00:00.000Z").getTime(); // canonical
+    const todayNoon = new Date("2026-06-09T12:00:00.000Z").getTime(); // due today
+    expect(tomorrowMidnight >= tomorrowStart).toBe(true); // legacy tomorrow: included
+    expect(tomorrowNoon >= tomorrowStart).toBe(true); // canonical tomorrow: included
+    expect(todayNoon >= tomorrowStart).toBe(false); // due-today: excluded (no double-count)
   });
 });
 

@@ -17,6 +17,7 @@ import {
   TestTubes,
   Webhook,
   Brain,
+  StickyNote,
   Activity,
   FolderKanban,
   Package,
@@ -82,6 +83,10 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/tools/prompt-library", label: "Prompt Library", icon: Library, group: "write", desc: "Saved prompts; manage your templates.", keywords: "templates prompts saved" },
   { href: "/tools/email-writer", label: "Email Writer", icon: Mail, group: "write", desc: "Compose and reply with the right tone.", keywords: "compose reply" },
   { href: "/tools/brainstorm", label: "Brainstorming", icon: Lightbulb, group: "write", desc: "Structured thinking techniques.", keywords: "ideas techniques" },
+
+  // Documents — saved text lives here (the Idea store: results, brainstorms,
+  // captures, quick notes). Was reserved/empty until now.
+  { href: "/tools/notes", label: "Notes", icon: StickyNote, group: "documents", desc: "Everything you've saved, in one place.", keywords: "notes ideas saved results captures brainstorm" },
 
   // Projects — the hub + active-project switcher.
   { href: "/tools/projects", label: "Projects", icon: FolderKanban, group: "projects", desc: "Group work; deep-link to Open WebUI.", keywords: "hub" },
