@@ -12,7 +12,7 @@ import {
   renderRubricBody,
   type RubricSpec,
 } from "@/lib/rubric";
-import { scoreFeature, type QaContext } from "@/lib/qaPipeline";
+import { scoreFeature, selectQaPackTemplates, type QaContext } from "@/lib/qaPipeline";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,16 +71,18 @@ Use the user's domain vocabulary. Do not invent requirements they didn't imply.`
 // The active project's consumable rubric, as the QA pipeline would resolve it.
 export async function GET() {
   const projectId = await getActiveProjectId();
-  const [designed, pack] = await Promise.all([
+  const [designed, packTemplates] = await Promise.all([
     prisma.template.findFirst({
       where: { slug: projectRubricSlug(projectId), projectId },
       select: { id: true, name: true, updatedAt: true },
     }),
-    prisma.template.findFirst({
-      where: { slug: "lbmh-qa-eval-rubric", projectId },
-      select: { id: true, name: true, updatedAt: true },
+    prisma.template.findMany({
+      where: { projectId, kind: "prompt", archived: false },
+      select: { id: true, slug: true, name: true, category: true, body: true, updatedAt: true },
     }),
   ]);
+  const packRubric = selectQaPackTemplates(packTemplates).rubricTemplate;
+  const pack = packRubric ? packTemplates.find((template) => template.id === packRubric.id) ?? null : null;
   const current = designed ?? pack;
   return Response.json({
     current: current

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseVerdict, stripFences, deriveTitle } from "@/lib/qaPipeline";
+import { parseVerdict, stripFences, deriveTitle, selectQaPackTemplates } from "@/lib/qaPipeline";
 
 describe("parseVerdict", () => {
   it("reads PASS / BLOCK case-insensitively", () => {
@@ -62,5 +62,28 @@ describe("deriveTitle", () => {
   });
   it("handles CRLF line endings", () => {
     expect(deriveTitle("First line\r\nsecond")).toBe("First line");
+  });
+});
+
+describe("selectQaPackTemplates", () => {
+  it("prefers neutral slugs for project QA templates", () => {
+    const selected = selectQaPackTemplates([
+      { id: "other", slug: "release-checklist", name: "Release checklist", category: "qa", body: "other" },
+      { id: "gherkin", slug: "project-gherkin-authoring", name: "Gherkin authoring", category: "qa", body: "g" },
+      { id: "rubric", slug: "project-qa-eval-rubric", name: "QA eval rubric", category: "qa", body: "r" },
+    ]);
+
+    expect(selected.gherkinTemplate?.id).toBe("gherkin");
+    expect(selected.rubricTemplate?.id).toBe("rubric");
+  });
+
+  it("can identify seeded pack templates by purpose without a hardcoded private slug", () => {
+    const selected = selectQaPackTemplates([
+      { id: "gherkin", slug: "custom-domain-gherkin-authoring", name: "Story to Gherkin", category: "bdd", body: "g" },
+      { id: "rubric", slug: "custom-domain-eval-rubric", name: "Acceptance rubric", category: "quality", body: "r" },
+    ]);
+
+    expect(selected.gherkinTemplate?.body).toBe("g");
+    expect(selected.rubricTemplate?.body).toBe("r");
   });
 });

@@ -2,7 +2,7 @@
 
 Date: 2026-06-26
 
-This folder holds the Haven Desk transition package for the Swiss Knife repo. Haven Desk is the public product direction: a local-first private AI daily runner for non-technical users and small businesses. Swiss Knife stays the repo and internal codename. Nothing here changes the local-first rule, the repo name, the ports, or the scripts.
+This folder holds the Haven Desk product package: a local-first private AI daily runner for non-technical users and small businesses. Nothing here changes the local-first rule, the ports, or the compatibility scripts.
 
 Tagline: Private AI for the work of daily life.
 

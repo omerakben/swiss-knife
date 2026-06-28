@@ -1,15 +1,15 @@
-# Swiss Knife — recommended Codex baseline for this repo (team reference)
+# Haven Desk recommended Codex baseline for this repo (team reference)
 #
 # IMPORTANT: Codex does NOT auto-load this file. The `codex` CLI reads
 # ~/.codex/config.toml (CODEX_HOME) only; a project-level .codex/config.toml
 # is not picked up just by running codex in this directory (verified).
-# This file is the *documented baseline* for working on Swiss Knife.
+# This file is the *documented baseline* for working on Haven Desk.
 #
 # To adopt it, either:
 #   a) merge the keys below into your own ~/.codex/config.toml, or
 #   b) copy it to a Codex profile and select it per run:
-#        cp .codex/config.toml ~/.codex/swiss-knife.config.toml
-#        codex -p swiss-knife
+#        cp .codex/config.toml ~/.codex/haven-desk.config.toml
+#        codex -p haven-desk
 #
 # Defaults here are intentionally conservative: a shared baseline should not
 # hand every teammate a no-prompt, full-network agent. Opt into more autonomy

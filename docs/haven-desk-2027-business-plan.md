@@ -106,7 +106,7 @@ All prices and conversion targets below are assumptions to validate in beta, not
   - Why it matters: The release-readiness audit says the product is demo-ready for technical users but not closed-alpha ready for non-technical users because setup still requires terminal, Docker, native Ollama, model pulls, and troubleshooting.
   - What to build:
     - Signed macOS installer and Windows installer after a simpler `.command`/`.cmd` bridge proves the flow.
-    - `./swiss doctor` style checks surfaced as plain-language setup cards.
+    - `./haven doctor` style checks surfaced as plain-language setup cards.
     - Persona picker: Household, Small business, Student, Creative, Personal admin, QA/Product Ops.
     - First guided workflow per persona.
     - "Time to first saved result" instrumentation stored locally.

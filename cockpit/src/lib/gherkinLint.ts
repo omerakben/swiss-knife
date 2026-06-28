@@ -1,5 +1,5 @@
-// Dependency-free Gherkin linter for BDD hygiene. A TypeScript port of the LBMH
-// Gherkin lint rules (one event per scenario, business-level language, standard
+// Dependency-free Gherkin linter for BDD hygiene, derived from project-pack
+// lint rules (one event per scenario, business-level language, standard
 // tags, the {Type} [name] entity convention). Pure functions — usable in a route
 // or a test. ERRORs are gates (block); WARNs are advisory.
 

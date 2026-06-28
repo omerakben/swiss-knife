@@ -46,7 +46,7 @@ function Grid({ items }: { items: NavItem[] }) {
 }
 
 export function DashboardToolGrid() {
-  const [favJson] = usePersisted("sk:nav:favorites", "[]");
+  const [favJson] = usePersisted("havendesk:nav:favorites", "[]");
 
   const { favItems, groups } = useMemo(() => {
     let favs: Set<string>;

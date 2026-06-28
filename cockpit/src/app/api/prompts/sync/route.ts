@@ -69,7 +69,7 @@ export async function POST() {
 
   for (const p of prompts) {
     const content = p.optimized || p.original;
-    const command = `/sk-${p.id.slice(-8)}`; // stable per-prompt command
+    const command = `/hd-${p.id.slice(-8)}`; // stable per-prompt command
     // Open WebUI's PromptForm field is `name` (not `title`); updates are by id.
     const body = JSON.stringify({ command, name: p.title.slice(0, 100), content });
     try {

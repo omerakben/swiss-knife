@@ -4,7 +4,7 @@ Date: 2026-06-26
 
 ## Purpose
 
-This roadmap turns Swiss Knife into Haven Desk: a local-first, private AI daily runner that non-technical users and small businesses can understand, adopt, and pay for.
+This roadmap makes Haven Desk a local-first, private AI daily runner that non-technical users and small businesses can understand, adopt, and pay for.
 
 The roadmap is written as implementation guidance for a future clean-context session. It is intentionally concrete enough for another agent or engineer to start turning it into issues, commits, and verification steps.
 
@@ -75,7 +75,7 @@ Deliverables:
 
 Implementation notes:
 
-- Keep `Swiss Knife` as repo/internal codename unless a full rename is explicitly approved.
+- Use `Haven Desk` consistently in public product docs and copy.
 - Add public-facing docs before code changes.
 - Do not rename packages, ports, scripts, or database models in this stage.
 
@@ -829,14 +829,13 @@ Acceptance checks:
 - Do not build autonomous sending, purchasing, trading, legal filing, or medical decision workflows.
 - Do not claim enterprise readiness before team controls exist.
 
-## Open decisions for Ozzy
+## Open decisions for the maintainer
 
 These are the few remaining product decisions that should be made before implementation:
 
-1. Should `Haven Desk` become the public product name while `Swiss Knife` remains the repo/internal name?
-2. Which first mass-market pack should ship first: Small Business Ops, Household Secretary, or Student Tutor?
-3. Should the first paid release target individual Pro users, professional packs, or a small-business setup/service offer?
-4. Should the initial packaging remain local web app plus Docker/Ollama, or should a desktop installer become mandatory before public launch?
+1. Which first mass-market pack should ship first: Small Business Ops, Household Secretary, or Student Tutor?
+2. Should the first paid release target individual Pro users, professional packs, or a small-business setup/service offer?
+3. Should the initial packaging remain local web app plus Docker/Ollama, or should a desktop installer become mandatory before public launch?
 
 Recommended defaults:
 
@@ -844,4 +843,3 @@ Recommended defaults:
 2. Ship Small Business Ops first.
 3. Monetize professional packs first, then Pro subscription.
 4. Keep current local stack for alpha, but plan desktop installer before mass-market launch.
-

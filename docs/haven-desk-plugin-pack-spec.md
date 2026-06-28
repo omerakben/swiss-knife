@@ -8,7 +8,7 @@ Haven Desk packs are intentionally limited to structured data in v1. The choice 
 
 A pack that contains only templates, memory facts, task seeds, knowledge links, and references to existing cockpit routes cannot execute code, open network connections, or mutate state without the user's explicit save action. That constraint is what lets a user install a community pack without reading every line of it. It is also what lets the validator catch every structural problem before any data reaches the database.
 
-The precedent already exists in the repo: `prisma/seed-lbmh.mjs` loads a LBMH project pack from `cockpit/projects/lbmh/pack/content.mjs` by upserting facts, templates, and prompts by their `sourceKey` or `slug`. That format is the practical L0 baseline. The `PluginManifest` type at `cockpit/src/lib/packs/manifest.ts`, implemented and tested this session (39 unit tests in `cockpit/src/lib/packs/manifest.test.ts`, run via `npm run test:unit`), gives that pattern a typed contract, a validator, and a maturity ladder so future packs can grow into routes, local MCP tools, and watched-folder automations without abandoning the safety model.
+The precedent already exists in the repo: `prisma/seed-local-pack.mjs` loads a gitignored project pack from `cockpit/projects/<pack>/pack/content.mjs` by upserting facts, templates, and prompts by their `sourceKey` or `slug`. That format is the practical L0 baseline. The `PluginManifest` type at `cockpit/src/lib/packs/manifest.ts`, implemented and tested this session (39 unit tests in `cockpit/src/lib/packs/manifest.test.ts`, run via `npm run test:unit`), gives that pattern a typed contract, a validator, and a maturity ladder so future packs can grow into routes, local MCP tools, and watched-folder automations without abandoning the safety model.
 
 Arbitrary code execution, external network calls, and unsupervised mutations are not permitted in v1. They may appear in L3 packs in a future version, but only after a review-queue and per-action approval gate are in place. See the positioning and hard constraints in `haven-desk-strategy-report.md` and the build sequence in `haven-desk-engineering-roadmap.md`.
 
@@ -56,7 +56,7 @@ Every `PackPermissions` field starts `false`. A validator error blocks installat
 
 **L0: Project pack (content only)**
 
-Templates, memory facts, task seeds, prompt-library entries, and knowledge source links. No routes, no `mcpTools`. The pack loads into an existing project through the seed path and relies entirely on surfaces that already exist in the cockpit. The LBMH pack in `prisma/seed-lbmh.mjs` is a working L0 example.
+Templates, memory facts, task seeds, prompt-library entries, and knowledge source links. No routes, no `mcpTools`. The pack loads into an existing project through the seed path and relies entirely on surfaces that already exist in the cockpit. Gitignored local packs loaded by `prisma/seed-local-pack.mjs` are working L0 examples.
 
 **L1: Cockpit tool**
 
@@ -133,7 +133,7 @@ type PackValidationResult = {
 
 ## Install and seed expectations
 
-The installer follows the same idempotent pattern established by `prisma/seed-lbmh.mjs`:
+The installer follows the same idempotent pattern established by `prisma/seed-local-pack.mjs`:
 
 - **Facts** upsert by `sourceKey` (`MemoryFact.sourceKey` is unique). Re-running updates the `value`, `key`, `category`, and `pinned` fields without creating a duplicate.
 - **Templates** upsert by `slug` (`Template.slug` is unique). Re-running refreshes `body`, `description`, and `variables`.
@@ -142,7 +142,7 @@ The installer follows the same idempotent pattern established by `prisma/seed-lb
 
 A dry-run flag (`--dry-run`) logs what would be inserted or updated and exits without touching the database.
 
-When no pack content file is present, the installer exits with a clean message and status 0. It does not error. This matches the LBMH seed behavior: `"No project pack found ... Nothing to seed."` The cockpit's empty-state first-run card points users to the install step rather than showing an error.
+When no pack content file is present, the installer exits with a clean message and status 0. It does not error. This matches the local-pack seed behavior: `"No local project pack found ... Nothing to seed."` The cockpit's empty-state first-run card points users to the install step rather than showing an error.
 
 The installer creates a Project record if one does not exist with the matching `name`, using the manifest `name` and `description`. It does not delete or reassign existing content.
 

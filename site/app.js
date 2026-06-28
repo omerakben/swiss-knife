@@ -1,4 +1,4 @@
-const CONTACT_EMAIL = "";
+const PILOT_DISCUSSION_URL = "https://github.com/omerakben/haven-desk/discussions";
 
 const navToggle = document.querySelector(".nav-toggle");
 const siteNav = document.querySelector(".site-nav");
@@ -77,7 +77,7 @@ const form = document.querySelector("#pilot-form");
 const output = document.querySelector("#application-output");
 const summaryField = document.querySelector("#application-summary");
 const copyButton = document.querySelector("#copy-application");
-const emailLink = document.querySelector("#email-application");
+const contactLink = document.querySelector("#contact-application");
 const emailWarning = document.querySelector("#email-warning");
 
 function getValue(formData, key) {
@@ -104,13 +104,6 @@ function buildSummary(formData) {
   ].join("\n");
 }
 
-function buildMailto(summary) {
-  const subject = encodeURIComponent("Haven Desk small business early-access application");
-  const body = encodeURIComponent(summary);
-  const recipient = CONTACT_EMAIL.trim();
-  return recipient ? `mailto:${recipient}?subject=${subject}&body=${body}` : `mailto:?subject=${subject}&body=${body}`;
-}
-
 form?.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(form);
@@ -119,13 +112,12 @@ form?.addEventListener("submit", (event) => {
   if (summaryField instanceof HTMLTextAreaElement) {
     summaryField.value = summary;
   }
-  if (emailLink instanceof HTMLAnchorElement) {
-    emailLink.href = buildMailto(summary);
+  if (contactLink instanceof HTMLAnchorElement) {
+    contactLink.href = PILOT_DISCUSSION_URL;
   }
   if (emailWarning) {
-    emailWarning.textContent = CONTACT_EMAIL
-      ? "Review the email before sending. Do not include sensitive client data in the pilot application."
-      : "Contact email is not configured yet. Copy the application summary and send it through the approved pilot channel.";
+    emailWarning.textContent =
+      "Keep the application summary private. GitHub Discussions are public, so use them only to request pilot contact.";
   }
   output?.removeAttribute("hidden");
   output?.scrollIntoView({ behavior: "smooth", block: "start" });

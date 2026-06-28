@@ -89,7 +89,7 @@ export function CaptureSetup() {
           <li>
             Add a “Run Shell Script” action and set it to:{" "}
             <code className="rounded bg-muted px-1">
-              bash &quot;&lt;repo&gt;/scripts/sk-capture.sh&quot;
+              bash &quot;&lt;repo&gt;/scripts/haven-capture.sh&quot;
             </code>{" "}
             (the script fetches this token itself, so nothing secret is stored in the Shortcut).
           </li>
@@ -101,7 +101,7 @@ export function CaptureSetup() {
         </ol>
         <p className="ml-4 mt-1 text-xs">
           Capture a fact/prompt/idea instead by passing a 2nd arg, e.g.{" "}
-          <code className="rounded bg-muted px-1">bash &quot;…/sk-capture.sh&quot; &quot;&quot; fact</code>.
+          <code className="rounded bg-muted px-1">bash &quot;…/haven-capture.sh&quot; &quot;&quot; fact</code>.
         </p>
       </details>
 
@@ -148,14 +148,14 @@ export function CaptureSetup() {
         <ol className="ml-4 mt-2 list-decimal space-y-1">
           <li>
             The repo ships{" "}
-            <code className="rounded bg-muted px-1">scripts\sk-capture.ps1</code> — it captures
+            <code className="rounded bg-muted px-1">scripts\haven-capture.ps1</code> — it captures
             your clipboard (or an argument) as a task/fact/prompt/idea, fetching this token
             itself, so nothing secret is stored anywhere.
           </li>
           <li>
             Try it in PowerShell:{" "}
             <code className="rounded bg-muted px-1">
-              powershell -ExecutionPolicy Bypass -File &quot;&lt;repo&gt;\scripts\sk-capture.ps1&quot;
+              powershell -ExecutionPolicy Bypass -File &quot;&lt;repo&gt;\scripts\haven-capture.ps1&quot;
             </code>
           </li>
           <li>

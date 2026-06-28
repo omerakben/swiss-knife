@@ -80,10 +80,10 @@ export function CommandPalette() {
       setOpen(true);
     };
     window.addEventListener("keydown", onKey);
-    window.addEventListener("swissknife:command", onOpen);
+    window.addEventListener("havendesk:command", onOpen);
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("swissknife:command", onOpen);
+      window.removeEventListener("havendesk:command", onOpen);
     };
   }, [resetTo]);
 

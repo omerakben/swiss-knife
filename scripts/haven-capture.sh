@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Quick-capture into Swiss Knife from anywhere (e.g. a macOS Shortcut hotkey).
+# Quick-capture into Haven Desk from anywhere (e.g. a macOS Shortcut hotkey).
 # No secret is stored here: the capture token is fetched from the running cockpit
 # at runtime, so this file is safe to commit.
 #
 # Usage:
-#   sk-capture.sh                 # captures the clipboard as a task
-#   sk-capture.sh "buy milk"      # captures the given text as a task
-#   sk-capture.sh "" fact         # captures the clipboard as a memory fact
-#   sk-capture.sh "idea text" idea # task | fact | prompt | idea
+#   haven-capture.sh                 # captures the clipboard as a task
+#   haven-capture.sh "buy milk"      # captures the given text as a task
+#   haven-capture.sh "" fact         # captures the clipboard as a memory fact
+#   haven-capture.sh "idea text" idea # task | fact | prompt | idea
 set -euo pipefail
 
-BASE="${SK_BASE:-http://localhost:4141}"
+BASE="${HAVEN_BASE:-http://localhost:4141}"
 PY="$(command -v python3 || echo /usr/bin/python3)"
 
 TEXT="${1:-}"
 [ -z "$TEXT" ] && TEXT="$(pbpaste 2>/dev/null || true)"
 TARGET="${2:-task}"
 
-notify() { osascript -e "display notification \"$1\" with title \"Swiss Knife\"" >/dev/null 2>&1 || true; }
+notify() { osascript -e "display notification \"$1\" with title \"Haven Desk\"" >/dev/null 2>&1 || true; }
 
 if [ -z "${TEXT// /}" ]; then
   notify "Nothing to capture (clipboard empty)"

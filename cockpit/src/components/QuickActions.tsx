@@ -27,7 +27,7 @@ import {
 } from "@/lib/quickActions";
 import { QUICK_ACTION_ICONS } from "@/lib/quickActionIcons";
 
-const RECENTS_KEY = "sk:qa:recents";
+const RECENTS_KEY = "havendesk:qa:recents";
 
 function ActionCard({ a, onOpen }: { a: QuickAction; onOpen: (a: QuickAction) => void }) {
   const Icon = QUICK_ACTION_ICONS[a.icon] ?? Sparkles;

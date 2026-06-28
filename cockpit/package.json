@@ -17,7 +17,7 @@
     "clean": "node -e \"fs.rmSync('.next',{recursive:true,force:true})\"",
     "postinstall": "prisma generate",
     "db:seed": "node --env-file-if-exists=.env prisma/seed.mjs",
-    "seed:lbmh": "node --env-file-if-exists=.env prisma/seed-lbmh.mjs"
+    "seed:local-pack": "node --env-file-if-exists=.env prisma/seed-local-pack.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,6 +1,6 @@
-# Contributing to Swiss Knife / Haven Desk
+# Contributing to Haven Desk
 
-Thanks for your interest. This project is a local-first private AI daily runner, and contributions of all kinds are welcome — code, docs, packs, issues, discussions.
+Thanks for your interest. This project is a local-first private AI daily runner, and contributions of all kinds are welcome: code, docs, packs, issues, and discussions.
 
 ## What we need help with
 
@@ -10,15 +10,15 @@ Thanks for your interest. This project is a local-first private AI daily runner,
 | **macOS Shortcut** | Build and test the documented quick-capture Shortcut recipe. |
 | **Setup experience** | Reduce the friction of getting Ollama + Docker running. One-click installer ideas welcome. |
 | **Docs** | Improve README, fix errors, write tutorials, translate into other languages. |
-| **Bug reports** | File an issue with `swiss doctor` output and the steps to reproduce. |
+| **Bug reports** | File an issue with `haven doctor` output and the steps to reproduce. |
 | **Code quality** | Review open PRs, add unit tests, improve the e2e coverage. |
 | **Feedback** | Tell us what breaks on your machine, what's confusing, what's missing. |
 
 ## Quick start
 
 ```bash
-git clone <repo-url> && cd haven-desk
-./swiss up          # start everything (Docker + Ollama)
+git clone https://github.com/omerakben/haven-desk.git && cd haven-desk
+./haven up          # start everything (Docker + Ollama)
 ```
 
 See the [README](README.md) for full setup instructions on macOS and Windows.
@@ -42,7 +42,7 @@ npm run lint
 npm run build
 ```
 
-No `.env` is needed for local dev — defaults work against a running Ollama at `localhost:11434`.
+No `.env` is needed for local dev. Defaults work against a running Ollama at `localhost:11434`.
 
 ## Code of conduct
 

@@ -162,7 +162,7 @@
       <section class="section-pad quickstart" id="quickstart">
         <div class="section-heading">
           <p class="overline">Quick Start</p>
-          <h2>One line downloads, sets up, starts, and opens Haven Desk.</h2>
+          <h2>Approved pilots can install with one line.</h2>
           <p>
             This is the low-friction pilot path. It downloads the public repo, runs the existing setup,
             starts the local stack, and opens <code>localhost:4141</code>.
@@ -242,7 +242,7 @@
       <section class="section-pad pack-section" id="pack">
         <div class="pack-copy">
           <p class="overline">Installed workflow pack</p>
-          <h2>Small Business Ops is the first commercial wedge.</h2>
+          <h2>Small Business Ops is the first packaged workflow.</h2>
           <p>
             The live app already shows a Small Business Ops pack. Packs bundle templates,
             memory facts, and setup tasks for a job. They are declarative and reviewed before install.
@@ -316,7 +316,7 @@
           </article>
           <article>
             <span>02</span>
-            <p>Run <code>./swiss setup</code> on macOS or <code>.\swiss.ps1 setup</code> on Windows.</p>
+            <p>Run <code>./haven setup</code> on macOS or <code>.\haven.ps1 setup</code> on Windows.</p>
           </article>
           <article>
             <span>03</span>
@@ -335,7 +335,8 @@
           <h2>Apply with one recurring admin job.</h2>
           <p>
             The best pilot is specific: weekly notes, client follow-ups, proposals, SOPs,
-            or inbox triage. The static page prepares a message only. It does not store applications.
+            or inbox triage. This static page prepares a private message only. It does not store
+            or submit applications.
           </p>
         </div>
         <form class="apply-form" id="pilot-form">
@@ -373,9 +374,9 @@
             <input type="checkbox" name="consent" required />
             I understand this is early access and Haven Desk will not send messages or take external actions for me.
           </label>
-          <button class="button primary" type="submit">Prepare my application</button>
+          <button class="button primary" type="submit">Prepare private application</button>
           <p class="form-note">
-            Contact routing is not configured yet. Review the generated summary before sending it through the approved pilot channel.
+            Copy the generated summary for your pilot contact. Use GitHub Discussions only for a non-sensitive introduction.
           </p>
         </form>
         <div class="application-output" id="application-output" hidden>
@@ -383,7 +384,7 @@
           <textarea id="application-summary" rows="12" readonly></textarea>
           <div class="output-actions">
             <button class="button secondary" type="button" id="copy-application">Copy application</button>
-            <a class="button primary" id="email-application" href="#">Email application</a>
+            <a class="button primary" id="contact-application" href="https://github.com/omerakben/haven-desk/discussions" target="_blank" rel="noreferrer">Ask for pilot contact</a>
           </div>
           <p id="email-warning" class="form-note"></p>
         </div>

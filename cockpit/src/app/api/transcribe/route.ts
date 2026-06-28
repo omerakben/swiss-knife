@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   // A per-request unique base: process.pid is constant in a long-lived server and
   // buf.length collides for two same-size clips, so two concurrent uploads would
   // clobber each other's temp files. randomUUID() is unique per request.
-  const base = join(tmpdir(), `sk-voice-${randomUUID()}`);
+  const base = join(tmpdir(), `haven-voice-${randomUUID()}`);
   const inPath = `${base}.webm`;
   const wavPath = `${base}.wav`;
   const txtPath = `${base}.txt`;

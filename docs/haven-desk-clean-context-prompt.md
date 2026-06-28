@@ -3,9 +3,9 @@
 Use this prompt in a fresh Codex or Claude session when you want the agent to continue the monetization transition from a clean context window.
 
 ```markdown
-/goal Act as a senior AI product strategist, technical product owner, and implementation planner for the Swiss Knife repo at `/Users/ozzy-mac/Projects/swiss-knife`.
+/goal Act as a senior AI product strategist, technical product owner, and implementation planner for the Haven Desk repo.
 
-We are transitioning Swiss Knife into **Haven Desk**, a local-first private AI daily runner.
+We are building **Haven Desk**, a local-first private AI daily runner.
 
 ## Core product thesis
 
@@ -86,7 +86,7 @@ Produce or update repo docs that cover:
 
 ## Recommended first implementation bets
 
-1. Keep `Swiss Knife` as internal/repo name and use `Haven Desk` as public product name.
+1. Use `Haven Desk` consistently in public product docs and copy.
 2. Reorganize public UX around Today, Capture, Write, Documents, Projects, Packs, and Settings.
 3. Hide QA/dev tools inside a professional pack rather than removing them.
 4. Build Small Business Ops as the first mass-market pack.
@@ -125,4 +125,3 @@ After pasting the prompt above, ask:
 ```markdown
 Read the Haven Desk docs and produce a decision-complete implementation plan for the first repo changes: public product docs, persona-first navigation plan, plugin manifest design, and the first two paid packs.
 ```
-

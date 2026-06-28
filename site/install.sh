@@ -45,7 +45,7 @@ case "$(uname -s)" in
     ok "macOS detected"
     ;;
   Linux)
-    fail "Linux one-line setup is not supported yet. Install Docker + Ollama manually, clone $REPO_URL, then run ./swiss up."
+    fail "Linux one-line setup is not supported yet. Install Docker + Ollama manually, clone $REPO_URL, then run ./haven up."
     ;;
   *)
     fail "Unsupported OS for this installer. Use the Windows PowerShell command on Windows."
@@ -87,21 +87,21 @@ else
 fi
 
 cd "$INSTALL_DIR"
-chmod +x ./swiss
+chmod +x ./haven
 
 say "Installing prerequisites"
-./swiss setup
+./haven setup
 
 if has_cmd docker && ! docker info >/dev/null 2>&1; then
   note "Starting Docker Desktop. Accept any first-run prompts if they appear."
   open -a Docker >/dev/null 2>&1 || true
   if ! wait_for_docker; then
-    fail "Docker Desktop did not become ready. Open Docker Desktop, finish setup, then run: cd \"$INSTALL_DIR\" && ./swiss up"
+    fail "Docker Desktop did not become ready. Open Docker Desktop, finish setup, then run: cd \"$INSTALL_DIR\" && ./haven up"
   fi
 fi
 
 say "Starting Haven Desk"
-./swiss up
+./haven up
 open_url
 
 say "Ready"

@@ -1,6 +1,6 @@
-# Swiss Knife — Local AI Daily Runner: Build Plan
+# Haven Desk — Local AI Daily Runner: Build Plan
 
-**Owner:** Ozzy · **Machine:** Apple M5 / 48GB · **Date:** 2026-06-04
+**Owner:** Omer Akben · **Date:** 2026-06-04
 **Goal:** A locally-run, private "daily cockpit" web app powered by local Gemma 4 12B, combining productivity tools, AI assistants, and a project knowledge base — with no third-party logging and all data on-machine.
 
 > **Status (2026-06-04):** The foundation milestone landed on top of Phase 0+1.

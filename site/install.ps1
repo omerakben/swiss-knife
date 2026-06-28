@@ -82,7 +82,7 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 Set-Location -LiteralPath $InstallDir
 
 Write-Step "Installing prerequisites"
-powershell -ExecutionPolicy Bypass -File ".\swiss.ps1" setup
+powershell -ExecutionPolicy Bypass -File ".\haven.ps1" setup
 if ($LASTEXITCODE -ne 0) { Stop-WithMessage "Setup failed. Review the output above." }
 
 $dockerBin = Join-Path $env:ProgramFiles "Docker\Docker\resources\bin"
@@ -96,13 +96,13 @@ if ((Test-Command "docker") -and -not (Wait-Docker)) {
     Write-Note "Starting Docker Desktop. Accept any first-run prompts if they appear."
     Start-Process -FilePath $dockerExe | Out-Null
     if (-not (Wait-Docker)) {
-      Stop-WithMessage "Docker Desktop did not become ready. Open Docker Desktop, finish setup, then run: cd `"$InstallDir`"; .\swiss.ps1 up"
+      Stop-WithMessage "Docker Desktop did not become ready. Open Docker Desktop, finish setup, then run: cd `"$InstallDir`"; .\haven.ps1 up"
     }
   }
 }
 
 Write-Step "Starting Haven Desk"
-powershell -ExecutionPolicy Bypass -File ".\swiss.ps1" up
+powershell -ExecutionPolicy Bypass -File ".\haven.ps1" up
 if ($LASTEXITCODE -ne 0) { Stop-WithMessage "Start failed. Review the output above." }
 
 Start-Process $AppUrl | Out-Null

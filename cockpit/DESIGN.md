@@ -1,4 +1,4 @@
-# Swiss Knife — design system
+# Haven Desk — design system
 
 The cockpit's whole look is controlled from **one file**: `src/app/globals.css`.
 It's built on Apple's three design principles — Clarity, Deference, Depth — over

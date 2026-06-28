@@ -89,13 +89,13 @@ export function TasksView({
   // Priority/module filters and the board/list tab survive reloads
   // (localStorage); the search box stays ephemeral by design.
   const [query, setQuery] = useState(initialQuery);
-  const [priorityRaw, setPriorityFilter] = usePersisted("sk:tasks:priority", "all");
-  const [moduleRaw, setModuleFilter] = usePersisted("sk:tasks:module", "all");
-  const [view, setView] = usePersisted("sk:tasks:view", "board");
+  const [priorityRaw, setPriorityFilter] = usePersisted("havendesk:tasks:priority", "all");
+  const [moduleRaw, setModuleFilter] = usePersisted("havendesk:tasks:module", "all");
+  const [view, setView] = usePersisted("havendesk:tasks:view", "board");
   // Scope to the active project by default — the page used to show every
   // project's tasks while DailyBrief/creates scoped, so switching projects
   // changed nothing here. "All projects" is one click and persisted.
-  const [scopeRaw, setScope] = usePersisted("sk:tasks:scope", "project");
+  const [scopeRaw, setScope] = usePersisted("havendesk:tasks:scope", "project");
   const scope: "project" | "all" = scopeRaw === "all" ? "all" : "project";
 
   // A ⌘K deep link must actually reveal its target: useState ignores a new
@@ -129,7 +129,7 @@ export function TasksView({
   const allTasks = [...board.todo, ...board.doing, ...board.done];
   const activeTask = allTasks.find((t) => t.id === activeId) ?? null;
 
-  // Distinct modules present (e.g. LBMH training modules), for the module filter.
+  // Distinct project-pack modules present, for the module filter.
   const modules = [...new Set(allTasks.filter((t) => t.module).map((t) => t.module as string))].sort();
   // Stored values are validated against what exists NOW — a stale persisted
   // module (or garbage) degrades to "all" instead of silently hiding tasks.

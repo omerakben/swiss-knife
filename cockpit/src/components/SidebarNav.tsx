@@ -8,9 +8,9 @@ import { ExternalLink, Star, ArrowDownAZ, ArrowUpZA, ListFilter, Wrench, Chevron
 import { NAV_GROUPS, NAV_ITEMS, type NavItem } from "@/lib/nav";
 import { usePersisted } from "@/hooks/usePersisted";
 
-const FAV_KEY = "sk:nav:favorites";
-const SORT_KEY = "sk:nav:sort";
-const PRO_KEY = "sk:nav:professional-open";
+const FAV_KEY = "havendesk:nav:favorites";
+const SORT_KEY = "havendesk:nav:sort";
+const PRO_KEY = "havendesk:nav:professional-open";
 
 export function SidebarNav() {
   const pathname = usePathname();

@@ -1,10 +1,10 @@
-# AGENTS.md — Codex partner brief for Swiss Knife / Haven Desk
+# AGENTS.md — Codex partner brief for Haven Desk
 
 Read this first. `CLAUDE.md` (same repo) is the full source of truth with history and roadmap; this is the short version you need before touching code.
 
 ## What this is
 
-Swiss Knife is a locally-run, private "daily cockpit" web app powered by local Gemma (via Ollama). The app we build lives in `cockpit/` — Next.js 15 (App Router), TypeScript strict, Prisma + SQLite, Tailwind 3 + shadcn/ui. Everything runs on the user's machine. No cloud LLM calls come from the app itself.
+Haven Desk is a locally-run, private "daily cockpit" web app powered by local Gemma (via Ollama). The app we build lives in `cockpit/` — Next.js 15 (App Router), TypeScript strict, Prisma + SQLite, Tailwind 3 + shadcn/ui. Everything runs on the user's machine. No cloud LLM calls come from the app itself.
 
 **The project is open-source (MIT).** Community contributions are welcome. See `CONTRIBUTING.md`.
 

@@ -1,4 +1,4 @@
-# Pull the Swiss Knife model tiers on Windows. Mirrors scripts/pull-models.sh,
+# Pull the Haven Desk model tiers on Windows. Mirrors scripts/pull-models.sh,
 # with ONE deliberate difference: the quality tier is gemma4:12b (GGUF) -
 # gemma4:12b-mlx is MLX = Apple Silicon ONLY and will not run on Windows.
 #

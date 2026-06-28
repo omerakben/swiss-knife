@@ -2,9 +2,9 @@
 // lint → rubric score, refined across iterations. This orchestrates EXISTING
 // primitives — it does not reimplement them. The Gherkin-authoring and
 // eval-rubric instructions come from the active project's seeded templates
-// (resolved by slug), so all LBMH/Spruce specifics stay in the gitignored
-// project pack (prisma/seed-lbmh.mjs), never hardcoded here. Glossary/vocabulary
-// is injected via the project's memory facts.
+// (resolved from project-scoped templates), so domain specifics stay in the
+// gitignored project pack and never need to be hardcoded here. Glossary and
+// vocabulary are injected via the project's memory facts.
 
 import { prisma } from "@/lib/db";
 import { chat, chatJson, type ChatMessage } from "@/lib/ollama";
@@ -14,13 +14,15 @@ import { renderTemplate } from "@/lib/templates";
 import { lintGherkin, type GherkinLintResult } from "@/lib/gherkinLint";
 import { projectRubricSlug } from "@/lib/rubric";
 
-// Stable slugs the project pack seeds these templates under (see
-// prisma/seed-lbmh.mjs → projects/<name>/pack/content.mjs). Resolved per project,
-// so a project without the pack simply has no match → needsPack.
-const GHERKIN_SLUG = "lbmh-gherkin-authoring";
-const RUBRIC_SLUG = "lbmh-qa-eval-rubric";
+const GHERKIN_TEMPLATE_SLUGS = new Set(["project-gherkin-authoring", "qa-gherkin-authoring", "gherkin-authoring"]);
+const RUBRIC_TEMPLATE_SLUGS = new Set(["project-qa-eval-rubric", "qa-eval-rubric", "eval-rubric"]);
 
 type QaTemplate = { id: string; body: string };
+export type QaTemplateCandidate = QaTemplate & {
+  slug: string | null;
+  name: string;
+  category: string | null;
+};
 
 export type QaContext = {
   /** True only when both templates AND project glossary facts are present. */
@@ -50,33 +52,73 @@ export type IterationResult = {
   rubric: RubricScore | null;
 };
 
+function templateText(t: QaTemplateCandidate): string {
+  return [t.slug, t.name, t.category].filter(Boolean).join(" ").toLowerCase();
+}
+
+function scoreGherkinTemplate(t: QaTemplateCandidate): number {
+  let score = t.slug && GHERKIN_TEMPLATE_SLUGS.has(t.slug) ? 100 : 0;
+  const text = templateText(t);
+  if (text.includes("gherkin")) score += 20;
+  if (/\b(author|draft|story|acceptance|bdd)\b/.test(text)) score += 5;
+  return score >= 20 ? score : 0;
+}
+
+function scoreRubricTemplate(t: QaTemplateCandidate): number {
+  let score = t.slug && RUBRIC_TEMPLATE_SLUGS.has(t.slug) ? 100 : 0;
+  const text = templateText(t);
+  if (text.includes("rubric")) score += 20;
+  if (/\b(eval|score|qa|quality)\b/.test(text)) score += 5;
+  return score >= 20 ? score : 0;
+}
+
+function pickTemplate(
+  templates: QaTemplateCandidate[],
+  scorer: (template: QaTemplateCandidate) => number
+): QaTemplate | null {
+  const ranked = templates
+    .map((template) => ({ template, score: scorer(template) }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score || a.template.name.localeCompare(b.template.name));
+
+  return ranked[0]?.template ?? null;
+}
+
+export function selectQaPackTemplates(templates: QaTemplateCandidate[]): {
+  gherkinTemplate: QaTemplate | null;
+  rubricTemplate: QaTemplate | null;
+} {
+  return {
+    gherkinTemplate: pickTemplate(templates, scoreGherkinTemplate),
+    rubricTemplate: pickTemplate(templates, scoreRubricTemplate),
+  };
+}
+
 /**
  * Resolve a project's QA pack: the Gherkin-authoring + eval-rubric templates (by
  * slug, scoped to the project) and whether the project has glossary memory facts.
  * A project "has the pack" only when both templates and at least one fact exist.
  */
 export async function loadProjectQaContext(projectId: string | null): Promise<QaContext> {
-  const [gherkinTemplate, designedRubric, packRubric, factCount] = await Promise.all([
-    prisma.template.findFirst({
-      where: { slug: GHERKIN_SLUG, projectId },
-      select: { id: true, body: true },
+  const [projectTemplates, designedRubric, factCount] = await Promise.all([
+    prisma.template.findMany({
+      where: { projectId, kind: "prompt", archived: false },
+      select: { id: true, slug: true, name: true, category: true, body: true },
     }),
     // A rubric saved by the Rubric Designer (per-project slug) overrides the
-    // seeded pack rubric — same body contract, so pipeline/bench/rescore are
+    // seeded pack rubric. Same body contract, so pipeline/bench/rescore are
     // unchanged consumers.
     prisma.template.findFirst({
       where: { slug: projectRubricSlug(projectId), projectId },
-      select: { id: true, body: true },
-    }),
-    prisma.template.findFirst({
-      where: { slug: RUBRIC_SLUG, projectId },
       select: { id: true, body: true },
     }),
     projectId
       ? prisma.memoryFact.count({ where: { projectId, status: "active", deletedAt: null } })
       : Promise.resolve(0),
   ]);
-  const rubricTemplate = designedRubric ?? packRubric;
+  const selected = selectQaPackTemplates(projectTemplates);
+  const gherkinTemplate = selected.gherkinTemplate;
+  const rubricTemplate = designedRubric ?? selected.rubricTemplate;
 
   const hasGlossary = factCount > 0;
   return {

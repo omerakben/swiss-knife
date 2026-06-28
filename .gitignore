@@ -18,7 +18,7 @@ next-env.d.ts
 cockpit/uploads/
 uploads/
 
-# project packs — local/internal project data (e.g. LBMH = ECI IP); never commit
+# project packs — local/private/customer data; never commit
 cockpit/projects/
 
 # env & secrets
@@ -37,6 +37,10 @@ $RECYCLE.BIN/
 
 # local agent/harness state (scheduled-task locks, etc.) — never commit
 .claude/
+
+# agent session handoff docs — never commit
+HANDOFF*
+PRODUCTION-READINESS*
 
 # build
 dist/

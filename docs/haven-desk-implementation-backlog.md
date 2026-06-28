@@ -43,10 +43,10 @@ Goal: move the product thesis and strategy into durable repo artifacts so any se
 
 ### T-02: Top-level README link to Haven Desk docs [SHIPPED]
 
-**Why:** A developer or journalist landing on the repo sees only "Swiss Knife, the developer cockpit." The public product name and transition context are invisible.
+**Why:** A developer or journalist landing on the repo sees only "Haven Desk, the developer cockpit." The public product name and transition context are invisible.
 **Scope:** Add a short "Haven Desk" section near the top of the root `README.md` (2 to 3 sentences, link to `docs/README.md`). Do not replace existing install or setup content.
 **Files:** `README.md`
-**Acceptance:** `grep -i "haven desk" README.md` returns at least one match. Existing `./swiss up` install path is intact.
+**Acceptance:** `grep -i "haven desk" README.md` returns at least one match. Existing `./haven up` install path is intact.
 **Verify:** From repo root: `grep -i "haven desk" README.md`
 **Size:** S
 **Depends-on:** T-01
@@ -59,7 +59,7 @@ Goal: define a declarative pack contract before writing any pack content. No mar
 
 ### T-03: PluginManifest TypeScript type [SHIPPED]
 
-**Why:** The current L0 seeding pattern (`prisma/seed-lbmh.mjs` + `cockpit/projects/<name>/pack/content.mjs`) is ad hoc. Every future pack author needs a single canonical type, and every load path needs a contract to validate against.
+**Why:** The current L0 seeding pattern (`prisma/seed-local-pack.mjs` + `cockpit/projects/<name>/pack/content.mjs`) is simple but still needs a single canonical type and validation contract for future pack authors.
 **Scope:** TypeScript type `PluginManifest` and `PackPermissions` in `cockpit/src/lib/packs/manifest.ts`. Fields match the canon exactly: `slug`, `name`, `version`, `description`, `audience`, `industry`, `maturity`, `capabilities`, `requiredModels`, `templates`, `memoryFacts`, `taskSeeds`, `knowledgeSources`, `gates`, `routes`, `mcpTools`, `permissions`, `setupChecks`. No runtime logic in this file. All enum-typed fields use TypeScript union literals. No `any`.
 **Files:** `cockpit/src/lib/packs/manifest.ts`
 **Acceptance:** `import type { PluginManifest } from '@/lib/packs/manifest'` compiles cleanly. `npm run build` exits 0.
@@ -166,11 +166,11 @@ Goal: a new user reaches one useful workflow in under 10 minutes without reading
 
 ## M4: L0 pack loader generalization
 
-Goal: any valid PluginManifest can be installed idempotently. The LBMH seeding pattern becomes one instance of a shared loader.
+Goal: any valid PluginManifest can be installed idempotently. The local project-pack seeding pattern becomes one instance of a shared loader.
 
 ### T-11: loadPack() loader function
 
-**Why:** `prisma/seed-lbmh.mjs` has bespoke upsert logic that will diverge from any new pack's shape. A typed `loadPack(manifest: PluginManifest, projectId?: string)` function becomes the single install path for all packs.
+**Why:** `prisma/seed-local-pack.mjs` has upsert logic that will diverge from any new pack's shape. A typed `loadPack(manifest: PluginManifest, projectId?: string)` function becomes the single install path for all packs.
 **Scope:** `cockpit/src/lib/packs/loader.ts`. Calls `validateManifest()` first and throws on any ERROR (no partial writes). Then upserts templates by slug, facts by sourceKey (skips pinned facts to prevent overwriting user edits), prompts by sourceKey, tasks by sourceKey. Attaches `projectId` where provided. Returns `{ templates: number, facts: number, tasks: number, skipped: number }`. Add `loader.test.ts` using a mocked Prisma client.
 **Files:** `cockpit/src/lib/packs/loader.ts`, `cockpit/src/lib/packs/loader.test.ts`
 **Acceptance:** Installing the small-business example manifest twice produces the same DB state both times (idempotent). Installing a manifest with a validation ERROR throws before any DB write. Unit tests pass.
@@ -192,13 +192,13 @@ Goal: any valid PluginManifest can be installed idempotently. The LBMH seeding p
 
 ---
 
-### T-13: Migrate LBMH seeding to use loadPack()
+### T-13: Migrate local-pack seeding to use loadPack()
 
-**Why:** After T-11 lands, `prisma/seed-lbmh.mjs` contains duplicated upsert logic that diverges from the generic loader. Migrating it reduces the surface area for future bugs.
-**Scope:** Refactor `prisma/seed-lbmh.mjs` to import the LBMH pack manifest from `cockpit/projects/lbmh/manifest.ts` (gitignored) and call `loadPack()`. The LBMH manifest is a `PluginManifest` typed file that captures all 37 facts, 4 templates, 3 prompts, and task seeds previously hardcoded in the seed script. Net result: same DB state, less duplicated code.
-**Files:** `prisma/seed-lbmh.mjs`, `cockpit/projects/lbmh/manifest.ts` (gitignored)
-**Acceptance:** `npm run seed:lbmh` on a clean DB produces 37 memory facts, 4 templates, and 3 prompts, same as before. Running it twice is idempotent. Full e2e suite still passes.
-**Verify:** `npm run seed:lbmh`, then `npm run test:unit && npm run test:e2e`
+**Why:** After T-11 lands, `prisma/seed-local-pack.mjs` contains duplicated upsert logic that diverges from the generic loader. Migrating it reduces the surface area for future bugs.
+**Scope:** Refactor `prisma/seed-local-pack.mjs` to import a gitignored local pack manifest from `cockpit/projects/<pack>/manifest.ts` and call `loadPack()`. The manifest captures facts, templates, prompts, and task seeds without committing private pack content.
+**Files:** `prisma/seed-local-pack.mjs`, `cockpit/projects/<pack>/manifest.ts` (gitignored)
+**Acceptance:** `npm run seed:local-pack` exits cleanly with no configured pack, and runs idempotently when `HAVEN_DESK_PACK_DIR` points at a valid local pack.
+**Verify:** `npm run seed:local-pack`, then `npm run test:unit && npm run test:e2e`
 **Size:** S
 **Depends-on:** T-11
 
@@ -462,7 +462,7 @@ Goal: a non-technical user installs Haven Desk without opening a terminal.
 
 **(Assumption):** This task produces a doc, not a code change.
 
-**Scope:** A short `docs/haven-desk-installer-spec.md` covering: macOS target (14 or later, Apple Silicon), Windows target (10 and 11, x64 and ARM64), minimum RAM (16 GB recommended for `gemma4:e4b`, 32 GB for `gemma4:12b-mlx`), GPU notes (GPU not required for the light tier), Ollama version floor, model pull steps, and recovery copy for missing-Ollama and missing-model states. Include the llama-server probe logic from `./swiss doctor` as a reference for the Ollama app-vs-formula check.
+**Scope:** A short `docs/haven-desk-installer-spec.md` covering: macOS target (14 or later, Apple Silicon), Windows target (10 and 11, x64 and ARM64), minimum RAM (16 GB recommended for `gemma4:e4b`, 32 GB for `gemma4:12b-mlx`), GPU notes (GPU not required for the light tier), Ollama version floor, model pull steps, and recovery copy for missing-Ollama and missing-model states. Include the llama-server probe logic from `./haven doctor` as a reference for the Ollama app-vs-formula check.
 **Files:** `docs/haven-desk-installer-spec.md`
 **Acceptance:** An engineer can read the spec and know exactly what the installer must check and what to show on failure. No terminal knowledge is assumed of the end user.
 **Verify:** Peer review (no automated gate for this task)
@@ -479,8 +479,8 @@ Goal: a non-technical user installs Haven Desk without opening a terminal.
 
 **Scope:** A macOS installer that: probes for the Ollama app using the llama-server check from `scripts/doctor.sh`; if missing, opens ollama.com/download and waits; pulls `gemma4:e4b` as the default light-tier model; starts the Docker Compose stack; opens `http://localhost:4141` in the default browser. The installer must not require Xcode or a terminal command from the user.
 **Files:** `installer/macos/` (new directory), references `scripts/doctor.sh` for health check logic
-**Acceptance:** A user on a clean macOS 14 Apple Silicon machine runs the installer and reaches the Haven Desk home page without opening Terminal. `./swiss doctor` reports all-green after the install completes.
-**Verify:** Test on a clean macOS VM. Run `./swiss doctor` to confirm all checks pass.
+**Acceptance:** A user on a clean macOS 14 Apple Silicon machine runs the installer and reaches the Haven Desk home page without opening Terminal. `./haven doctor` reports all-green after the install completes.
+**Verify:** Test on a clean macOS VM. Run `./haven doctor` to confirm all checks pass.
 **Size:** L
 **Depends-on:** T-32, T-08
 
@@ -488,14 +488,14 @@ Goal: a non-technical user installs Haven Desk without opening a terminal.
 
 ### T-34: Windows installer package
 
-**Why:** `swiss.ps1` and `swiss.cmd` exist and were verified on real hardware (2026-06-10). The installer wraps them for a user who will not run PowerShell.
+**Why:** `haven.ps1` and `haven.cmd` exist and were verified on real hardware (2026-06-10). The installer wraps them for a user who will not run PowerShell.
 
 **(Assumption):** NSIS or WiX is the likely packaging tool. The choice is not locked.
 
-**Scope:** A Windows installer that: checks Ollama for Windows is installed (`winget install Ollama.Ollama` or opens ollama.com/download/windows); pulls `gemma4:e4b`; starts the Docker Compose stack via `swiss.cmd up`; opens `http://localhost:4141` in Edge. Handles Windows port reservation conflicts (winnat) with retry copy and a link to the README troubleshooting section.
+**Scope:** A Windows installer that: checks Ollama for Windows is installed (`winget install Ollama.Ollama` or opens ollama.com/download/windows); pulls `gemma4:e4b`; starts the Docker Compose stack via `haven.cmd up`; opens `http://localhost:4141` in Edge. Handles Windows port reservation conflicts (winnat) with retry copy and a link to the README troubleshooting section.
 **Files:** `installer/windows/` (new directory)
-**Acceptance:** A user on a clean Windows 11 machine runs the `.exe` or `.msi` and reaches Haven Desk home without opening PowerShell. `.\swiss doctor` reports all-green after install.
-**Verify:** Test on a clean Windows 11 VM. Run `.\swiss doctor` to confirm all checks pass.
+**Acceptance:** A user on a clean Windows 11 machine runs the `.exe` or `.msi` and reaches Haven Desk home without opening PowerShell. `.\haven doctor` reports all-green after install.
+**Verify:** Test on a clean Windows 11 VM. Run `.\haven doctor` to confirm all checks pass.
 **Size:** L
 **Depends-on:** T-32, T-08
 
@@ -519,7 +519,7 @@ Each number is one PR. Items with no dependency on the previous can be merged in
 12. T-12 (pack install API, depends on T-11)
 13. T-17 (QA pack manifest, depends on T-04; can run in parallel with T-12)
 14. T-14 (Small Business Ops manifest, depends on T-04 and T-11)
-15. T-13 (migrate LBMH seeding, depends on T-11; run after T-14 to validate the pattern)
+15. T-13 (migrate local-pack seeding, depends on T-11; run after T-14 to validate the pattern)
 16. T-18 (release readiness template, depends on T-17 and T-04)
 17. T-15 (meeting-notes template, depends on T-14 and T-12)
 18. T-16 (Packs page UI, depends on T-06, T-12, and T-14)

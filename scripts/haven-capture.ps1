@@ -1,15 +1,15 @@
-# Quick-capture into Swiss Knife from anywhere on Windows (the macOS Shortcut
+# Quick-capture into Haven Desk from anywhere on Windows (the macOS Shortcut
 # equivalent). No secret is stored here: the capture token is fetched from the
 # running cockpit at runtime, so this file is safe to commit.
 #
 # Usage:
-#   .\sk-capture.ps1                       # captures the clipboard as a task
-#   .\sk-capture.ps1 "buy milk"            # captures the given text as a task
-#   .\sk-capture.ps1 "" fact               # captures the clipboard as a memory fact
-#   .\sk-capture.ps1 "idea text" idea      # task | fact | prompt | idea
+#   .\haven-capture.ps1                       # captures the clipboard as a task
+#   .\haven-capture.ps1 "buy milk"            # captures the given text as a task
+#   .\haven-capture.ps1 "" fact               # captures the clipboard as a memory fact
+#   .\haven-capture.ps1 "idea text" idea      # task | fact | prompt | idea
 #
 # Hotkey: create a shortcut to this script (Target:
-#   powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\sk-capture.ps1"
+#   powershell -NoProfile -ExecutionPolicy Bypass -File "C:\path\to\haven-capture.ps1"
 # ), put it on the Desktop or Start Menu, open its Properties, and assign a
 # "Shortcut key" (e.g. Ctrl+Alt+C). AutoHotkey works too if you use it.
 param(
@@ -18,7 +18,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 
-$Base = if ($env:SK_BASE) { $env:SK_BASE } else { "http://localhost:4141" }
+$Base = if ($env:HAVEN_BASE) { $env:HAVEN_BASE } else { "http://localhost:4141" }
 
 if (-not $Text) {
   try { $Text = Get-Clipboard -Raw } catch { $Text = "" }

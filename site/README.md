@@ -26,6 +26,6 @@ irm https://omerakben.github.io/haven-desk/install.ps1 | iex
 
 ## Before publishing
 
-Update `CONTACT_EMAIL` in `site/app.js` or replace the form handler with a Google Form, Tally, Airtable, or other approved application destination.
+The application form is static by design. It prepares a private summary in the browser and links to GitHub Discussions only for a non-sensitive introduction. Configure a private intake form or email destination before treating the page as a broad public launch funnel.
 
-The page intentionally uses "Apply for early access" instead of "Download now." The one-line installer is present for approved pilots, but the public CTA should stay gated until installer support and intake routing are ready.
+The page intentionally uses "Apply for early access" instead of an immediate download CTA. The one-line installer is present for approved pilots, but the public CTA should stay gated until installer support and intake routing are ready.

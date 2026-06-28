@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Swiss Knife ops CLI — one command to run, stop, inspect, and diagnose the stack.
+# Haven Desk ops CLI — one command to run, stop, inspect, and diagnose the stack.
 #
-#   ./swiss setup    one-time: install the prerequisites (Docker Desktop + Ollama app)
-#   ./swiss up       start everything: native Ollama (official app) + models + containers
-#   ./swiss down     stop the containers (native Ollama keeps running)
-#   ./swiss status   one-line state of engine / cockpit / Open WebUI / Docker
-#   ./swiss doctor   full preflight with fix-it commands
+#   ./haven setup    one-time: install the prerequisites (Docker Desktop + Ollama app)
+#   ./haven up       start everything: native Ollama (official app) + models + containers
+#   ./haven down     stop the containers (native Ollama keeps running)
+#   ./haven status   one-line state of engine / cockpit / Open WebUI / Docker
+#   ./haven doctor   full preflight with fix-it commands
 #
 # Hard rule encoded here: Ollama must be the official macOS APP
 # (brew install --cask ollama-app). The Homebrew FORMULA's bottle ships without
@@ -46,7 +46,7 @@ wait_for() { # wait_for <seconds> <check-fn>
 }
 
 cmd_doctor() {
-  say "Swiss Knife doctor"
+  say "Haven Desk doctor"
   echo
   say "Engine install (must be the official Ollama APP, not the brew formula)"
   if [ -d "$OLLAMA_APP" ]; then
@@ -76,7 +76,7 @@ cmd_doctor() {
     ok "Ollama serving on :11434"
     local m
     for m in "gemma4:e4b" "embeddinggemma"; do
-      if model_pulled "$m"; then ok "model $m pulled"; else bad "model $m not pulled" "ollama pull $m  (or just: ./swiss up)"; fi
+      if model_pulled "$m"; then ok "model $m pulled"; else bad "model $m not pulled" "ollama pull $m  (or just: ./haven up)"; fi
     done
     if model_pulled "gemma4:12b-mlx"; then
       ok "model gemma4:12b-mlx pulled (quality tier)"
@@ -84,7 +84,7 @@ cmd_doctor() {
       note "model gemma4:12b-mlx not pulled (optional quality tier)" "ollama pull gemma4:12b-mlx"
     fi
   else
-    bad "Ollama isn't serving on :11434" "open -a Ollama  (or: ./swiss up)"
+    bad "Ollama isn't serving on :11434" "open -a Ollama  (or: ./haven up)"
   fi
 
   echo
@@ -95,10 +95,10 @@ cmd_doctor() {
     ok "Docker daemon running"
     local running
     running=$(docker compose ps --status running --services 2>/dev/null || true)
-    if echo "$running" | grep -qx cockpit; then ok "cockpit container running"; else note "cockpit container not running" "./swiss up"; fi
-    if echo "$running" | grep -qx open-webui; then ok "open-webui container running"; else note "open-webui container not running" "./swiss up"; fi
+    if echo "$running" | grep -qx cockpit; then ok "cockpit container running"; else note "cockpit container not running" "./haven up"; fi
+    if echo "$running" | grep -qx open-webui; then ok "open-webui container running"; else note "open-webui container not running" "./haven up"; fi
   else
-    bad "Docker daemon isn't running" "start Docker Desktop, then: ./swiss up"
+    bad "Docker daemon isn't running" "start Docker Desktop, then: ./haven up"
   fi
 
   echo
@@ -110,12 +110,12 @@ cmd_doctor() {
   elif [ -n "$h" ]; then
     bad "Cockpit is up but unhealthy: $h" "fix the engine findings above, then refresh"
   else
-    note "Cockpit not responding at $COCKPIT_URL" "./swiss up  (Docker)  ·  or local dev: cd cockpit && npm run dev"
+    note "Cockpit not responding at $COCKPIT_URL" "./haven up  (Docker)  ·  or local dev: cd cockpit && npm run dev"
   fi
   if owui_responds; then
     ok "Open WebUI responding at $OWUI_URL"
   else
-    note "Open WebUI not responding at $OWUI_URL" "./swiss up  (first boot downloads its embedder — give it a few minutes)"
+    note "Open WebUI not responding at $OWUI_URL" "./haven up  (first boot downloads its embedder — give it a few minutes)"
   fi
 
   echo
@@ -149,7 +149,7 @@ cmd_status() {
     count=$(engine_tags | grep -o '"name"' | wc -l | tr -d ' ' || true)
     ok "Engine      up on :11434 (${count:-0} models pulled)"
   else
-    bad "Engine      down" "open -a Ollama  (or: ./swiss up)"
+    bad "Engine      down" "open -a Ollama  (or: ./haven up)"
   fi
 
   local h
@@ -157,15 +157,15 @@ cmd_status() {
   if echo "$h" | grep -q '"ok":true'; then
     ok "Cockpit     $COCKPIT_URL"
   elif [ -n "$h" ]; then
-    note "Cockpit     up, but engine unhealthy ($(echo "$h" | grep -o '"reason":"[^"]*"' | head -1 || true))" "./swiss doctor"
+    note "Cockpit     up, but engine unhealthy ($(echo "$h" | grep -o '"reason":"[^"]*"' | head -1 || true))" "./haven doctor"
   else
-    bad "Cockpit     down" "./swiss up"
+    bad "Cockpit     down" "./haven up"
   fi
 
   if owui_responds; then
     ok "Open WebUI  $OWUI_URL"
   else
-    bad "Open WebUI  down" "./swiss up"
+    bad "Open WebUI  down" "./haven up"
   fi
 
   if ! docker_installed; then
@@ -180,7 +180,7 @@ cmd_status() {
 }
 
 cmd_up() {
-  say "▶ Swiss Knife up"
+  say "▶ Haven Desk up"
 
   # 1) Engine — native, official app (GGUF needs its bundled llama-server).
   if ! engine_up; then
@@ -188,16 +188,16 @@ cmd_up() {
       echo "  starting the Ollama app…"
       open -a Ollama
       if ! wait_for 30 engine_up; then
-        bad "Ollama didn't come up on :11434 within 30s" "./swiss doctor"
+        bad "Ollama didn't come up on :11434 within 30s" "./haven doctor"
         exit 1
       fi
     elif command -v ollama >/dev/null 2>&1; then
       # Fallback for non-app installs (e.g. Linux). On macOS the brew formula
       # breaks GGUF — doctor will flag it.
-      echo "  Ollama app not found; starting 'ollama serve' (run ./swiss doctor to vet this install)…"
-      nohup ollama serve >/tmp/swissknife-ollama.log 2>&1 &
+      echo "  Ollama app not found; starting 'ollama serve' (run ./haven doctor to vet this install)…"
+      nohup ollama serve >/tmp/havendesk-ollama.log 2>&1 &
       if ! wait_for 20 engine_up; then
-        bad "Ollama didn't start" "./swiss doctor"
+        bad "Ollama didn't start" "./haven doctor"
         exit 1
       fi
     else
@@ -221,7 +221,7 @@ cmd_up() {
 
   # 3) Containers.
   if ! docker_up; then
-    bad "Docker daemon isn't running" "start Docker Desktop, then re-run: ./swiss up"
+    bad "Docker daemon isn't running" "start Docker Desktop, then re-run: ./haven up"
     exit 1
   fi
   # The cockpit does calendar-day math (due dates, Today panel); hand it the
@@ -236,20 +236,20 @@ cmd_up() {
   docker compose up -d --build
 
   # 4) Wait for the surfaces (OWUI's first boot downloads an embedder — minutes).
-  if wait_for 90 cockpit_responds; then ok "cockpit responding"; else note "cockpit still starting" "./swiss status in a minute"; fi
-  if wait_for 30 owui_responds; then ok "open webui responding"; else note "open webui still starting (first boot is slow)" "./swiss status in a few minutes"; fi
+  if wait_for 90 cockpit_responds; then ok "cockpit responding"; else note "cockpit still starting" "./haven status in a minute"; fi
+  if wait_for 30 owui_responds; then ok "open webui responding"; else note "open webui still starting (first boot is slow)" "./haven status in a few minutes"; fi
 
   echo
-  say "✅ Swiss Knife is running"
+  say "✅ Haven Desk is running"
   echo "   Cockpit:     $COCKPIT_URL"
   echo "   Open WebUI:  $OWUI_URL"
-  echo "   Stop:        ./swiss down    Inspect: ./swiss status · ./swiss doctor"
+  echo "   Stop:        ./haven down    Inspect: ./haven status · ./haven doctor"
 }
 
 cmd_setup() {
-  say "▶ Swiss Knife setup — install the two prerequisites (Docker Desktop + Ollama app)"
+  say "▶ Haven Desk setup — install the two prerequisites (Docker Desktop + Ollama app)"
   if ! command -v brew >/dev/null 2>&1; then
-    bad "Homebrew isn't installed (needed to install the prerequisites)" 'install it first: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"  — then re-run ./swiss setup'
+    bad "Homebrew isn't installed (needed to install the prerequisites)" 'install it first: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"  — then re-run ./haven setup'
     exit 1
   fi
 
@@ -273,15 +273,15 @@ cmd_setup() {
 
   echo
   if [ "$FAILS" -eq 0 ]; then
-    say "Setup done. Start everything with: ./swiss up"
+    say "Setup done. Start everything with: ./haven up"
   else
-    say "Fix the item(s) above, then: ./swiss up"
+    say "Fix the item(s) above, then: ./haven up"
     exit 1
   fi
 }
 
 cmd_down() {
-  say "▶ Swiss Knife down"
+  say "▶ Haven Desk down"
   if docker_installed && docker_up; then
     docker compose down
     ok "containers stopped & removed (data lives in named volumes)"
@@ -293,13 +293,13 @@ cmd_down() {
 
 usage() {
   cat <<'EOF'
-Swiss Knife — local AI cockpit
+Haven Desk — local AI cockpit
 
-  ./swiss setup    one-time: install the prerequisites (Docker Desktop + Ollama app)
-  ./swiss up       start everything: native Ollama (official app) + models + containers
-  ./swiss down     stop the containers (native Ollama keeps running)
-  ./swiss status   one-line state of engine / cockpit / Open WebUI / Docker
-  ./swiss doctor   full preflight: install type, llama-server runner, models,
+  ./haven setup    one-time: install the prerequisites (Docker Desktop + Ollama app)
+  ./haven up       start everything: native Ollama (official app) + models + containers
+  ./haven down     stop the containers (native Ollama keeps running)
+  ./haven status   one-line state of engine / cockpit / Open WebUI / Docker
+  ./haven doctor   full preflight: install type, llama-server runner, models,
                    Docker, surfaces, optional voice deps — with fix-it commands
 EOF
 }

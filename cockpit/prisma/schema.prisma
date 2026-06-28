@@ -105,7 +105,7 @@ model Task {
   notes       String?
   status      String    @default("todo") // todo | doing | done
   priority    String    @default("medium") // low | medium | high
-  module      String? // LBMH training module (e.g. Point of Sale); null for ad-hoc tasks
+  module      String? // optional project-pack module/group label; null for ad-hoc tasks
   dueDate     DateTime?
   order       Float     @default(0) // fractional ordering within a column
   completedAt DateTime?

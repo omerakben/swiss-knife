@@ -1,6 +1,6 @@
 # Haven Desk engineering roadmap
 
-Implementation milestones with acceptance criteria for the Swiss Knife to Haven Desk transition.
+Implementation milestones with acceptance criteria for Haven Desk.
 
 Date: 2026-06-26
 
@@ -10,7 +10,7 @@ Date: 2026-06-26
 
 Haven Desk is a private AI operations desk for daily life and small business work. It captures messy input, organizes it into tasks, memory, and documents, drafts useful output, and waits for review before saving or acting. The engineering sequence below moves the app from a developer cockpit to a persona-first daily runner without rewriting the existing foundation.
 
-The app internal name stays `swiss-knife`. No package names, ports, scripts, or DB model names change during this transition.
+Compatibility scripts, ports, and DB model names stay stable unless a separate migration explicitly changes them.
 
 ---
 
@@ -152,7 +152,7 @@ The app internal name stays `swiss-knife`. No package names, ports, scripts, or 
 
 ### M4: Generic L0 pack loader
 
-**Goal.** Replace the LBMH-specific `prisma/seed-lbmh.mjs` loader with a generic pack loader that accepts a validated `PluginManifest` and upserts templates, facts, and task seeds idempotently.
+**Goal.** Keep the local project-pack seed path generic so gitignored packs can upsert templates, facts, and task seeds idempotently.
 
 **Dependencies.** M3 (manifest type must be stable before the loader implements it).
 
@@ -160,13 +160,13 @@ The app internal name stays `swiss-knife`. No package names, ports, scripts, or 
 
 - `cockpit/src/lib/packs/loader.ts`: exports `installPack(manifest: PluginManifest, prisma: PrismaClient): Promise<InstallResult>`. Upserts templates by slug, memory facts by sourceKey, tasks by sourceKey, prompts by sourceKey. Returns counts of created vs updated.
 - `prisma/schema.prisma`: adds `PackInstall` model (`slug`, `name`, `version`, `installedAt`, `updatedAt`). Tracks which packs are installed for the Packs surface UI. One row per slug, upserted on install.
-- `prisma/seed-lbmh.mjs`: migrated to call `installPack` with an inline manifest object (or kept as-is with a note that it predates the manifest contract; assumption: migration preferred for consistency).
+- `prisma/seed-local-pack.mjs`: loads a gitignored local pack from `cockpit/projects/<pack>/pack/content.mjs`.
 - A CLI command (or an existing `npm run` script) to install a pack from a manifest file path.
 
 **Acceptance checks.**
 
 - `installPack` called twice with the same manifest produces no duplicates (upsert behavior).
-- `npm run seed:lbmh` still produces 37 active memory facts and all LBMH templates/tasks on a fresh DB.
+- `npm run seed:local-pack` exits cleanly when no local pack exists and remains idempotent when one is configured.
 - `PackInstall` row exists after install; row is updated (not duplicated) on reinstall.
 - All 39+ existing e2e tests pass.
 
@@ -253,7 +253,7 @@ The routes `/tools/code-review`, `/tools/adr`, and `/tools/api-contract` belong 
 - Documents section accessible from main nav.
 - A project with `owuiUrl` set shows a "Open in knowledge base" button that deep-links correctly.
 - Deadline extraction from a pasted contract or letter produces at least one pending Task proposal, not an auto-saved task.
-- Open WebUI offline state shows a plain-language message ("Your document library isn't running; start it with `./swiss up`"), not a generic 500.
+- Open WebUI offline state shows a plain-language message ("Your document library isn't running; start it with `./haven up`"), not a generic 500.
 - All citation responses include at least the document label from `knowledgeSources` when OWUI returns source metadata.
 
 **Guardrails.** cockpit-only RAG is not built in M7. If OWUI cannot serve a use case, the gap is documented for M9 (MCP) or a later pack, not solved by duplicating the embedding stack.
@@ -315,7 +315,7 @@ The routes `/tools/code-review`, `/tools/adr`, and `/tools/api-contract` belong 
 - Every tool call writes a row to `ActivityLog`.
 - Proposal tools write to pending state only; no tool directly sets `status = active` on a MemoryFact or `status = done` on a Task.
 - A test confirms that an MCP tool call cannot bypass the save-after-review invariant.
-- `./swiss doctor` reports MCP server status.
+- `./haven doctor` reports MCP server status.
 
 **Guardrails.** MCP is local-only. No cloud routing. The `network: false` invariant from PluginManifest applies to all MCP tool declarations. L2 packs that declare `mcpTools` must list only tools registered in the MCP server.
 
@@ -348,7 +348,7 @@ The routes `/tools/code-review`, `/tools/adr`, and `/tools/api-contract` belong 
 - Every proposal requires at least one explicit user action (accept button or edit-then-save).
 - Approval queue shows source label and trigger time for each proposal.
 - Watched folder ingest does not process files larger than a configurable cap (assumption: 10 MB default; to be confirmed in backlog).
-- `./swiss doctor` reports watched folder status and last automation run time.
+- `./haven doctor` reports watched folder status and last automation run time.
 
 **Guardrails.** L3 packs that declare automations must route all outputs through the proposal queue. The `autonomous: false` invariant from PluginManifest is enforced by the loader: a pack with `autonomous: true` in permissions fails validation.
 
@@ -367,7 +367,7 @@ The routes `/tools/code-review`, `/tools/adr`, and `/tools/api-contract` belong 
 - Pull default model (`gemma4:e4b` first, quality tier soft-fails).
 - Start local services (Docker compose up).
 - Open Haven Desk in the browser.
-- Run `./swiss doctor` checks and surface any failures with copy-paste fixes.
+- Run `./haven doctor` checks and surface any failures with copy-paste fixes.
 
 **Launch bundle assets.**
 
@@ -379,11 +379,11 @@ The routes `/tools/code-review`, `/tools/adr`, and `/tools/api-contract` belong 
 **Acceptance checks.**
 
 - macOS installer: non-technical install instructions fit on one printed page.
-- Windows installer: `.\swiss doctor` all green after a clean install (verified by Ozzy on Windows hardware, matching the June 10 precedent).
+- Windows installer: `.\haven doctor` all green after a clean install (verified by the maintainer on Windows hardware, matching the June 10 precedent).
 - App and website copy are consistent on product name, tagline, and local-first claim.
 - Installer does not pull any cloud model or introduce cloud LLM calls.
 - Existing Docker/Ollama path preserved for power users with a documented override.
-- A fresh-clone `./swiss up` rehearsal passes end to end on macOS before launch.
+- A fresh-clone `./haven up` rehearsal passes end to end on macOS before launch.
 
 **Guardrails.** Do not claim enterprise readiness in any launch copy before team admin, auth, update, and backup controls exist. Known limitations page must exist at launch.
 

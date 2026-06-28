@@ -2,7 +2,7 @@
 
 Date: 2026-06-27
 
-Status: draft marketing and sales collateral. Do not publish, post, email, or sell with this copy until Ozzy approves the exact outbound text.
+Status: draft marketing and sales collateral. Do not publish, post, email, or sell with this copy until the maintainer approves the exact outbound text.
 
 ## Decision
 
@@ -172,7 +172,7 @@ For the early pilot, we help configure it. Broad non-technical launch waits unti
 
 ## Outreach copy
 
-Use this only after Ozzy approves the exact recipient and channel.
+Use this only after the maintainer approves the exact recipient and channel.
 
 ### Short DM
 

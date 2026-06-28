@@ -9,7 +9,7 @@ export function CommandHint() {
   const isMac = useIsMac();
   return (
     <button
-      onClick={() => window.dispatchEvent(new Event("swissknife:command"))}
+      onClick={() => window.dispatchEvent(new Event("havendesk:command"))}
       className="flex w-full items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
     >
       <Search className="h-4 w-4" />

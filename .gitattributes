@@ -6,7 +6,7 @@
 
 # Always LF: anything executed on Linux/macOS or inside containers.
 *.sh        text eol=lf
-swiss       text eol=lf
+haven       text eol=lf
 Dockerfile  text eol=lf
 *.yml       text eol=lf
 *.yaml      text eol=lf

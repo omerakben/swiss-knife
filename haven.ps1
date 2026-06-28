@@ -1,13 +1,13 @@
-# Swiss Knife ops CLI for Windows - one command to run, stop, inspect, and
+# Haven Desk ops CLI for Windows - one command to run, stop, inspect, and
 # diagnose the stack. PowerShell 5.1+ (works in Windows PowerShell and pwsh 7).
 #
-#   .\swiss.ps1 setup    one-time: install the prerequisites (Docker Desktop + Ollama app)
-#   .\swiss.ps1 up       start everything: native Ollama + models + containers
-#   .\swiss.ps1 down     stop the containers (native Ollama keeps running)
-#   .\swiss.ps1 status   one-line state of engine / cockpit / Open WebUI / Docker
-#   .\swiss.ps1 doctor   full preflight with fix-it commands
+#   .\haven.ps1 setup    one-time: install the prerequisites (Docker Desktop + Ollama app)
+#   .\haven.ps1 up       start everything: native Ollama + models + containers
+#   .\haven.ps1 down     stop the containers (native Ollama keeps running)
+#   .\haven.ps1 status   one-line state of engine / cockpit / Open WebUI / Docker
+#   .\haven.ps1 doctor   full preflight with fix-it commands
 #
-# Hard rule encoded here (same as the macOS ./swiss): Ollama runs NATIVELY on
+# Hard rule encoded here (same as the macOS ./haven): Ollama runs NATIVELY on
 # the host, never in Docker. On Windows the native app uses your NVIDIA/AMD
 # GPU when present and falls back to CPU; containerized Ollama complicates GPU
 # access for no benefit.
@@ -17,8 +17,8 @@
 # will not run on Windows.
 #
 # If scripts are blocked by execution policy, run via:
-#   powershell -ExecutionPolicy Bypass -File .\swiss.ps1 doctor
-# (or use the swiss.cmd wrapper, which does exactly that.)
+#   powershell -ExecutionPolicy Bypass -File .\haven.ps1 doctor
+# (or use the haven.cmd wrapper, which does exactly that.)
 
 [CmdletBinding()]
 param(
@@ -125,7 +125,7 @@ function Wait-ForCheck([int]$Seconds, [scriptblock]$Check) {
 }
 
 function Invoke-Doctor {
-  Write-Say "Swiss Knife doctor (Windows)"
+  Write-Say "Haven Desk doctor (Windows)"
   Write-Host ""
 
   Write-Say "Engine install (native Ollama for Windows - never in Docker)"
@@ -169,7 +169,7 @@ function Invoke-Doctor {
     Write-Ok "Ollama serving on :11434"
     foreach ($m in @("gemma4:e4b", "embeddinggemma")) {
       if (Test-ModelPulled $m) { Write-Ok "model $m pulled" }
-      else { Write-Bad "model $m not pulled" "ollama pull $m   (or just: .\swiss.ps1 up)" }
+      else { Write-Bad "model $m not pulled" "ollama pull $m   (or just: .\haven.ps1 up)" }
     }
     if (Test-ModelPulled "gemma4:12b") {
       Write-Ok "model gemma4:12b pulled (quality tier, GGUF)"
@@ -180,7 +180,7 @@ function Invoke-Doctor {
       Write-Bad "gemma4:12b-mlx is in your model list - MLX is Apple Silicon ONLY and won't run here" "ollama rm gemma4:12b-mlx; ollama pull gemma4:12b   (then pick gemma4:12b in Settings -> Model)"
     }
   } else {
-    Write-Bad "Ollama isn't serving on :11434" "start Ollama from the Start menu (or: .\swiss.ps1 up)"
+    Write-Bad "Ollama isn't serving on :11434" "start Ollama from the Start menu (or: .\haven.ps1 up)"
   }
 
   Write-Host ""
@@ -192,11 +192,11 @@ function Invoke-Doctor {
     $running = @()
     try { $running = @(docker compose ps --status running --services 2>$null) } catch { }
     if ($running -contains "cockpit") { Write-Ok "cockpit container running" }
-    else { Write-Note "cockpit container not running" ".\swiss.ps1 up" }
+    else { Write-Note "cockpit container not running" ".\haven.ps1 up" }
     if ($running -contains "open-webui") { Write-Ok "open-webui container running" }
-    else { Write-Note "open-webui container not running" ".\swiss.ps1 up" }
+    else { Write-Note "open-webui container not running" ".\haven.ps1 up" }
   } else {
-    Write-Bad "Docker daemon isn't running" "start Docker Desktop, then: .\swiss.ps1 up"
+    Write-Bad "Docker daemon isn't running" "start Docker Desktop, then: .\haven.ps1 up"
   }
 
   Write-Host ""
@@ -207,12 +207,12 @@ function Invoke-Doctor {
   } elseif ($null -ne $h) {
     Write-Bad "Cockpit is up but unhealthy (reason: $($h.reason))" "fix the engine findings above, then refresh"
   } else {
-    Write-Note "Cockpit not responding at $CockpitUrl" ".\swiss.ps1 up   (Docker)  -  or local dev: cd cockpit; npm run dev"
+    Write-Note "Cockpit not responding at $CockpitUrl" ".\haven.ps1 up   (Docker)  -  or local dev: cd cockpit; npm run dev"
   }
   if (Test-Owui) {
     Write-Ok "Open WebUI responding at $OwuiUrl"
   } else {
-    Write-Note "Open WebUI not responding at $OwuiUrl" ".\swiss.ps1 up   (first boot downloads its embedder - give it a few minutes)"
+    Write-Note "Open WebUI not responding at $OwuiUrl" ".\haven.ps1 up   (first boot downloads its embedder - give it a few minutes)"
   }
 
   Write-Host ""
@@ -255,22 +255,22 @@ function Invoke-Status {
     $count = (Get-EngineModelNames).Count
     Write-Ok "Engine      up on :11434 ($count models pulled)"
   } else {
-    Write-Bad "Engine      down" "start Ollama from the Start menu (or: .\swiss.ps1 up)"
+    Write-Bad "Engine      down" "start Ollama from the Start menu (or: .\haven.ps1 up)"
   }
 
   $h = Get-CockpitHealth
   if ($null -ne $h -and $h.ok) {
     Write-Ok "Cockpit     $CockpitUrl"
   } elseif ($null -ne $h) {
-    Write-Note "Cockpit     up, but engine unhealthy (reason: $($h.reason))" ".\swiss.ps1 doctor"
+    Write-Note "Cockpit     up, but engine unhealthy (reason: $($h.reason))" ".\haven.ps1 doctor"
   } else {
-    Write-Bad "Cockpit     down" ".\swiss.ps1 up"
+    Write-Bad "Cockpit     down" ".\haven.ps1 up"
   }
 
   if (Test-Owui) {
     Write-Ok "Open WebUI  $OwuiUrl"
   } else {
-    Write-Bad "Open WebUI  down" ".\swiss.ps1 up"
+    Write-Bad "Open WebUI  down" ".\haven.ps1 up"
   }
 
   if (-not (Test-DockerInstalled)) {
@@ -285,7 +285,7 @@ function Invoke-Status {
 }
 
 function Invoke-Up {
-  Write-Say "> Swiss Knife up (Windows)"
+  Write-Say "> Haven Desk up (Windows)"
 
   # 1) Engine - native Ollama (GPU when present, never in Docker).
   if (-not (Test-Engine)) {
@@ -293,14 +293,14 @@ function Invoke-Up {
       Write-Host "  starting the Ollama app..."
       Start-Process -FilePath $OllamaAppExe | Out-Null
       if (-not (Wait-ForCheck 30 { Test-Engine })) {
-        Write-Bad "Ollama didn't come up on :11434 within 30s" ".\swiss.ps1 doctor"
+        Write-Bad "Ollama didn't come up on :11434 within 30s" ".\haven.ps1 doctor"
         exit 1
       }
     } elseif (Get-Command ollama -ErrorAction SilentlyContinue) {
       Write-Host "  Ollama app not found; starting 'ollama serve' in the background..."
       Start-Process -FilePath "ollama" -ArgumentList "serve" -WindowStyle Hidden | Out-Null
       if (-not (Wait-ForCheck 20 { Test-Engine })) {
-        Write-Bad "Ollama didn't start" ".\swiss.ps1 doctor"
+        Write-Bad "Ollama didn't start" ".\haven.ps1 doctor"
         exit 1
       }
     } else {
@@ -327,7 +327,7 @@ function Invoke-Up {
 
   # 3) Containers.
   if (-not (Test-DockerUp)) {
-    Write-Bad "Docker daemon isn't running" "start Docker Desktop, then re-run: .\swiss.ps1 up"
+    Write-Bad "Docker daemon isn't running" "start Docker Desktop, then re-run: .\haven.ps1 up"
     exit 1
   }
   # The cockpit does calendar-day math (due dates, Today panel); hand it the
@@ -350,27 +350,27 @@ function Invoke-Up {
   Write-Host "  building & starting containers..."
   docker compose up -d --build
   if ($LASTEXITCODE -ne 0) {
-    Write-Bad "docker compose failed" "check the output above; .\swiss.ps1 doctor"
+    Write-Bad "docker compose failed" "check the output above; .\haven.ps1 doctor"
     exit 1
   }
 
   # 4) Wait for the surfaces (OWUI's first boot downloads an embedder - minutes).
   if (Wait-ForCheck 90 { Test-Cockpit }) { Write-Ok "cockpit responding" }
-  else { Write-Note "cockpit still starting" ".\swiss.ps1 status in a minute" }
+  else { Write-Note "cockpit still starting" ".\haven.ps1 status in a minute" }
   if (Wait-ForCheck 30 { Test-Owui }) { Write-Ok "open webui responding" }
-  else { Write-Note "open webui still starting (first boot is slow)" ".\swiss.ps1 status in a few minutes" }
+  else { Write-Note "open webui still starting (first boot is slow)" ".\haven.ps1 status in a few minutes" }
 
   Write-Host ""
-  Write-Say "Swiss Knife is running"
+  Write-Say "Haven Desk is running"
   Write-Host "   Cockpit:     $CockpitUrl"
   Write-Host "   Open WebUI:  $OwuiUrl"
-  Write-Host "   Stop:        .\swiss.ps1 down    Inspect: .\swiss.ps1 status / .\swiss.ps1 doctor"
+  Write-Host "   Stop:        .\haven.ps1 down    Inspect: .\haven.ps1 status / .\haven.ps1 doctor"
 }
 
 function Invoke-Setup {
-  Write-Say "> Swiss Knife setup - install the two prerequisites (Docker Desktop + Ollama)"
+  Write-Say "> Haven Desk setup - install the two prerequisites (Docker Desktop + Ollama)"
   if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    Write-Bad "winget isn't available (needed to install the prerequisites)" "install 'App Installer' from the Microsoft Store, then re-run .\swiss setup - or install Docker Desktop and Ollama manually from their sites"
+    Write-Bad "winget isn't available (needed to install the prerequisites)" "install 'App Installer' from the Microsoft Store, then re-run .\haven setup - or install Docker Desktop and Ollama manually from their sites"
     exit 1
   }
 
@@ -389,20 +389,20 @@ function Invoke-Setup {
     Write-Host "  installing Ollama (winget)..."
     winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements
     if ($LASTEXITCODE -ne 0) { Write-Bad "Ollama install failed" "install manually: https://ollama.com/download/windows" }
-    else { Write-Note "Open a NEW terminal afterwards so the ollama CLI lands on PATH (swiss up also self-heals this)" }
+    else { Write-Note "Open a NEW terminal afterwards so the ollama CLI lands on PATH (haven up also self-heals this)" }
   }
 
   Write-Host ""
   if ($script:Fails -eq 0) {
-    Write-Say "Setup done. Start everything with: .\swiss up"
+    Write-Say "Setup done. Start everything with: .\haven up"
   } else {
-    Write-Say "Fix the item(s) above, then: .\swiss up"
+    Write-Say "Fix the item(s) above, then: .\haven up"
     exit 1
   }
 }
 
 function Invoke-Down {
-  Write-Say "> Swiss Knife down"
+  Write-Say "> Haven Desk down"
   if (Test-DockerUp) {
     docker compose down
     if ($LASTEXITCODE -ne 0) {
@@ -418,13 +418,13 @@ function Invoke-Down {
 
 function Show-Usage {
   Write-Host @"
-Swiss Knife - local AI cockpit (Windows)
+Haven Desk - local AI cockpit (Windows)
 
-  .\swiss setup    one-time: install the prerequisites (Docker Desktop + Ollama)
-  .\swiss up       start everything: native Ollama + models + containers
-  .\swiss down     stop the containers (native Ollama keeps running)
-  .\swiss status   one-line state of engine / cockpit / Open WebUI / Docker
-  .\swiss doctor   full preflight: Ollama install, GPU/RAM, models, Docker,
+  .\haven setup    one-time: install the prerequisites (Docker Desktop + Ollama)
+  .\haven up       start everything: native Ollama + models + containers
+  .\haven down     stop the containers (native Ollama keeps running)
+  .\haven status   one-line state of engine / cockpit / Open WebUI / Docker
+  .\haven doctor   full preflight: Ollama install, GPU/RAM, models, Docker,
                    surfaces, optional voice deps - with fix-it commands
 
 Quality tier on Windows is gemma4:12b (GGUF). gemma4:12b-mlx is Apple Silicon

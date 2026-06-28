@@ -56,7 +56,7 @@ export function OwuiSync() {
             type="password"
             value={key}
             onChange={(e) => setKey(e.target.value)}
-            placeholder={hasKey ? "•••••• (paste to replace)" : "sk-…"}
+            placeholder={hasKey ? "•••••• (paste to replace)" : "hd-…"}
             className="font-mono text-xs"
           />
           <Button onClick={save} disabled={!key.trim()}>

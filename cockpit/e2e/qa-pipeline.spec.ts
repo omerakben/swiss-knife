@@ -76,7 +76,7 @@ test.describe("qa pipeline", () => {
     );
     await page.goto("/tools/qa-pipeline");
     await page.getByRole("button", { name: /import from ticket/i }).click();
-    await page.getByPlaceholder(/paste the ticket/i).fill("LBMH01-4821 partial ROA payment at POS");
+    await page.getByPlaceholder(/paste the ticket/i).fill("QA-4821 partial payment at checkout");
     await page.getByRole("button", { name: /extract story/i }).click();
     await expect(page.getByPlaceholder(/paste a user story/i)).toHaveValue(/partial ROA payment/i);
   });
@@ -114,7 +114,7 @@ test.describe("qa pipeline", () => {
     await page.getByPlaceholder(/paste a user story/i).fill("any story");
     await page.getByRole("button", { name: /^run$/i }).click();
     await expect(page.getByText(/no QA pack/i)).toBeVisible();
-    await expect(page.getByText(/npm run seed:lbmh/i)).toBeVisible();
+    await expect(page.getByText(/npm run seed:local-pack/i)).toBeVisible();
   });
 
   test("saved session opens from the history list", async ({ page }) => {

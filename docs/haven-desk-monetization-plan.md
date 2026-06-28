@@ -123,7 +123,7 @@ Price range (assumption): **$199-$499** per pack.
 |------|----------|----------|-----------------|
 | QA and product ops | QA engineers, product managers, technical leads | L1 | QA Pipeline, Gherkin Lint, Bug Report, Rubric Designer, Eval Cases, plus a release readiness checklist |
 
-QA and Product Ops is the highest-confidence first professional pack because all its primitives already exist in the repo (verified in the canon). The pack reorganizes them under a professional framing with project-scoped memory seeding, the LBMH-style glossary pattern, and the full session-and-iteration QA pipeline.
+QA and Product Ops is the highest-confidence first professional pack because all its primitives already exist in the repo (verified in the canon). The pack reorganizes them under a professional framing with project-scoped memory seeding, a generic glossary pattern, and the full session-and-iteration QA pipeline.
 
 Future professional packs (post-v1 assumptions): a Content and Marketing Ops pack (creative studio at L1 with content calendar automation), a Research and Knowledge Management pack (document Q&A plus citation tracking), and a Client Services pack for agencies (client project memory plus proposal automation).
 
@@ -135,7 +135,7 @@ These are the highest-margin offers and the first path to revenue before any pai
 
 | Offer | Price range (assumption) | What it is |
 |-------|--------------------------|-----------|
-| Install and configure | $1,000-$3,000 | One session: install Ollama app, pull models, run `./swiss up`, configure one project, load one pack, verify the first workflow end to end |
+| Install and configure | $1,000-$3,000 | One session: install Ollama app, pull models, run `./haven up`, configure one project, load one pack, verify the first workflow end to end |
 | Workflow pack onboarding | $2,000-$5,000 | One pack deployed to one team: install, seed a project pack with the client's own templates and memory facts, train the team on capture and daily routines, one follow-up call |
 | Custom pack development | $5,000-$10,000 | A new L0 or L1 pack built to the client's industry and workflows, delivered as a local seed script under the `cockpit/projects/<name>/pack/` pattern |
 | Monthly support retainer | $100-$500/mo | Email support, model update guidance, pack updates, one 30-min call per month |
@@ -213,7 +213,7 @@ Mitigation: differentiate on context, not just drafting. Haven Desk wins when th
 
 Ollama, Docker Desktop, and the cockpit each have platform-specific failure modes: the brew formula trap on macOS, winnat port conflicts on Windows, GPU driver issues, and model pull failures on slow connections. A small team with paying customers cannot absorb open-ended support across all combinations.
 
-Mitigation: four levers. First, `./swiss doctor` already encodes the most common failure states with copy-paste fixes; expand it to cover the top 5 support tickets from beta. Second, write a setup FAQ that routes users to community forums (Discord or GitHub Discussions) before support email. Third, charge for setup services at a rate that covers the actual time cost. Fourth, cap the Solo business tier's support SLA at email-only with a 48-hour response; anything faster requires a retainer.
+Mitigation: four levers. First, `./haven doctor` already encodes the most common failure states with copy-paste fixes; expand it to cover the top 5 support tickets from beta. Second, write a setup FAQ that routes users to community forums (Discord or GitHub Discussions) before support email. Third, charge for setup services at a rate that covers the actual time cost. Fourth, cap the Solo business tier's support SLA at email-only with a 48-hour response; anything faster requires a retainer.
 
 ### Risk 3: consulting can swallow product focus
 
@@ -246,6 +246,6 @@ The QA Pipeline, Gherkin Lint, Rubric Designer, Eval Cases, Bug Report, and API 
 
 The buyer's objection to existing tools (GitHub Copilot Chat, Claude.ai) is not quality; it is that pasting internal feature specs into a cloud tool is a policy violation in many companies. A local Haven Desk install with a QA pack sidesteps that objection entirely.
 
-Price assumption: $299 one-time for the QA and Product Ops pack, or $199/yr for updates. The first beta target is 3-5 professional users or one team license at $999. The goal is to validate that the Gherkin lint + rubric + iteration loop is worth paying for independent of the LBMH context it was originally built for.
+Price assumption: $299 one-time for the QA and Product Ops pack, or $199/yr for updates. The first beta target is 3-5 professional users or one team license at $999. The goal is to validate that the Gherkin lint + rubric + iteration loop is worth paying for independent of any private local-pack context.
 
 These two wedges are complementary: Small Business Ops proves the non-developer market; QA/Product Ops proves the professional market. Neither requires new infrastructure, only pack authoring and a license check mechanism.

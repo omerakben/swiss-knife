@@ -404,7 +404,7 @@ export function QaPipeline({ initialSessionId = null }: { initialSessionId?: str
               project:
             </p>
             <pre className="overflow-x-auto rounded-md border border-border bg-muted p-3 font-mono text-xs text-foreground">
-              npm run seed:lbmh
+              npm run seed:local-pack
             </pre>
             <p>
               No pack? Packs are private and not in the repo — but Gherkin Lint and the Rubric

@@ -137,8 +137,8 @@ export function MemoryManager({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   // Project/category filters survive reloads; the search box stays ephemeral.
-  const [filterProjectRaw, setFilterProject] = usePersisted("sk:memory:project", ALL);
-  const [filterCategoryRaw, setFilterCategory] = usePersisted("sk:memory:category", ALLCAT);
+  const [filterProjectRaw, setFilterProject] = usePersisted("havendesk:memory:project", ALL);
+  const [filterCategoryRaw, setFilterCategory] = usePersisted("havendesk:memory:category", ALLCAT);
   // Stored values are validated against what exists NOW — a stale persisted
   // project id (or garbage) degrades to "all" instead of silently blanking
   // every section with no visible cue.

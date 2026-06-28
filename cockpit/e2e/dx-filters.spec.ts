@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-// Filters persist via localStorage (sk:tasks:*) and badges act as filter chips.
+// Filters persist via localStorage (havendesk:tasks:*) and badges act as filter chips.
 // Real DB camp: tasks are created through the UI with unique titles.
 
 test.describe("dx: persisted filters + chips", () => {

@@ -1,4 +1,4 @@
-# Swiss Knife — local AI daily runner
+# Haven Desk — local AI daily runner
 # NOTE: Ollama runs NATIVELY on the host on EVERY platform; these containers
 # reach it via host.docker.internal.
 #   macOS:   Docker can't pass the Apple GPU — containerized Ollama is ~5-6x slower.
@@ -9,7 +9,7 @@ services:
     image: ghcr.io/open-webui/open-webui:main
     container_name: havendesk-openwebui
     ports:
-      # Dedicated host port (override with OWUI_PORT). Swiss Knife runs all the
+      # Dedicated host port (override with OWUI_PORT). Haven Desk runs all the
       # time, so it stays off the universal dev ports 3000/3001. The container
       # still listens on 8080 internally.
       - "${OWUI_PORT:-4142}:8080"
@@ -51,7 +51,7 @@ services:
       - DATABASE_URL=file:/data/cockpit.db
       # Calendar-day math (due dates, Today panel, routine titles) runs in this
       # container; without TZ Node computes days in UTC, shifting them a day for
-      # any user west of UTC in the evening. ./swiss up / .\swiss up export it.
+      # any user west of UTC in the evening. ./haven up / .\haven up export it.
       - TZ=${TZ:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -64,7 +64,7 @@ services:
       # stays on the host (it's large + machine-local). Mounted read-only at the
       # path WHISPER_MODEL points to (cockpit/Dockerfile). No model on the host →
       # the route returns a friendly 503 with the download command. Override the
-      # host path with WHISPER_MODEL_DIR if your model lives elsewhere (the swiss
+      # host path with WHISPER_MODEL_DIR if your model lives elsewhere (the haven
       # CLIs export it; ${HOME} covers a direct `docker compose up` on mac/Linux).
       - ${WHISPER_MODEL_DIR:-${HOME}/.cache/whisper}:/models:ro
     depends_on:

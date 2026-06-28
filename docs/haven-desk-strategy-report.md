@@ -20,11 +20,11 @@ The durable advantage is not only local inference. By 2027, local/on-device AI w
 - Deterministic checks around model output.
 - Industry-specific plugins and packs.
 
-The product should move from "Swiss Knife, the developer cockpit" to "Haven Desk, the private AI daily runner."
+The product should move from "Haven Desk, the developer cockpit" to "Haven Desk, the private AI daily runner."
 
 ## Current product truth
 
-The current Swiss Knife repo already has the right foundation for this transition:
+The current Haven Desk repo already has the right foundation for this transition:
 
 - Local Gemma through Ollama, with no cloud LLM calls from the cockpit.
 - Next.js cockpit with SQLite, local data, and project scoping.
@@ -41,7 +41,7 @@ This means the strategy is not "build an AI app from scratch." The strategy is t
 
 Recommended public name: Haven Desk
 
-Internal name can remain Swiss Knife for the repo or developer edition. Haven Desk is more mass-market:
+Internal name can remain Haven Desk for the repo or developer edition. Haven Desk is more mass-market:
 
 - "Haven" signals privacy, safety, and ownership.
 - "Desk" signals daily work, files, tasks, admin, and action.
@@ -811,7 +811,7 @@ Response:
 
 The next serious milestone should be:
 
-> Turn Swiss Knife into a packaged Haven Desk prototype with a public narrative, a persona-first home, a plugin/pack system design, and two end-to-end paid workflow packs.
+> Turn Haven Desk into a packaged Haven Desk prototype with a public narrative, a persona-first home, a plugin/pack system design, and two end-to-end paid workflow packs.
 
 Recommended first two paid packs:
 

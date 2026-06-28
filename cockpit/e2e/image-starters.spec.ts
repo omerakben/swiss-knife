@@ -11,14 +11,14 @@ test.describe("image question starters", () => {
       route.fulfill(
         fulfill({
           starters: [
-            { id: "im1", target: "image", label: "Read the text", inputs: { text: "Read all the text in this image." }, builtin: true, order: 0 },
+            { id: "im1", target: "image", label: "Tiny OCR", inputs: { text: "Read all the text in this image." }, builtin: true, order: 0 },
           ],
         }),
       ),
     );
     await page.goto("/tools/image");
 
-    const chip = page.getByRole("button", { name: "Read the text", exact: true });
+    const chip = page.getByRole("button", { name: "Tiny OCR", exact: true });
     await expect(chip).toBeVisible();
     await chip.click();
     await expect(page.getByPlaceholder(/What do you want to know about this image/)).toHaveValue(/Read all the text/);

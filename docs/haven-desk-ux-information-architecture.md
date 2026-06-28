@@ -1,4 +1,4 @@
-Persona-first information architecture, route mapping, first-run onboarding, and the concrete nav.tsx change plan for the Haven Desk transition of Swiss Knife.
+Persona-first information architecture, route mapping, first-run onboarding, and the concrete nav.tsx change plan for Haven Desk.
 
 Date: 2026-06-26
 
@@ -145,7 +145,7 @@ Show the estimated download size (around 4 GB for e4b) if available from the Oll
 > "Working globally, nothing is scoped to a project. Create a project to group tasks, memory, and documents together."
 
 **QA Pipeline with no pack**
-The existing `needsPack: true` empty state already prompts to run `npm run seed:lbmh`. For Haven Desk this copy changes to:
+The existing `needsPack: true` empty state prompts to run `npm run seed:local-pack`. For Haven Desk this copy changes to:
 > "This tool is part of the QA and Product Ops pack. Install it to get started."
 The underlying mechanism (`needsPack: true`) stays; only the copy changes.
 

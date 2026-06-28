@@ -1,5 +1,5 @@
-// Declarative plugin/pack contract for Haven Desk (the monetizable transition of
-// Swiss Knife). A pack is data, not code: it carries templates, memory facts,
+// Declarative plugin/pack contract for Haven Desk. A pack is data, not code:
+// it carries templates, memory facts,
 // task seeds, prompts, knowledge links, and the deterministic gates and routes it
 // relies on. v1 is this TypeScript type plus the pure validator below. No
 // marketplace, no arbitrary runtime code.
