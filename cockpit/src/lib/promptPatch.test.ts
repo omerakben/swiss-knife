@@ -26,10 +26,12 @@ describe("buildPromptPatch", () => {
     if (r.ok) expect((r.data.title as string).length).toBe(120);
   });
 
-  it("trims original and rejects an empty one (NOT NULL column)", () => {
+  it("stores original verbatim, rejecting only all-blank (NOT NULL column)", () => {
+    // Validate emptiness via trim, but persist the reviewed text unchanged —
+    // whitespace/indentation can be meaningful in a prompt.
     expect(buildPromptPatch({ original: "  do x  " })).toEqual({
       ok: true,
-      data: { original: "do x" },
+      data: { original: "  do x  " },
     });
     expect(buildPromptPatch({ original: "   " })).toEqual({
       ok: false,

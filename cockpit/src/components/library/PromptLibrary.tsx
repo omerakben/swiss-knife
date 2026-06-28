@@ -38,8 +38,9 @@ export type LibPrompt = {
   tags: string | null;
   favorite: boolean;
   source: string;
-  projectId?: string | null;
-  project?: string | null;
+  // Required-but-nullable: the page always supplies both (id + resolved name).
+  projectId: string | null;
+  project: string | null;
 };
 
 export type LibProject = { id: string; name: string };
@@ -139,13 +140,24 @@ export function PromptLibrary({
   }, [q, prompts]);
 
   async function patch(id: string, data: Record<string, unknown>) {
-    const res = await fetch(`/api/prompts/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`/api/prompts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } catch {
+      // A rejected fetch (engine/app stopped) would otherwise leave the caller
+      // hanging — surface it and let the dialog re-enable its Save button.
+      toast.error("Update failed — is the app still running?");
+      return false;
+    }
     if (!res.ok) {
-      toast.error("Update failed");
+      // Surface the route's specific message ("Project not found.", "Original
+      // prompt can't be empty.", …) instead of a generic toast.
+      const body = await res.json().catch(() => ({}));
+      toast.error(body.error || "Update failed");
       return false;
     }
     router.refresh();
@@ -711,8 +723,9 @@ function EditForm({
           >
             <SelectTrigger id="edit-project" className="w-56">
               {/* Placeholder shows only if the stored id isn't in the loaded
-                  list (stale/failed query) — avoids a blank trigger. */}
-              <SelectValue placeholder="No project — global" />
+                  list (stale/failed query). Fall back to the prompt's known
+                  project name so it isn't mislabeled "global". */}
+              <SelectValue placeholder={prompt.project ?? "No project — global"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NO_PROJECT}>No project — global</SelectItem>
@@ -744,16 +757,21 @@ function EditForm({
           disabled={!valid || saving}
           onClick={async () => {
             setSaving(true);
-            await onSave({
-              title: title.trim(),
-              original: original.trim(),
-              // Preserve optimized content verbatim; an all-blank value clears it.
-              optimized: optimized.trim() ? optimized : "",
-              tags: tags.trim(),
-              favorite,
-              projectId,
-            });
-            setSaving(false);
+            try {
+              await onSave({
+                title: title.trim(),
+                // Save both bodies verbatim (the empty checks live in `valid`);
+                // an all-blank optimized clears it back to the prompt above.
+                original,
+                optimized: optimized.trim() ? optimized : "",
+                tags: tags.trim(),
+                favorite,
+                projectId,
+              });
+            } finally {
+              // Always re-enable Save, even if onSave/patch rejects.
+              setSaving(false);
+            }
           }}
         >
           {saving ? "Saving…" : "Save"}

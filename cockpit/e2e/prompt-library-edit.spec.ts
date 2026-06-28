@@ -1,10 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 // The edit dialog used to expose only Title + Tags. It now edits every field —
-// the prompt text, the optimized version, tags, project, and favorite. These
-// tests create real rows via the API, drive the UI, then clean up after
-// themselves. Assertions are card-scoped (the e2e runs against the shared dev
-// DB, so page-global text could collide with other prompts).
+// title, the prompt text, the optimized version, tags, project, and favorite.
+// These tests create real rows via the API, drive the UI, then clean up after
+// themselves. The Edit button is found via a card filter and prefill checks are
+// dialog-scoped; the post-save assertions are page-global but use unique
+// per-run tokens (Date.now()) so they can't collide with other prompts in the
+// shared dev DB.
 
 function cardFor(page: import("@playwright/test").Page, title: string) {
   return page
@@ -71,6 +73,20 @@ test.describe("prompt library — full edit", () => {
       await expect(page.getByText(tagA, { exact: true })).toBeVisible();
       await expect(page.getByText(tagB, { exact: true })).toBeVisible();
       await expect(page.getByText(projectName)).toBeVisible();
+      // Favorite persisted: the card star is filled.
+      await expect(
+        cardFor(page, title).getByRole("button", { name: "Toggle favorite" }).locator("svg")
+      ).toHaveClass(/fill-yellow-400/);
+
+      // Clearing the optimized field round-trips to null: the card falls back to
+      // the prompt body — which also proves `original` was saved (verbatim).
+      await cardFor(page, title).getByRole("button", { name: "Edit", exact: true }).click();
+      await expect(dialog.getByLabel("Prompt", { exact: true })).toHaveValue("edited original body");
+      await dialog.getByLabel("Optimized version").fill("");
+      await dialog.getByRole("button", { name: /^save$/i }).click();
+      await expect(dialog).toBeHidden();
+      await expect(page.getByText("edited original body")).toBeVisible();
+      await expect(page.getByText(optimizedEdit)).toBeHidden();
     } finally {
       await page.request.delete(`/api/prompts/${prompt.id}`);
       await page.request.delete(`/api/projects/${project.id}`);
@@ -100,6 +116,13 @@ test.describe("prompt library — full edit", () => {
       });
       expect(bad.status()).toBe(400);
       expect((await bad.json()).error).toMatch(/invalid request body/i);
+
+      // A missing prompt row is the P2025 404 (distinct from the 500 fallback).
+      const miss = await page.request.patch(`/api/prompts/does-not-exist`, {
+        data: { title: "x" },
+      });
+      expect(miss.status()).toBe(404);
+      expect((await miss.json()).error).toMatch(/not found/i);
     } finally {
       await page.request.delete(`/api/prompts/${prompt.id}`);
     }

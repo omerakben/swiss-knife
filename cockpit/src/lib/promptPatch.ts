@@ -7,7 +7,8 @@
 
 const TITLE_MAX = 120;
 
-export type PromptPatchBody = {
+// Internal post-guard view of the untrusted body (only used for the cast below).
+type PromptPatchBody = {
   title?: unknown;
   original?: unknown;
   optimized?: unknown;
@@ -16,8 +17,22 @@ export type PromptPatchBody = {
   projectId?: unknown;
 };
 
+// The validated, precisely-typed update payload. Keeping this exact (rather than
+// Record<string, unknown>) preserves Prisma's field-checking at the update call
+// site and lets the route narrow `projectId` without a cast — field/shape drift
+// becomes a compile error instead of a runtime surprise. Assignable to Prisma's
+// PromptUncheckedUpdateInput.
+export type PromptPatchData = {
+  title?: string;
+  original?: string;
+  optimized?: string | null;
+  tags?: string | null;
+  favorite?: boolean;
+  projectId?: string | null;
+};
+
 export type PromptPatchResult =
-  | { ok: true; data: Record<string, unknown> }
+  | { ok: true; data: PromptPatchData }
   | { ok: false; error: string };
 
 /**
@@ -35,7 +50,7 @@ export function buildPromptPatch(body: unknown): PromptPatchResult {
     return { ok: false, error: "Invalid request body." };
   }
   const b = body as PromptPatchBody;
-  const data: Record<string, unknown> = {};
+  const data: PromptPatchData = {};
 
   if (typeof b.title === "string") {
     const t = b.title.trim();
@@ -43,12 +58,12 @@ export function buildPromptPatch(body: unknown): PromptPatchResult {
     data.title = t.slice(0, TITLE_MAX);
   }
 
-  // `original` is NOT NULL in the schema — an empty edit would orphan the row's
-  // content, so reject it rather than silently storing "".
+  // `original` is NOT NULL in the schema — reject an all-blank edit. Otherwise
+  // store it VERBATIM (validate emptiness via trim, but don't mutate the text):
+  // a manual edit saves the reviewed prompt exactly, and whitespace can matter.
   if (typeof b.original === "string") {
-    const o = b.original.trim();
-    if (!o) return { ok: false, error: "Original prompt can't be empty." };
-    data.original = o;
+    if (!b.original.trim()) return { ok: false, error: "Original prompt can't be empty." };
+    data.original = b.original;
   }
 
   // `optimized` is nullable: an all-whitespace value clears it (back to

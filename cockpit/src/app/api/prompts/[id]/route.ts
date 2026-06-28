@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = await req.json().catch(() => ({}));
+  // undefined (not {}) on parse failure so malformed JSON and primitive bodies
+  // both reach buildPromptPatch's "Invalid request body." path, not a misleading
+  // "Nothing to update.".
+  const body = await req.json().catch(() => undefined);
 
   const result = buildPromptPatch(body);
   if (!result.ok) {
@@ -17,7 +20,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { data } = result;
 
   // Verify a reassigned project exists, so a stale/bad id reads as a clear 400
-  // instead of an FK error caught below as a misleading "Prompt not found".
+  // here instead of surfacing as a generic 500 "Update failed." from the FK
+  // violation caught below (which maps only a missing prompt row / P2025 to 404).
   if (typeof data.projectId === "string") {
     const exists = await prisma.project.findUnique({
       where: { id: data.projectId },
