@@ -8,9 +8,35 @@
       content="Haven Desk is a local AI desk for small-business follow-through: quick actions, meeting notes, smart inbox, tasks, drafts, packs, and reviewed local workflows."
     />
     <title>Haven Desk | Small business early access</title>
+    <meta name="theme-color" content="#f4f4f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e11" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230070e0'/%3E%3Cpath d='M12 3.2 18.2 5v5.6c0 4.1-2.5 7.8-6.2 9.4-3.7-1.6-6.2-5.3-6.2-9.4V5L12 3.2Z' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linejoin='round'/%3E%3Cpath d='M9.2 12.1 11 13.9l4-4.4' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <script>
+      /* Apply saved theme before paint (no flash, no-JS safe) and arm a reveal failsafe. */
+      (function () {
+        var de = document.documentElement;
+        try {
+          var t = localStorage.getItem("hd-theme");
+          if (t === "light" || t === "dark") de.setAttribute("data-theme", t);
+        } catch (e) {}
+        de.classList.add("js");
+        /* If app.js never runs (network/parse failure), reveal everything so no content is trapped. */
+        window.setTimeout(function () {
+          if (!window.__hdRevealed) {
+            var els = document.querySelectorAll("[data-reveal]");
+            for (var i = 0; i < els.length; i++) els[i].classList.add("in");
+          }
+        }, 1500);
+      })();
+    </script>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#top">Skip to content</a>
     <header class="site-header" data-shell>
       <a class="brand" href="#top" aria-label="Haven Desk home">
         <span class="brand-mark" aria-hidden="true">
@@ -21,18 +47,29 @@
         </span>
         <span>Haven Desk</span>
       </a>
-      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <nav class="site-nav" id="site-nav" aria-label="Main navigation">
-        <a href="#product">Product</a>
-        <a href="#quickstart">Quick Start</a>
-        <a href="#workflow">Workflow</a>
-        <a href="#pack">Pack</a>
-        <a class="nav-cta" href="#apply">Apply</a>
-      </nav>
+      <div class="header-tools">
+        <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+          <a href="#product">Product</a>
+          <a href="#quickstart">Quick Start</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#pack">Pack</a>
+          <a class="nav-cta" href="#apply">Apply</a>
+        </nav>
+        <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false" title="Toggle dark mode">
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z" />
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2.5v2.4M12 19.1v2.4M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.7 19.3l1.7-1.7M17.6 6.4l1.7-1.7" />
+          </svg>
+        </button>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
     </header>
 
     <main id="top">
@@ -49,6 +86,13 @@
             <a class="button primary" href="#apply">Apply for early access</a>
             <a class="button secondary" href="#workflow">See the daily loop</a>
           </div>
+          <p class="hero-trust">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 5 6v5c0 4 2.6 7.4 7 9 4.4-1.6 7-5 7-9V6l-7-3Z" />
+              <path d="M9 12l2 2 4-4.2" />
+            </svg>
+            No cloud calls. No account. Everything runs on your machine.
+          </p>
           <dl class="truth-strip" aria-label="Verified product facts">
             <div>
               <dt>Current app</dt>
@@ -65,7 +109,7 @@
           </dl>
         </div>
 
-        <div class="product-shell" aria-label="Sanitized Haven Desk product preview">
+        <div class="product-shell" aria-hidden="true">
           <div class="window-bar">
             <span></span>
             <span></span>
@@ -83,7 +127,7 @@
                 </span>
                 <span>Haven Desk</span>
               </div>
-              <button class="project-select" type="button">No project - global</button>
+              <button class="project-select" type="button">No project — global</button>
               <div class="search-box">Search... <kbd>⌘K</kbd></div>
               <p class="nav-label">Favorites</p>
               <a>Quick Actions <b></b></a>
@@ -160,7 +204,7 @@
       </section>
 
       <section class="section-pad quickstart" id="quickstart">
-        <div class="section-heading">
+        <div class="section-heading" data-reveal>
           <p class="overline">Quick Start</p>
           <h2>Approved pilots can install with one line.</h2>
           <p>
@@ -168,7 +212,7 @@
             starts the local stack, and opens <code>localhost:4141</code>.
           </p>
         </div>
-        <div class="terminal-card">
+        <div class="terminal-card" data-reveal>
           <div class="terminal-topbar">
             <div class="traffic-lights" aria-hidden="true">
               <span></span>
@@ -176,16 +220,16 @@
               <span></span>
             </div>
             <div class="install-tabs" role="tablist" aria-label="Install platform">
-              <button class="install-tab active" type="button" role="tab" aria-selected="true" data-install-tab="mac">
+              <button class="install-tab active" type="button" role="tab" id="install-tab-mac" aria-controls="install-panel-mac" aria-selected="true" data-install-tab="mac">
                 macOS
               </button>
-              <button class="install-tab" type="button" role="tab" aria-selected="false" data-install-tab="windows">
+              <button class="install-tab" type="button" role="tab" id="install-tab-windows" aria-controls="install-panel-windows" aria-selected="false" tabindex="-1" data-install-tab="windows">
                 Windows
               </button>
             </div>
             <span class="pilot-pill">pilot</span>
           </div>
-          <div class="install-panel active" data-install-panel="mac">
+          <div class="install-panel active" id="install-panel-mac" role="tabpanel" aria-labelledby="install-tab-mac" tabindex="0" data-install-panel="mac">
             <p># Installs Homebrew/Git if needed, downloads Haven Desk, starts the local app.</p>
             <div class="command-row">
               <pre><code id="install-command-mac">curl -fsSL https://<wbr />omerakben.github.io/<wbr />haven-desk/<wbr />install.sh | bash</code></pre>
@@ -194,7 +238,7 @@
               </button>
             </div>
           </div>
-          <div class="install-panel" data-install-panel="windows">
+          <div class="install-panel" id="install-panel-windows" role="tabpanel" aria-labelledby="install-tab-windows" tabindex="0" data-install-panel="windows">
             <p># Run in PowerShell. Installs Git if needed, downloads Haven Desk, starts the local app.</p>
             <div class="command-row">
               <pre><code id="install-command-windows">irm https://<wbr />omerakben.github.io/<wbr />haven-desk/<wbr />install.ps1 | iex</code></pre>
@@ -211,11 +255,11 @@
       </section>
 
       <section class="section-pad workflow" id="workflow">
-        <div class="section-heading">
+        <div class="section-heading" data-reveal>
           <p class="overline">The actual daily loop</p>
           <h2>Start with one messy input. End with something you can review and use.</h2>
         </div>
-        <div class="workflow-rail">
+        <div class="workflow-rail" data-reveal>
           <article>
             <span>01</span>
             <h3>Quick Actions</h3>
@@ -240,7 +284,7 @@
       </section>
 
       <section class="section-pad pack-section" id="pack">
-        <div class="pack-copy">
+        <div class="pack-copy" data-reveal>
           <p class="overline">Installed workflow pack</p>
           <h2>Small Business Ops is the first packaged workflow.</h2>
           <p>
@@ -248,7 +292,7 @@
             memory facts, and setup tasks for a job. They are declarative and reviewed before install.
           </p>
         </div>
-        <div class="pack-console">
+        <div class="pack-console" data-reveal>
           <div class="pack-header">
             <div>
               <strong>Small Business Ops</strong>
@@ -272,7 +316,7 @@
       </section>
 
       <section class="section-pad honesty-section">
-        <div class="honesty-card">
+        <div class="honesty-card" data-reveal>
           <p class="overline">Honest positioning</p>
           <h2>This is not trying to beat Open WebUI at being an AI platform.</h2>
           <p>
@@ -281,7 +325,7 @@
             gives them reviewed next steps, and keeps the workflow simple.
           </p>
         </div>
-        <div class="compare-grid">
+        <div class="compare-grid" data-reveal>
           <article>
             <span>Haven Desk</span>
             <strong>Workflow-first local desk</strong>
@@ -301,7 +345,7 @@
       </section>
 
       <section class="section-pad setup" id="setup">
-        <div class="section-heading left">
+        <div class="section-heading left" data-reveal>
           <p class="overline">What the installer does</p>
           <h2>The one-liner is thin on purpose.</h2>
           <p>
@@ -309,7 +353,7 @@
             the same setup and launch commands we already validate locally.
           </p>
         </div>
-        <div class="setup-grid">
+        <div class="setup-grid" data-reveal>
           <article>
             <span>01</span>
             <p>Clone or update <code>https://github.com/omerakben/haven-desk.git</code> into <code>~/HavenDesk</code>.</p>
@@ -330,7 +374,7 @@
       </section>
 
       <section class="section-pad apply" id="apply">
-        <div class="apply-copy">
+        <div class="apply-copy" data-reveal>
           <p class="overline">Small business early access</p>
           <h2>Apply with one recurring admin job.</h2>
           <p>
@@ -339,7 +383,7 @@
             or submit applications.
           </p>
         </div>
-        <form class="apply-form" id="pilot-form">
+        <form class="apply-form" id="pilot-form" data-reveal>
           <label>
             Your name
             <input name="name" autocomplete="name" required />
@@ -380,8 +424,8 @@
           </p>
         </form>
         <div class="application-output" id="application-output" hidden>
-          <h3>Your application summary</h3>
-          <textarea id="application-summary" rows="12" readonly></textarea>
+          <h3 id="application-summary-label">Your application summary</h3>
+          <textarea id="application-summary" rows="12" readonly aria-labelledby="application-summary-label"></textarea>
           <div class="output-actions">
             <button class="button secondary" type="button" id="copy-application">Copy application</button>
             <a class="button primary" id="contact-application" href="https://github.com/omerakben/haven-desk/discussions" target="_blank" rel="noreferrer">Ask for pilot contact</a>
@@ -396,6 +440,6 @@
       <a href="#top">Back to top</a>
     </footer>
 
-    <script src="./app.js"></script>
+    <script src="./app.js" defer></script>
   </body>
 </html>
