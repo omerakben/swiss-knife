@@ -20,6 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TemplateRunDialog } from "@/components/library/TemplateRunDialog";
 import { templateVariableNames } from "@/lib/templates";
 
@@ -31,8 +38,12 @@ export type LibPrompt = {
   tags: string | null;
   favorite: boolean;
   source: string;
-  project?: string | null;
+  // Required-but-nullable: the page always supplies both (id + resolved name).
+  projectId: string | null;
+  project: string | null;
 };
+
+export type LibProject = { id: string; name: string };
 
 export type LibTemplate = {
   id: string;
@@ -64,6 +75,7 @@ function tagList(tags: string | null): string[] {
 export function PromptLibrary({
   prompts,
   templates,
+  projects = [],
   initialQuery = "",
   initialNewTemplate = false,
   initialEditId = null,
@@ -71,6 +83,8 @@ export function PromptLibrary({
 }: {
   prompts: LibPrompt[];
   templates: LibTemplate[];
+  /** Projects for the edit dialog's reassignment picker. */
+  projects?: LibProject[];
   /** Seed for the search box (the ⌘K search deep link: /tools/prompt-library?q=…). */
   initialQuery?: string;
   /** Open the New-template dialog on the Templates tab (deep link from /tools/templates?new=template). */
@@ -126,13 +140,24 @@ export function PromptLibrary({
   }, [q, prompts]);
 
   async function patch(id: string, data: Record<string, unknown>) {
-    const res = await fetch(`/api/prompts/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`/api/prompts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } catch {
+      // A rejected fetch (engine/app stopped) would otherwise leave the caller
+      // hanging — surface it and let the dialog re-enable its Save button.
+      toast.error("Update failed — is the app still running?");
+      return false;
+    }
     if (!res.ok) {
-      toast.error("Update failed");
+      // Surface the route's specific message ("Project not found.", "Original
+      // prompt can't be empty.", …) instead of a generic toast.
+      const body = await res.json().catch(() => ({}));
+      toast.error(body.error || "Update failed");
       return false;
     }
     router.refresh();
@@ -432,16 +457,20 @@ export function PromptLibrary({
       </Tabs>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit prompt</DialogTitle>
-            <DialogDescription>Update the title and tags.</DialogDescription>
+            <DialogDescription>
+              Edit every field — title, the prompt text, the optimized version, tags, project, and favorite.
+            </DialogDescription>
           </DialogHeader>
           {editing && (
             <EditForm
+              key={editing.id}
               prompt={editing}
-              onSave={async (title, tags) => {
-                const ok = await patch(editing.id, { title, tags });
+              projects={projects}
+              onSave={async (values) => {
+                const ok = await patch(editing.id, values);
                 if (ok) {
                   toast.success("Saved");
                   setEditing(null);
@@ -607,21 +636,74 @@ function TemplateForm({
   );
 }
 
+type PromptEdit = {
+  title: string;
+  original: string;
+  optimized: string;
+  tags: string;
+  favorite: boolean;
+  projectId: string | null;
+};
+
+const NO_PROJECT = "__none__";
+
 function EditForm({
   prompt,
+  projects,
   onSave,
 }: {
   prompt: LibPrompt;
-  onSave: (title: string, tags: string) => void;
+  projects: LibProject[];
+  onSave: (values: PromptEdit) => Promise<void>;
 }) {
   const [title, setTitle] = useState(prompt.title);
+  const [original, setOriginal] = useState(prompt.original);
+  const [optimized, setOptimized] = useState(prompt.optimized ?? "");
   const [tags, setTags] = useState(prompt.tags ?? "");
+  const [favorite, setFavorite] = useState(prompt.favorite);
+  const [projectId, setProjectId] = useState<string | null>(prompt.projectId ?? null);
+  const [saving, setSaving] = useState(false);
+
+  const valid = title.trim().length > 0 && original.trim().length > 0;
+
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="edit-title">Title</Label>
-        <Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input
+          id="edit-title"
+          value={title}
+          maxLength={120}
+          onChange={(e) => setTitle(e.target.value)}
+        />
       </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="edit-original">Prompt</Label>
+        <Textarea
+          id="edit-original"
+          rows={6}
+          value={original}
+          onChange={(e) => setOriginal(e.target.value)}
+          placeholder="The prompt text."
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="edit-optimized">Optimized version</Label>
+        <Textarea
+          id="edit-optimized"
+          rows={6}
+          value={optimized}
+          onChange={(e) => setOptimized(e.target.value)}
+          aria-describedby="edit-optimized-help"
+          placeholder="Optional — the optimized rewrite. Leave blank to keep just the prompt above."
+        />
+        <p id="edit-optimized-help" className="text-xs text-muted-foreground">
+          This is what Copy and Sync use when present; otherwise the prompt above is used.
+        </p>
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
         <Input
@@ -631,9 +713,68 @@ function EditForm({
           placeholder="email, draft"
         />
       </div>
+
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-project">Project</Label>
+          <Select
+            value={projectId ?? NO_PROJECT}
+            onValueChange={(v) => setProjectId(v === NO_PROJECT ? null : v)}
+          >
+            <SelectTrigger id="edit-project" className="w-56">
+              {/* Placeholder shows only if the stored id isn't in the loaded
+                  list (stale/failed query). Fall back to the prompt's known
+                  project name so it isn't mislabeled "global". */}
+              <SelectValue placeholder={prompt.project ?? "No project — global"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_PROJECT}>No project — global</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button
+          type="button"
+          variant={favorite ? "default" : "outline"}
+          size="sm"
+          aria-pressed={favorite}
+          onClick={() => setFavorite((f) => !f)}
+        >
+          <Star className={"mr-1 h-4 w-4 " + (favorite ? "fill-current" : "")} />
+          {favorite ? "Favorited" : "Favorite"}
+        </Button>
+      </div>
+
+      <p className="text-xs text-muted-foreground">Source: {prompt.source}</p>
+
       <DialogFooter>
-        <Button onClick={() => onSave(title.trim(), tags.trim())} disabled={!title.trim()}>
-          Save
+        <Button
+          disabled={!valid || saving}
+          onClick={async () => {
+            setSaving(true);
+            try {
+              await onSave({
+                title: title.trim(),
+                // Save both bodies verbatim (the empty checks live in `valid`);
+                // an all-blank optimized clears it back to the prompt above.
+                original,
+                optimized: optimized.trim() ? optimized : "",
+                tags: tags.trim(),
+                favorite,
+                projectId,
+              });
+            } finally {
+              // Always re-enable Save, even if onSave/patch rejects.
+              setSaving(false);
+            }
+          }}
+        >
+          {saving ? "Saving…" : "Save"}
         </Button>
       </DialogFooter>
     </div>
