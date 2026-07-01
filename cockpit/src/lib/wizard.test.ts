@@ -43,4 +43,13 @@ describe("wizard grounding", () => {
   it("suggestTools includes an advanced tool when it is the clear match", () => {
     expect(suggestTools("The QA Pipeline drafts Gherkin.").map((t) => t.label)).toContain("QA Pipeline");
   });
+
+  it("suggestTools never mints a chip for a noSuggest verb-label (Refine)", () => {
+    // "refine" is a UI verb the app uses everywhere; a prose mention must not
+    // chip-link to the Refine tool.
+    expect(suggestTools("You can refine the draft with the Make-it buttons.").map((t) => t.label)).toEqual([]);
+    expect(suggestTools("Open Refine to talk it through.").map((t) => t.label)).toEqual([]);
+    // The flag is set on the Refine tool, so it is excluded from candidates.
+    expect(NAV_ITEMS.find((n) => n.href === "/tools/refine")?.noSuggest).toBe(true);
+  });
 });

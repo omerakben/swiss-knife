@@ -5,6 +5,7 @@ import {
   LayoutTemplate,
   Mail,
   Lightbulb,
+  MessagesSquare,
   Image as ImageIcon,
   Inbox,
   ListTodo,
@@ -45,6 +46,13 @@ export type NavItem = {
    * non-technical user is not led with them. Still reachable from ⌘K.
    */
   professional?: boolean;
+  /**
+   * Keep this tool out of the Help Wizard's auto "Open ___" chips
+   * (`suggestTools`). Set when the label is a common word the app uses as a UI
+   * verb ("Refine"), so ordinary prose like "refine the draft" can't mint a
+   * misleading chip. The tool is still in the nav, dashboard, and ⌘K.
+   */
+  noSuggest?: boolean;
 };
 
 // Persona-first groups for the Haven Desk transition (was work/write/qa/dev/system,
@@ -83,6 +91,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/tools/prompt-library", label: "Prompt Library", icon: Library, group: "write", desc: "Saved prompts; manage your templates.", keywords: "templates prompts saved" },
   { href: "/tools/email-writer", label: "Email Writer", icon: Mail, group: "write", desc: "Compose and reply with the right tone.", keywords: "compose reply" },
   { href: "/tools/brainstorm", label: "Brainstorming", icon: Lightbulb, group: "write", desc: "Structured thinking techniques.", keywords: "ideas techniques" },
+  { href: "/tools/refine", label: "Refine", icon: MessagesSquare, group: "write", noSuggest: true, desc: "Talk an idea through — it interviews you and sharpens it.", keywords: "refine idea interview ask me questions align critique sharpen product manager aha discuss brainstorm edge cases" },
 
   // Documents — saved text lives here (the Idea store: results, brainstorms,
   // captures, quick notes). Was reserved/empty until now.

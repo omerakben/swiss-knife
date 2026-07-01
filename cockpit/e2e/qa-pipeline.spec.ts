@@ -91,7 +91,9 @@ test.describe("qa pipeline", () => {
     await expect(page.getByText("Drafted .feature")).toBeVisible();
     await expect(page.getByText("lint PASS")).toBeVisible();
     await expect(page.getByText("rubric PASS")).toBeVisible();
-    await expect(page.getByRole("button", { name: /refine/i })).toBeVisible();
+    // Anchored so it matches the QA "Refine" action, not the sidebar's
+    // "Favorite Refine" toggle for the Refine tool (both are buttons).
+    await expect(page.getByRole("button", { name: /^refine$/i })).toBeVisible();
     // Deterministic coverage panel flags the happy-path-only draft.
     await expect(page.getByText("Coverage", { exact: true })).toBeVisible();
     await expect(page.getByText(/No negative paths/i)).toBeVisible();

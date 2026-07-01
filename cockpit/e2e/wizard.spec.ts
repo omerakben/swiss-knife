@@ -7,7 +7,23 @@ async function mockWizard(page: Page, text: string) {
   await page.route("**/api/wizard", (route) => route.fulfill({ contentType: "text/plain", body: text }));
 }
 
+// The starter questions are now editable StarterChips (target=wizard); mock the
+// list so the chip label is deterministic regardless of the dev DB's starters.
+async function mockWizardStarters(page: Page) {
+  await page.route("**/api/starters**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        starters: [
+          { id: "wz1", target: "wizard", label: "How do I turn meeting notes into tasks?", inputs: { text: "How do I turn meeting notes into tasks?" }, builtin: true, order: 0 },
+        ],
+      }),
+    }),
+  );
+}
+
 async function openGuide(page: Page) {
+  await mockWizardStarters(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Open the Haven Desk guide" }).click();
   await expect(page.getByText("Hi! I can explain any tool and point you to it.")).toBeVisible();
