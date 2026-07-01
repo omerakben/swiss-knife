@@ -50,7 +50,9 @@ export function buildWizardSystemPrompt(
  */
 export function suggestTools(text: string, items: NavItem[] = NAV_ITEMS, max = 3): NavItem[] {
   const lower = text.toLowerCase();
-  const byLen = [...items].sort((a, b) => b.label.length - a.label.length);
+  // Drop labels that double as everyday verbs ("Refine") — matching them against
+  // free prose ("refine the draft") would mint a chip to the wrong place.
+  const byLen = [...items].filter((it) => !it.noSuggest).sort((a, b) => b.label.length - a.label.length);
   const matched: NavItem[] = [];
   const used = new Set<string>();
   for (const it of byLen) {

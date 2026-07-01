@@ -53,6 +53,10 @@ export const MANUAL: Record<string, ManualEntry> = {
     howTo: "Find everything you've saved — results, brainstorms, captures, quick notes — in one searchable place; edit or copy any of them.",
     examples: ["Search your saved notes", "Edit a note you kept"],
   },
+  "/tools/refine": {
+    howTo: "Share a rough idea and talk it through; pick a lens — Interview me, Align, Critique, or Sharpen — and it acts like a product manager to flesh the idea out. Save the result as a note or turn it into tasks.",
+    examples: ["Interview me about a newsletter idea", "Critique my plan", "Sharpen this into a brief"],
+  },
   "/tools/projects": {
     howTo: "Group your prompts, tasks, ideas, and memory by project; pick the active one in the sidebar so new work files there.",
     examples: ["Create a project for a client", "Switch the active project"],
