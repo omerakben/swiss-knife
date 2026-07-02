@@ -29,6 +29,19 @@ can pick up without re-deriving anything.
 
 ---
 
+## DONE — 2026-07-02 session (branch `claude/starter-placeholder-crud`)
+
+Both goal items shipped. Item 1: Gherkin Lint and QA Pipeline "Load example"
+buttons are `Starter` targets (`gherkin-lint` / `qa-story`), and `FeaturedDemo`
+prefers the live first `reply-to-message` starter (code copy = loading/empty
+fallback). Item 2: option (a/d hybrid) was built as the **ToolHint** system —
+see `2026-07-01-placeholder-crud-design.md` (approved) — a key-value model
+gated by the `PLACEHOLDER_DEFAULTS` code registry; every grey `e.g. …` hint in
+the 10 static sites plus every Quick Action field is editable via a pencil
+(`EditHintButton`) with empty-save = reset. `SettingsForm` model-tag hints
+stay hardcoded by design (config guidance, not examples). After pulling run
+`npm run db:push` (new `ToolHint` model).
+
 ## Status at end of 2026-07-01 session (what's already CRUD-able)
 
 **On the `Starter` system (`StarterChips`) — full CRUD:**
