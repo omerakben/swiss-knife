@@ -41,6 +41,8 @@ type StarterChipsProps = {
   editFields: StarterEditField[];
   /** Header copy, e.g. "See it instantly — tap one to fill and run:". */
   headline: string;
+  /** Disable the pick chips (e.g. while the host tool is busy running). Manage controls are unaffected. */
+  disabled?: boolean;
 };
 
 /**
@@ -50,7 +52,7 @@ type StarterChipsProps = {
  * user starters render identically. While the live list loads it shows the code
  * fallback, so chips never flash empty.
  */
-export function StarterChips({ target, fallback, current, onPick, editFields, headline }: StarterChipsProps) {
+export function StarterChips({ target, fallback, current, onPick, editFields, headline, disabled }: StarterChipsProps) {
   const [starters, setStarters] = useState<StarterDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
@@ -136,7 +138,8 @@ export function StarterChips({ target, fallback, current, onPick, editFields, he
             <button
               type="button"
               onClick={() => onPick(s.inputs)}
-              className="inline-flex items-center gap-1 rounded-full border border-primary/45 bg-primary/10 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              disabled={disabled}
+              className="inline-flex items-center gap-1 rounded-full border border-primary/45 bg-primary/10 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/70 hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50"
             >
               <Play className="h-3 w-3 text-primary" /> {s.label}
             </button>

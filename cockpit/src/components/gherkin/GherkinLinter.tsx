@@ -74,7 +74,7 @@ export function GherkinLinter() {
           textareaClassName="font-mono text-sm"
           disabled={busy}
         />
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2">
           <Button onClick={lint} disabled={busy || !text.trim()}>
             {busy ? "Linting…" : "Lint"}
           </Button>
@@ -89,6 +89,7 @@ export function GherkinLinter() {
           }}
           editFields={[{ name: INBOX_FIELD, label: "Feature text", type: "textarea" }]}
           headline="Try an example — tap to fill:"
+          disabled={busy}
         />
       </div>
 

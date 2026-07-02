@@ -9,9 +9,12 @@ export const dynamic = "force-dynamic";
 // only ever sees keys it can actually resolve a default for).
 export async function GET() {
   const rows = await prisma.toolHint.findMany();
-  const hints: Record<string, string> = {};
+  // Object.create(null) has no prototype chain, so even a stray "__proto__" key
+  // (already filtered by Object.hasOwn below, belt-and-suspenders) can't reach
+  // the prototype setter when assigned onto this accumulator.
+  const hints: Record<string, string> = Object.create(null);
   for (const r of rows) {
-    if (r.key in PLACEHOLDER_DEFAULTS) hints[r.key] = r.text;
+    if (Object.hasOwn(PLACEHOLDER_DEFAULTS, r.key)) hints[r.key] = r.text;
   }
   return Response.json({ hints });
 }
@@ -25,7 +28,7 @@ export async function PUT(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { key?: unknown; text?: unknown };
   const key = typeof body.key === "string" ? body.key : "";
 
-  if (!(key in PLACEHOLDER_DEFAULTS)) return Response.json({ error: "Unknown hint." }, { status: 400 });
+  if (!Object.hasOwn(PLACEHOLDER_DEFAULTS, key)) return Response.json({ error: "Unknown hint." }, { status: 400 });
 
   if (typeof body.text === "string" && !body.text.trim()) {
     await prisma.toolHint.deleteMany({ where: { key } });

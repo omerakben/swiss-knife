@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logActivity } from "@/lib/activity";
+import { validateHint } from "@/lib/toolHints";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -103,7 +104,12 @@ export async function POST(req: Request) {
   let thFailed = 0;
   for (const h of Array.isArray(data.toolHints) ? data.toolHints : []) {
     const key = h && typeof h === "object" ? (h as Row).key : undefined;
-    if (typeof key !== "string" || !key) {
+    const text = h && typeof h === "object" ? (h as Row).text : undefined;
+    // Route the same registry gate a live save goes through (lib/toolHints.ts)
+    // over an imported row too — otherwise a corrupted/foreign backup (unknown
+    // key, or a multi-MB "text") lands in the DB permanently, since nothing
+    // downstream re-validates a ToolHint row after import.
+    if (typeof key !== "string" || !key || !validateHint(key, text as string).ok) {
       thFailed += 1;
       continue;
     }

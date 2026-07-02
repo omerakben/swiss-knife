@@ -8,7 +8,7 @@ import { useAiTool } from "@/hooks/useAiTool";
 import { Button } from "@/components/ui/button";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { ErrorAlert } from "@/components/ErrorAlert";
-import { FEATURED_DEMO, getFeaturedDemo, type QuickActionExample } from "@/lib/quickActions";
+import { FEATURED_DEMO, getFeaturedDemo, missingInputs, type QuickActionExample } from "@/lib/quickActions";
 
 /**
  * The "wow in seconds" on the home: one tap runs a real example inline, so a
@@ -29,19 +29,32 @@ export function FeaturedDemo() {
   });
 
   const [live, setLive] = useState<QuickActionExample | null>(null);
+  // demo.action comes from getQuickAction() — a find() over the static
+  // QUICK_ACTIONS array, so the reference is stable across renders even
+  // though `demo` itself is a fresh wrapper object each call. Safe as an
+  // effect dependency without refetching on every render. (Named separately
+  // from the `action` used below so the early-return guard can narrow that one.)
+  const demoAction = demo?.action;
   useEffect(() => {
+    if (!demoAction) return;
     let cancelled = false;
-    fetch(`/api/starters?target=${FEATURED_DEMO.actionId}`)
+    fetch(`/api/starters?target=${encodeURIComponent(FEATURED_DEMO.actionId)}`)
       .then((r) => r.json())
       .then((d) => {
         const s = Array.isArray(d.starters) ? d.starters[0] : null;
-        if (!cancelled && s && s.inputs) setLive({ label: s.label, inputs: s.inputs });
+        // Only prefer the live starter when it's actually runnable — a
+        // corrupted/imported starter whose inputs degraded to {} is still
+        // truthy, which would otherwise render an empty example and 400 on
+        // "See it work".
+        if (!cancelled && s && s.inputs && missingInputs(demoAction, s.inputs).length === 0) {
+          setLive({ label: s.label, inputs: s.inputs });
+        }
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [demoAction]);
 
   if (!demo) return null;
   const { action, example: codeExample } = demo;

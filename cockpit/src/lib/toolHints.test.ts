@@ -24,6 +24,12 @@ describe("toolHints registry", () => {
     expect(validateHint("email-brief", 5 as unknown as string).ok).toBe(false);
     expect(validateHint("email-brief", "custom hint").ok).toBe(true);
   });
+  it("rejects Object.prototype keys (the `in` operator walks the prototype chain)", () => {
+    expect(validateHint("toString", "x").ok).toBe(false);
+    expect(validateHint("__proto__", "x").ok).toBe(false);
+    expect(validateHint("constructor", "x").ok).toBe(false);
+    expect(validateHint("hasOwnProperty", "x").ok).toBe(false);
+  });
 });
 
 // Drift tripwire (same style as the nav/manual/wizard registry tests): walk

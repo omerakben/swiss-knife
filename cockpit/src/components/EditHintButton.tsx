@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,7 +36,17 @@ export function EditHintButton({ hintKey, label }: EditHintButtonProps) {
   const current = usePlaceholder(hintKey);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(current);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // If the dialog is opened before the initial bulk GET (useToolHints) resolves,
+  // `current` is still the code default. Keep the draft synced to the effective
+  // placeholder while open, UNTIL the user types — a `dirty` flag (reset on
+  // open) makes sure a real override that arrives late doesn't clobber typing.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing the draft to a late-arriving external store value, guarded by `dirty` so it never clobbers typing
+    if (open && !dirty) setText(current);
+  }, [open, dirty, current]);
 
   async function putHint(value: string): Promise<boolean> {
     try {
@@ -85,6 +95,7 @@ export function EditHintButton({ hintKey, label }: EditHintButtonProps) {
         aria-label={`Edit hint: ${label}`}
         onClick={() => {
           setText(current);
+          setDirty(false);
           setOpen(true);
         }}
       >
@@ -108,7 +119,10 @@ export function EditHintButton({ hintKey, label }: EditHintButtonProps) {
             <Textarea
               id={`hint-text-${hintKey}`}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                setDirty(true);
+              }}
               rows={3}
             />
           </div>

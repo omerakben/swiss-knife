@@ -16,15 +16,24 @@ let fetched = false;
 let fetching: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 
+// Bumped on every fetch start, so a response can tell whether a newer fetch
+// has since superseded it. Without this: mount starts GET A, a save fires
+// refreshToolHints() (nulling `fetching`) and starts GET B, B resolves first
+// with fresh data, then A resolves late and clobbers `overrides` with the
+// pre-save snapshot.
+let generation = 0;
+
 function notify() {
   for (const cb of listeners) cb();
 }
 
 function fetchHints(): Promise<void> {
   if (fetching) return fetching;
+  const gen = ++generation;
   fetching = fetch("/api/tool-hints")
     .then((r) => (r.ok ? r.json() : null))
     .then((d) => {
+      if (gen !== generation) return; // superseded by a newer fetch — ignore this stale response
       if (d && d.hints && typeof d.hints === "object") overrides = d.hints as Record<string, string>;
     })
     .catch(() => {
@@ -32,6 +41,7 @@ function fetchHints(): Promise<void> {
       // refreshToolHints() (e.g. after the user saves a hint) tries again.
     })
     .finally(() => {
+      if (gen !== generation) return; // let the newer in-flight fetch own `fetching`/`fetched`
       fetched = true;
       fetching = null;
       notify();

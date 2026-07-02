@@ -365,6 +365,7 @@ export function QaPipeline({ initialSessionId = null }: { initialSessionId?: str
           }}
           editFields={[{ name: INBOX_FIELD, label: "User story", type: "textarea" }]}
           headline="Try an example — tap to fill:"
+          disabled={busyNew}
         />
       </div>
 

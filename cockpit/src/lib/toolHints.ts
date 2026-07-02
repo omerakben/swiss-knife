@@ -49,7 +49,7 @@ export type HintValidation = { ok: boolean; error?: string };
  * validates a real save.
  */
 export function validateHint(key: string, text: string): HintValidation {
-  if (!(key in PLACEHOLDER_DEFAULTS)) return { ok: false, error: "Unknown hint." };
+  if (!Object.hasOwn(PLACEHOLDER_DEFAULTS, key)) return { ok: false, error: "Unknown hint." };
   if (typeof text !== "string" || !text.trim()) return { ok: false, error: "The hint needs some text." };
   if (text.length > MAX_HINT) return { ok: false, error: "That hint is too long." };
   return { ok: true };
