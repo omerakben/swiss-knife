@@ -91,6 +91,33 @@ export async function POST(req: Request) {
   imported.starters = stOk;
   if (stFailed > 0) skipped.starters = stFailed;
 
+  // ToolHint edits are matched by `key` (the stable business identity — see
+  // PLACEHOLDER_DEFAULTS in lib/toolHints.ts), not `id`, so a cross-machine
+  // import merges into an existing edit of the same hint instead of racing
+  // the unique @@unique(key) constraint if the same key already exists
+  // locally under a different id.
+  const toolHintModel = m.toolHint as unknown as {
+    upsert: (a: { where: Record<string, unknown>; update: Record<string, unknown>; create: Record<string, unknown> }) => Promise<unknown>;
+  };
+  let thOk = 0;
+  let thFailed = 0;
+  for (const h of Array.isArray(data.toolHints) ? data.toolHints : []) {
+    const key = h && typeof h === "object" ? (h as Row).key : undefined;
+    if (typeof key !== "string" || !key) {
+      thFailed += 1;
+      continue;
+    }
+    const { id: _id, ...rest } = h as Row;
+    try {
+      await toolHintModel.upsert({ where: { key }, update: rest, create: h as Row });
+      thOk += 1;
+    } catch {
+      thFailed += 1;
+    }
+  }
+  imported.toolHints = thOk;
+  if (thFailed > 0) skipped.toolHints = thFailed;
+
   let qa = 0;
   let qaFailed = 0;
   let iters = 0;
