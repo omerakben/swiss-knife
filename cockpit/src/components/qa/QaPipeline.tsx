@@ -20,13 +20,12 @@ import { QaSessionView } from "@/components/qa/QaSessionView";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingState } from "@/components/LoadingState";
+import { StarterChips } from "@/components/StarterChips";
+import { QA_STORY_TARGET, INBOX_FIELD, builtinStartersFor } from "@/lib/quickActions";
 import type { Iteration, Session, SessionSummary } from "@/components/qa/types";
 
 type BenchResult = { id: string; expected: string; got: string; agree: boolean; story: string };
 type Golden = { id: string; story: string; expectedVerdict: string };
-
-const EXAMPLE = `As a cashier, I want to make a walk-in cash sale of in-stock items tax-exempt at the point of sale, so a tax-exempt customer is charged correctly.
-The sale must record the tax-exemption reason, and an over-tender must return the right change.`;
 
 async function jsonFetch(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -355,17 +354,18 @@ export function QaPipeline({ initialSessionId = null }: { initialSessionId?: str
           <Button variant="outline" onClick={() => setImportOpen(true)} disabled={busyNew}>
             Import from ticket
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setInput(EXAMPLE);
-              setNeedsPack(false);
-            }}
-            disabled={busyNew}
-          >
-            Load example
-          </Button>
         </div>
+        <StarterChips
+          target={QA_STORY_TARGET}
+          fallback={builtinStartersFor(QA_STORY_TARGET)}
+          current={{ [INBOX_FIELD]: input }}
+          onPick={(inputs) => {
+            setInput(inputs[INBOX_FIELD] ?? "");
+            setNeedsPack(false);
+          }}
+          editFields={[{ name: INBOX_FIELD, label: "User story", type: "textarea" }]}
+          headline="Try an example — tap to fill:"
+        />
       </div>
 
       <Dialog open={importOpen} onOpenChange={setImportOpen}>

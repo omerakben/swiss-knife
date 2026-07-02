@@ -9,6 +9,8 @@ import {
   REFINE_TARGET,
   WIZARD_TARGET,
   PROJECTS_TARGET,
+  GHERKIN_TARGET,
+  QA_STORY_TARGET,
   INBOX_FIELD,
 } from "./quickActions";
 import { buildStarterSeedPlan, parseInputs, validateStarter } from "./starters";
@@ -47,7 +49,7 @@ describe("starters", () => {
   });
 
   it("validateStarter treats every single-text target like inbox (non-empty text)", () => {
-    for (const target of [IMAGE_TARGET, EMAIL_TARGET, MEETING_TARGET, REFINE_TARGET, WIZARD_TARGET, PROJECTS_TARGET]) {
+    for (const target of [IMAGE_TARGET, EMAIL_TARGET, MEETING_TARGET, REFINE_TARGET, WIZARD_TARGET, PROJECTS_TARGET, GHERKIN_TARGET, QA_STORY_TARGET]) {
       expect(validateStarter(target, "X", { [INBOX_FIELD]: "" }).ok, `${target} empty`).toBe(false);
       expect(validateStarter(target, "X", { [INBOX_FIELD]: "some text" }).ok, `${target} filled`).toBe(true);
     }
