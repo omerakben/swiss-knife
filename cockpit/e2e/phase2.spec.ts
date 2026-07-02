@@ -18,7 +18,10 @@ test.describe("phase 2 tools", () => {
     const dialog = page.getByRole("dialog");
     const name = `E2E tmpl ${Date.now()}`;
     await dialog.getByLabel("Name").fill(name);
-    await dialog.getByLabel("Body").fill("Summarize {{text}} in {{count}} bullets.");
+    // getByRole("textbox", ...), not getByLabel: the Body field now has an
+    // "Edit hint" pencil button beside its label, and getByLabel matches on
+    // any aria-label substring — including the button's ("Edit hint: Body").
+    await dialog.getByRole("textbox", { name: "Body" }).fill("Summarize {{text}} in {{count}} bullets.");
     await dialog.getByRole("button", { name: /^save$/i }).click();
 
     await expect(page.getByText(name)).toBeVisible();
@@ -42,7 +45,9 @@ test.describe("phase 2 tools", () => {
     const dialog = page.getByRole("dialog");
     const name = `Del tmpl ${Date.now()}`;
     await dialog.getByLabel("Name").fill(name);
-    await dialog.getByLabel("Body").fill("Body {{x}}.");
+    // See the note in "create a custom template" — getByRole("textbox") avoids
+    // the collision with the Body field's "Edit hint" pencil button.
+    await dialog.getByRole("textbox", { name: "Body" }).fill("Body {{x}}.");
     await dialog.getByRole("button", { name: /^save$/i }).click();
     await expect(page.getByText(name)).toBeVisible();
 
@@ -59,7 +64,10 @@ test.describe("phase 2 tools", () => {
   test("email writer shows its controls", async ({ page }) => {
     await page.goto("/tools/email-writer");
     await expect(page.getByRole("heading", { name: /email writer/i })).toBeVisible();
-    await expect(page.getByLabel(/brief/i)).toBeVisible();
+    // getByRole("textbox", ...), not getByLabel: the Brief field now has an
+    // "Edit hint" pencil button beside its label, and getByLabel matches on
+    // any aria-label substring — including the button's ("Edit hint: Brief").
+    await expect(page.getByRole("textbox", { name: /brief/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /^write$/i })).toBeVisible();
   });
 

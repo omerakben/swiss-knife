@@ -9,6 +9,8 @@ import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { downloadText } from "@/lib/download";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 
 type Report = {
   title: string;
@@ -45,6 +47,7 @@ export function BugReportTool() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
+  const notePlaceholder = usePlaceholder("bug-report");
   // The note that produced the current draft — save persists THIS pairing.
   const lastRunNote = useRef("");
 
@@ -102,17 +105,22 @@ export function BugReportTool() {
         deterministic gate checks completeness, and you save the draft you reviewed.
       </p>
 
-      <VoiceTextarea
-        className="mt-6"
-        rows={5}
-        value={note}
-        onValueChange={setNote}
-        placeholder="e.g. POS partial ROA payment errors when amount is less than balance — should accept and apply oldest-invoice-first…"
-        disabled={busy}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && note.trim() && !busy) run();
-        }}
-      />
+      <div className="mt-6">
+        <div className="flex justify-end">
+          <EditHintButton hintKey="bug-report" label="Bug note" />
+        </div>
+        <VoiceTextarea
+          className="mt-1"
+          rows={5}
+          value={note}
+          onValueChange={setNote}
+          placeholder={notePlaceholder}
+          disabled={busy}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && note.trim() && !busy) run();
+          }}
+        />
+      </div>
       <div className="mt-3 flex gap-2">
         <Button onClick={run} disabled={busy || !note.trim()}>
           {busy ? `Drafting… ${secs}s` : "Draft report"}

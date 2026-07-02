@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { TemplateRunDialog } from "@/components/library/TemplateRunDialog";
 import { templateVariableNames } from "@/lib/templates";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 
 export type LibPrompt = {
   id: string;
@@ -547,6 +549,7 @@ function TemplateForm({
   const [variables, setVariables] = useState(seed.variables);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [saving, setSaving] = useState(false);
+  const bodyPlaceholder = usePlaceholder("prompt-template-body");
 
   const derived = templateVariableNames(body);
   const valid = name.trim().length > 0 && body.trim().length > 0;
@@ -579,13 +582,16 @@ function TemplateForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="tmpl-body">Body</Label>
+        <div className="flex items-center gap-1">
+          <Label htmlFor="tmpl-body">Body</Label>
+          <EditHintButton hintKey="prompt-template-body" label="Body" />
+        </div>
         <Textarea
           id="tmpl-body"
           rows={6}
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="e.g. Summarize {{text}} into {{count}} bullet points."
+          placeholder={bodyPlaceholder}
         />
         <p className="text-xs text-muted-foreground">
           {derived.length > 0

@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { ErrorAlert } from "@/components/ErrorAlert";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 import type { CaseDimension, EvalCase, EvalCaseLint } from "@/lib/evalCases";
 
 type GeneratedCase = EvalCase & { duplicateOf: number | null };
@@ -35,6 +37,7 @@ export function EvalCaseGenerator() {
   // Which rubric will judge the accepted goldens — surfaced up front so an
   // accept isn't a blind write into a bench with no (or the wrong) rubric.
   const [rubric, setRubric] = useState<{ name: string; source: string } | null | undefined>(undefined);
+  const specPlaceholder = usePlaceholder("eval-cases-spec");
 
   useEffect(() => {
     let alive = true;
@@ -140,20 +143,25 @@ export function EvalCaseGenerator() {
         </p>
       )}
 
-      <VoiceTextarea
-        className="mt-6"
-        rows={6}
-        value={spec}
-        placeholder="Paste the spec or rule being tested, e.g. “Tax-exempt sales require a valid exemption certificate on file; the cashier must…”"
-        onValueChange={setSpec}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && spec.trim() && !busy) {
-            e.preventDefault();
-            generate();
-          }
-        }}
-        disabled={busy}
-      />
+      <div className="mt-6">
+        <div className="flex justify-end">
+          <EditHintButton hintKey="eval-cases-spec" label="Spec" />
+        </div>
+        <VoiceTextarea
+          className="mt-1"
+          rows={6}
+          value={spec}
+          placeholder={specPlaceholder}
+          onValueChange={setSpec}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && spec.trim() && !busy) {
+              e.preventDefault();
+              generate();
+            }
+          }}
+          disabled={busy}
+        />
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button onClick={generate} disabled={busy || !spec.trim()}>

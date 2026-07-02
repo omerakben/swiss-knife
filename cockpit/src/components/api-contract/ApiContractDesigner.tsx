@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { downloadText } from "@/lib/download";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 import type { OpenapiLintResult } from "@/lib/openapiLint";
 
 type Result = {
@@ -25,6 +27,7 @@ export function ApiContractDesigner() {
   const [secs, setSecs] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const inputPlaceholder = usePlaceholder("api-contract");
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function run() {
@@ -64,21 +67,26 @@ export function ApiContractDesigner() {
         shapes (4xx/5xx), pagination on lists, operation ids.
       </p>
 
-      <VoiceTextarea
-        className="mt-6"
-        rows={10}
-        value={input}
-        placeholder={'e.g. "An endpoint to list a project\'s invoices with filtering by status, plus fetching one invoice by id" — or paste an openapi: 3.1.0 document'}
-        onValueChange={setInput}
-        textareaClassName="font-mono text-sm"
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && input.trim() && !busy) {
-            e.preventDefault();
-            run();
-          }
-        }}
-        disabled={busy}
-      />
+      <div className="mt-6">
+        <div className="flex justify-end">
+          <EditHintButton hintKey="api-contract" label="Endpoint description" />
+        </div>
+        <VoiceTextarea
+          className="mt-1"
+          rows={10}
+          value={input}
+          placeholder={inputPlaceholder}
+          onValueChange={setInput}
+          textareaClassName="font-mono text-sm"
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && input.trim() && !busy) {
+              e.preventDefault();
+              run();
+            }
+          }}
+          disabled={busy}
+        />
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button onClick={run} disabled={busy || !input.trim()}>

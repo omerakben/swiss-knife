@@ -19,6 +19,8 @@ import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { downloadText } from "@/lib/download";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 import type { AdrLintResult } from "@/lib/adrLint";
 
 type AdrRow = {
@@ -45,6 +47,7 @@ export function AdrWriter() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [adrs, setAdrs] = useState<AdrRow[]>([]);
+  const notePlaceholder = usePlaceholder("adr-note");
 
   const { output, status, error, isRunning, elapsedMs, run, stop } = useAiTool({
     endpoint: "/api/adr-writer",
@@ -154,20 +157,25 @@ export function AdrWriter() {
         honest negative consequence.
       </p>
 
-      <VoiceTextarea
-        className="mt-6"
-        rows={6}
-        value={note}
-        placeholder="Describe the decision: the problem, the options you weighed, what you picked and why…"
-        onValueChange={setNote}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && note.trim() && !isRunning) {
-            e.preventDefault();
-            handleRun();
-          }
-        }}
-        disabled={isRunning}
-      />
+      <div className="mt-6">
+        <div className="flex justify-end">
+          <EditHintButton hintKey="adr-note" label="Decision note" />
+        </div>
+        <VoiceTextarea
+          className="mt-1"
+          rows={6}
+          value={note}
+          placeholder={notePlaceholder}
+          onValueChange={setNote}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && note.trim() && !isRunning) {
+              e.preventDefault();
+              handleRun();
+            }
+          }}
+          disabled={isRunning}
+        />
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         {/* also disabled while saving: a save landing after a new draft started

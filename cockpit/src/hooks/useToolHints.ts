@@ -65,3 +65,15 @@ export function refreshToolHints(): void {
   fetching = null;
   fetchHints();
 }
+
+/**
+ * The full saved-overrides map (same store as usePlaceholder, one bulk GET
+ * shared across both). For a generated field loop (Quick Actions) where the
+ * key is computed per-input rather than known at a fixed call site — calling
+ * usePlaceholder per field isn't an option since the number of fields is
+ * dynamic — a consumer reads this map directly:
+ * `overrides[quickActionHintKey(id, field)] ?? codeDefault`.
+ */
+export function useToolHintOverrides(): Record<string, string> {
+  return useSyncExternalStore(subscribe, () => overrides, () => overrides);
+}

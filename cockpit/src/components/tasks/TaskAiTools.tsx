@@ -5,9 +5,11 @@ import { Sparkles, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
+import { usePlaceholder } from "@/hooks/useToolHints";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { EditHintButton } from "@/components/EditHintButton";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import {
   Dialog,
@@ -24,6 +26,7 @@ export function TaskAiTools({ onTasksCreated }: { onTasksCreated: (tasks: Task[]
   const [standupOpen, setStandupOpen] = useState(false);
   const [goal, setGoal] = useState("");
   const [generating, setGenerating] = useState(false);
+  const goalPlaceholder = usePlaceholder("tasks-goal");
 
   const standup = useAiTool({ endpoint: "/api/tasks/standup", buildBody: () => ({}) });
 
@@ -68,11 +71,14 @@ export function TaskAiTools({ onTasksCreated }: { onTasksCreated: (tasks: Task[]
               Gemma breaks it into actionable tasks, added to To do.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex justify-end">
+            <EditHintButton hintKey="tasks-goal" label="Goal" />
+          </div>
           <Textarea
             rows={3}
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            placeholder="e.g. Prepare and ship the Q3 launch announcement"
+            placeholder={goalPlaceholder}
             disabled={generating}
           />
           <DialogFooter>
