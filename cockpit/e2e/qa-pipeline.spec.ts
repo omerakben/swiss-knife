@@ -137,6 +137,12 @@ test.describe("qa pipeline", () => {
     await page.route("**/api/qa-pipeline/sess_1", (route) =>
       route.fulfill(fulfill({ needsPack: false, iteration: iteration(2, true) }))
     );
+    // The refine-instruction placeholder ("add a boundary case…") is now a
+    // user-editable ToolHint (qa-refine); mock the GET so a locally-edited
+    // hint can't break the selector below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/qa-pipeline");
     await page.getByPlaceholder(/paste a user story/i).fill("a tax-exempt cash sale");
     await page.getByRole("button", { name: /^run$/i }).click();

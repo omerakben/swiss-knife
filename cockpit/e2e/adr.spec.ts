@@ -80,6 +80,11 @@ test.describe("adr writer", () => {
     await page.route("**/api/adr-writer", (route) =>
       route.fulfill({ status: 200, contentType: "text/plain; charset=utf-8", body: GOOD_ADR })
     );
+    // The note placeholder is now a user-editable ToolHint (adr-note); mock
+    // the GET so a locally-edited hint can't break the selector below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/adr");
     await page
       .getByPlaceholder(/describe the decision/i)
@@ -97,6 +102,9 @@ test.describe("adr writer", () => {
     await mockAdrCrud(page);
     await page.route("**/api/adr-writer", (route) =>
       route.fulfill({ status: 200, contentType: "text/plain; charset=utf-8", body: BAD_ADR })
+    );
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
     );
     await page.goto("/tools/adr");
     await page.getByPlaceholder(/describe the decision/i).fill("rust rewrite");
@@ -118,6 +126,9 @@ test.describe("adr writer", () => {
           reason: "ollama_down",
         }),
       })
+    );
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
     );
     await page.goto("/tools/adr");
     await page.getByPlaceholder(/describe the decision/i).fill("x");

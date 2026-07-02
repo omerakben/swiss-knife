@@ -49,6 +49,12 @@ test.describe("eval case generator", () => {
 
   test("a full-coverage set renders with dimensions, dup flag, and accepts", async ({ page }) => {
     await mockApi(page, GOOD);
+    // The spec box placeholder is now a user-editable ToolHint
+    // (eval-cases-spec); mock the GET so a locally-edited hint can't break
+    // the selector below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/eval-cases");
     await page.getByPlaceholder(/paste the spec/i).fill("tax exemption requires a certificate");
     await page.getByRole("button", { name: /^generate cases$/i }).click();
@@ -73,6 +79,9 @@ test.describe("eval case generator", () => {
       },
       ok: false,
     });
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/eval-cases");
     await page.getByPlaceholder(/paste the spec/i).fill("x");
     await page.getByRole("button", { name: /^generate cases$/i }).click();
@@ -91,6 +100,9 @@ test.describe("eval case generator", () => {
           reason: "ollama_down",
         }),
       })
+    );
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
     );
     await page.goto("/tools/eval-cases");
     await page.getByPlaceholder(/paste the spec/i).fill("x");

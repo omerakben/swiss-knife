@@ -5,9 +5,15 @@ import { test, expect } from "@playwright/test";
 test.describe("memory loop", () => {
   // The page auto-reindexes unranked facts on mount (best-effort). Mock it so the
   // suite stays hermetic regardless of the dev DB's indexed state or Ollama.
+  // The relevance-preview placeholder below is now a user-editable ToolHint
+  // (memory-relevance-preview) — mock the GET too, so a locally-edited hint
+  // can't break the getByPlaceholder selector.
   test.beforeEach(async ({ page }) => {
     await page.route("**/api/memory/reindex", (route) =>
       route.fulfill({ contentType: "application/json", body: JSON.stringify({ indexed: 0, total: 0 }) })
+    );
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
     );
   });
 

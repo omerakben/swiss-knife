@@ -31,6 +31,12 @@ test.describe("api contract designer", () => {
   });
 
   test("pasting a flawed contract lints it for real and blocks the gate", async ({ page }) => {
+    // The prose/paste box placeholder is now a user-editable ToolHint
+    // (api-contract); mock the GET so a locally-edited hint can't break the
+    // selector below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/api-contract");
     await page.getByPlaceholder(/describe|openapi/i).fill(BAD_CONTRACT);
     await page.getByRole("button", { name: /design \/ lint contract/i }).click();
@@ -58,6 +64,9 @@ test.describe("api contract designer", () => {
         }),
       })
     );
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/api-contract");
     await page.getByPlaceholder(/describe|openapi/i).fill("an endpoint to list invoices");
     await page.getByRole("button", { name: /design \/ lint contract/i }).click();
@@ -77,6 +86,9 @@ test.describe("api contract designer", () => {
           reason: "ollama_down",
         }),
       })
+    );
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
     );
     await page.goto("/tools/api-contract");
     await page.getByPlaceholder(/describe|openapi/i).fill("an endpoint for things");

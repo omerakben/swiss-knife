@@ -66,6 +66,11 @@ test.describe("rubric designer", () => {
 
   test("a gated design renders criteria, bands, separation, and saves", async ({ page }) => {
     await mockDesigner(page, GOOD_RESULT);
+    // The bar placeholder is now a user-editable ToolHint (rubric-designer);
+    // mock the GET so a locally-edited hint can't break the selector below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/rubric-designer");
     await page.getByPlaceholder(/what artifact is being judged/i).fill("error responses must be actionable");
     await page.getByRole("button", { name: /^design rubric$/i }).click();
@@ -91,6 +96,9 @@ test.describe("rubric designer", () => {
       separation: null,
       ok: false,
     });
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/rubric-designer");
     await page.getByPlaceholder(/what artifact is being judged/i).fill("x");
     await page.getByRole("button", { name: /^design rubric$/i }).click();
@@ -114,6 +122,9 @@ test.describe("rubric designer", () => {
       }
       return route.fulfill(fulfill({ current: null }));
     });
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
     await page.goto("/tools/rubric-designer");
     await page.getByPlaceholder(/what artifact is being judged/i).fill("x");
     await page.getByRole("button", { name: /^design rubric$/i }).click();
