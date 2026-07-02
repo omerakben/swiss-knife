@@ -14,6 +14,11 @@ test.describe("save a result", () => {
   test("save as note flips to Saved; save as tasks absent on a reply", async ({ page }) => {
     await mockResult(page, "A polished reply you can send.");
     await page.route("**/api/ideas", (route) => route.fulfill(fulfillJson({ idea: { id: "i1" } })));
+    // Quick Action input placeholders are now user-editable ToolHints; mock
+    // the GET so a locally-edited hint can't break the selectors below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
 
     await page.goto("/tools/quick-actions?action=reply-to-message");
     await page.getByPlaceholder("Paste it here…").fill("hi there");
@@ -44,6 +49,9 @@ test.describe("save a result", () => {
         }),
       );
     });
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
 
     await page.goto("/tools/quick-actions?action=notes-to-list");
     await page.getByPlaceholder(/Paste or type anything/).fill("printer, quote");

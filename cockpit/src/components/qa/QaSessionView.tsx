@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { QaIterationCard } from "@/components/qa/QaIterationCard";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 import type { Session } from "@/components/qa/types";
 
 type Props = {
@@ -39,6 +41,7 @@ export function QaSessionView({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [savingGolden, setSavingGolden] = useState(false);
   const [pickingVerdict, setPickingVerdict] = useState(false);
+  const refinePlaceholder = usePlaceholder("qa-refine");
 
   const latest = session.iterations[session.iterations.length - 1];
   const latestVerdict =
@@ -214,16 +217,21 @@ export function QaSessionView({
       </div>
 
       <div className="mt-6 rounded-md border border-dashed border-border p-4">
-        <h3 className="text-sm font-medium">Refine with a follow-up</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Describe what the latest draft is missing. The model revises iteration {session.iterations.length}{" "}
-          into a new one (keeps the standards and existing scenarios).
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-medium">Refine with a follow-up</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Describe what the latest draft is missing. The model revises iteration {session.iterations.length}{" "}
+              into a new one (keeps the standards and existing scenarios).
+            </p>
+          </div>
+          <EditHintButton hintKey="qa-refine" label="Refine instruction" />
+        </div>
         <Textarea
           rows={3}
           value={instruction}
           onChange={(e) => setInstruction(e.target.value)}
-          placeholder="e.g. add a boundary case for a special order with a 50% deposit…"
+          placeholder={refinePlaceholder}
           className="mt-2"
           disabled={refining}
         />

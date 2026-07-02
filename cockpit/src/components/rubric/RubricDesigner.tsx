@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { ErrorAlert } from "@/components/ErrorAlert";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 import type { RubricLint, RubricSpec } from "@/lib/rubric";
 
 type Separation = {
@@ -37,6 +39,7 @@ export function RubricDesigner() {
   const [saving, setSaving] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const [current, setCurrent] = useState<Current>(null);
+  const barPlaceholder = usePlaceholder("rubric-designer");
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Initial load (inlined per the repo pattern: async + cancellation guard).
@@ -126,20 +129,25 @@ export function RubricDesigner() {
         </div>
       )}
 
-      <VoiceTextarea
-        className="mt-6"
-        rows={6}
-        value={bar}
-        placeholder="What artifact is being judged, and what separates good from bad? e.g. “API error responses: actionable message, right status code, no internals leaked…”"
-        onValueChange={setBar}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && bar.trim() && !busy) {
-            e.preventDefault();
-            design();
-          }
-        }}
-        disabled={busy}
-      />
+      <div className="mt-6">
+        <div className="flex justify-end">
+          <EditHintButton hintKey="rubric-designer" label="Bar" />
+        </div>
+        <VoiceTextarea
+          className="mt-1"
+          rows={6}
+          value={bar}
+          placeholder={barPlaceholder}
+          onValueChange={setBar}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && bar.trim() && !busy) {
+              e.preventDefault();
+              design();
+            }
+          }}
+          disabled={busy}
+        />
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button onClick={design} disabled={busy || !bar.trim()}>

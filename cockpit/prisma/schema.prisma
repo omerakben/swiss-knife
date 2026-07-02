@@ -315,3 +315,15 @@ model Starter {
 
   @@index([target])
 }
+
+// A user-edited override for one placeholder's grey example text. `key` must
+// exist in PLACEHOLDER_DEFAULTS (src/lib/toolHints.ts) — that registry is the
+// gate, not this table; a row here means "the user changed it", so resetting
+// to default is just deleting the row (the API's empty-text PUT branch).
+model ToolHint {
+  id        String   @id @default(cuid())
+  key       String   @unique // must exist in PLACEHOLDER_DEFAULTS (lib/toolHints.ts)
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

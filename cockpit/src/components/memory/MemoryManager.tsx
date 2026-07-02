@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { usePersisted } from "@/hooks/usePersisted";
+import { usePlaceholder } from "@/hooks/useToolHints";
+import { EditHintButton } from "@/components/EditHintButton";
 import {
   Pin,
   Trash2,
@@ -178,6 +180,7 @@ export function MemoryManager({
   // Relevance inspector.
   const [previewQ, setPreviewQ] = useState("");
   const [preview, setPreview] = useState<PreviewFact[] | null>(null);
+  const previewPlaceholder = usePlaceholder("memory-relevance-preview");
   const [previewRanked, setPreviewRanked] = useState(true);
   const [previewBusy, setPreviewBusy] = useState(false);
 
@@ -560,6 +563,8 @@ export function MemoryManager({
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">Relevance preview</span>
+          <span className="flex-1" />
+          <EditHintButton hintKey="memory-relevance-preview" label="Relevance preview" />
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           Type a task to see which facts rank highest — the same ranking the tools use
@@ -569,7 +574,7 @@ export function MemoryManager({
           <Input
             value={previewQ}
             onChange={(e) => setPreviewQ(e.target.value)}
-            placeholder="e.g. Write a Gherkin scenario for a tax-exempt POS sale"
+            placeholder={previewPlaceholder}
             className="max-w-lg"
             onKeyDown={(e) => {
               if (e.key === "Enter") runPreview();

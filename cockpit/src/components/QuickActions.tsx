@@ -8,11 +8,13 @@ import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
 import { usePersisted } from "@/hooks/usePersisted";
+import { useToolHintOverrides } from "@/hooks/useToolHints";
 import { Button } from "@/components/ui/button";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import { StarterChips } from "@/components/StarterChips";
 import { ResultSaveActions } from "@/components/tools/ResultSaveActions";
+import { EditHintButton } from "@/components/EditHintButton";
 import {
   QUICK_ACTIONS,
   QUICK_ACTION_CATEGORIES,
@@ -26,6 +28,7 @@ import {
   type QuickAction,
 } from "@/lib/quickActions";
 import { QUICK_ACTION_ICONS } from "@/lib/quickActionIcons";
+import { quickActionHintKey } from "@/lib/toolHints";
 
 const RECENTS_KEY = "havendesk:qa:recents";
 
@@ -56,6 +59,7 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
   const [values, setValues] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [recentsJson, setRecentsJson] = usePersisted(RECENTS_KEY, "[]");
+  const hintOverrides = useToolHintOverrides();
   const { output, status, error, isRunning, elapsedMs, run, stop, reset, restore } = useAiTool({
     endpoint: "/api/quick-action",
     buildBody: (_input, extra) => extra,
@@ -234,33 +238,40 @@ export function QuickActions({ initialActionId }: { initialActionId: string | nu
       />
 
       <div className="mt-6 space-y-4">
-        {active.inputs.map((inp) => (
-          <div key={inp.name}>
-            <label htmlFor={`qa-${inp.name}`} className="text-sm font-medium">
-              {inp.label}
-              {inp.optional && <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>}
-            </label>
-            {inp.type === "textarea" ? (
-              <textarea
-                id={`qa-${inp.name}`}
-                value={values[inp.name] ?? ""}
-                onChange={(e) => setValues((s) => ({ ...s, [inp.name]: e.target.value }))}
-                placeholder={inp.placeholder}
-                disabled={isRunning}
-                className="mt-1.5 h-28 w-full rounded-lg border border-input bg-card p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              />
-            ) : (
-              <input
-                id={`qa-${inp.name}`}
-                value={values[inp.name] ?? ""}
-                onChange={(e) => setValues((s) => ({ ...s, [inp.name]: e.target.value }))}
-                placeholder={inp.placeholder}
-                disabled={isRunning}
-                className="mt-1.5 h-10 w-full rounded-lg border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              />
-            )}
-          </div>
-        ))}
+        {active.inputs.map((inp) => {
+          const hintKey = quickActionHintKey(active.id, inp.name);
+          const placeholder = hintOverrides[hintKey] ?? inp.placeholder;
+          return (
+            <div key={inp.name}>
+              <div className="flex items-center gap-1">
+                <label htmlFor={`qa-${inp.name}`} className="text-sm font-medium">
+                  {inp.label}
+                  {inp.optional && <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>}
+                </label>
+                {inp.placeholder && <EditHintButton hintKey={hintKey} label={inp.label} />}
+              </div>
+              {inp.type === "textarea" ? (
+                <textarea
+                  id={`qa-${inp.name}`}
+                  value={values[inp.name] ?? ""}
+                  onChange={(e) => setValues((s) => ({ ...s, [inp.name]: e.target.value }))}
+                  placeholder={placeholder}
+                  disabled={isRunning}
+                  className="mt-1.5 h-28 w-full rounded-lg border border-input bg-card p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                />
+              ) : (
+                <input
+                  id={`qa-${inp.name}`}
+                  value={values[inp.name] ?? ""}
+                  onChange={(e) => setValues((s) => ({ ...s, [inp.name]: e.target.value }))}
+                  placeholder={placeholder}
+                  disabled={isRunning}
+                  className="mt-1.5 h-10 w-full rounded-lg border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">

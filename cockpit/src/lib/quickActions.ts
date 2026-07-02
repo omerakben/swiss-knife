@@ -35,6 +35,11 @@ export const MEETING_TARGET = "meeting-notes";
 export const REFINE_TARGET = "refine";
 export const WIZARD_TARGET = "wizard";
 export const PROJECTS_TARGET = "projects";
+// Gherkin Lint (a .feature to check) and the QA Pipeline (a user story) are
+// single-text starter targets too — their old hardcoded "Load example" buttons
+// became editable chips.
+export const GHERKIN_TARGET = "gherkin-lint";
+export const QA_STORY_TARGET = "qa-story";
 // The single text field shared by the single-text starter targets above.
 export const INBOX_FIELD = "text";
 // The single-text (no action schema) starter targets.
@@ -46,6 +51,8 @@ export const TEXT_STARTER_TARGETS = [
   REFINE_TARGET,
   WIZARD_TARGET,
   PROJECTS_TARGET,
+  GHERKIN_TARGET,
+  QA_STORY_TARGET,
 ];
 
 // A built-in starter: the seed source for the editable Starter rows (lib/starters.ts).
@@ -498,6 +505,22 @@ export const BUILTIN_STARTERS: BuiltinStarter[] = [
     inputs: { [INBOX_FIELD]: "Home renovation" } },
   { target: PROJECTS_TARGET, key: "projects:q3-marketing", label: "Q3 marketing",
     inputs: { [INBOX_FIELD]: "Q3 marketing" } },
+
+  { target: GHERKIN_TARGET, key: "gherkin:pos-cash-sale", label: "POS cash sale .feature",
+    inputs: { [INBOX_FIELD]: `Feature: Point of Sale — cash sale
+  A walk-in customer buys in-stock items and pays cash.
+
+  @valid @smoke @ui
+  Scenario: a completed cash sale prints a receipt
+    Given an open Cash Drawer [drawer]
+    And a Cart [cart] holding one in-stock item
+    When the cashier tenders the exact cash amount
+    Then the sale is invoiced against [drawer]
+    And a receipt prints for [cart]` } },
+
+  { target: QA_STORY_TARGET, key: "qa-story:tax-exempt-sale", label: "Tax-exempt POS sale",
+    inputs: { [INBOX_FIELD]: `As a cashier, I want to make a walk-in cash sale of in-stock items tax-exempt at the point of sale, so a tax-exempt customer is charged correctly.
+The sale must record the tax-exemption reason, and an over-tender must return the right change.` } },
 ];
 
 // Group the action-targeted built-ins into the per-action example shape the

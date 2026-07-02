@@ -51,6 +51,11 @@ test.describe("starters", () => {
       [row("s1", "School bake sale", { message: "m1", intent: "i1" }), row("s2", "Reschedule a call", { message: "m2", intent: "i2" })],
       () => {},
     );
+    // Quick Action input placeholders are now user-editable ToolHints; mock
+    // the GET so a locally-edited hint can't break the selectors below.
+    await page.route("**/api/tool-hints", (route) =>
+      route.fulfill({ contentType: "application/json", body: '{"hints":{}}' })
+    );
 
     await page.goto("/tools/quick-actions?action=reply-to-message");
     await expect(page.getByRole("button", { name: "School bake sale", exact: true })).toBeVisible();

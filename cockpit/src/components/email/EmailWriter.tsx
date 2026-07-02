@@ -6,6 +6,7 @@ import { Square } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAiTool } from "@/hooks/useAiTool";
+import { usePlaceholder } from "@/hooks/useToolHints";
 import { AiOutput } from "@/components/tools/AiOutput";
 import { RefineRow } from "@/components/tools/RefineRow";
 import { StarterChips } from "@/components/StarterChips";
@@ -14,6 +15,7 @@ import { ContextUsed } from "@/components/tools/ContextUsed";
 import { Button } from "@/components/ui/button";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { Label } from "@/components/ui/label";
+import { EditHintButton } from "@/components/EditHintButton";
 import { ErrorAlert } from "@/components/ErrorAlert";
 import {
   Select,
@@ -39,6 +41,7 @@ export function EmailWriter() {
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const briefPlaceholder = usePlaceholder("email-brief");
   // The settings that produced the current draft — save persists THIS pairing,
   // not whatever the form says now (editable again after the run finishes).
   const lastRun = useRef({ mode, tone, length, brief, sourceText });
@@ -166,7 +169,10 @@ export function EmailWriter() {
       </div>
 
       <div className="mt-4 space-y-1.5">
-        <Label htmlFor="brief">Brief — what should it say?</Label>
+        <div className="flex items-center gap-1">
+          <Label htmlFor="brief">Brief — what should it say?</Label>
+          <EditHintButton hintKey="email-brief" label="Brief" />
+        </div>
         <VoiceTextarea
           id="brief"
           rows={4}
@@ -178,7 +184,7 @@ export function EmailWriter() {
               handleRun();
             }
           }}
-          placeholder="e.g. Ask for a 2-day extension on the report, apologize for the delay, propose Thursday."
+          placeholder={briefPlaceholder}
           disabled={isRunning}
         />
       </div>

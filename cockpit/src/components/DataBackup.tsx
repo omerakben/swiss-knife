@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { refreshToolHints } from "@/hooks/useToolHints";
 
 /** Export everything to JSON / restore from a JSON backup. All local. */
 export function DataBackup() {
@@ -35,6 +36,10 @@ export function DataBackup() {
       } else {
         toast.success(`Imported ${total} record(s)`);
       }
+      // Imported ToolHint overrides live in the client-side store (useToolHints),
+      // not server-rendered props — router.refresh() alone never reaches an
+      // already-mounted usePlaceholder()/useToolHintOverrides() consumer.
+      refreshToolHints();
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Import failed");

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logActivity } from "@/lib/activity";
+import { planHintImport } from "@/lib/importHints";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -90,6 +91,32 @@ export async function POST(req: Request) {
   }
   imported.starters = stOk;
   if (stFailed > 0) skipped.starters = stFailed;
+
+  // ToolHint edits are matched by `key` (the stable business identity — see
+  // PLACEHOLDER_DEFAULTS in lib/toolHints.ts), not `id`, so a cross-machine
+  // import merges into an existing edit of the same hint instead of racing
+  // the unique `key @unique` constraint if the same key already exists
+  // locally under a different id. Row shape/registry-gate decisions live in
+  // lib/importHints.ts (planHintImport) so they're unit-testable; this loop
+  // only performs the upsert and folds any upsert-time failures into the
+  // count planHintImport already started.
+  const toolHintModel = m.toolHint as unknown as {
+    upsert: (a: { where: Record<string, unknown>; update: Record<string, unknown>; create: Record<string, unknown> }) => Promise<unknown>;
+  };
+  const hintPlan = planHintImport(data.toolHints);
+  let thOk = 0;
+  let thFailed = hintPlan.failed;
+  for (const { key, row } of hintPlan.valid) {
+    const { id: _id, ...rest } = row;
+    try {
+      await toolHintModel.upsert({ where: { key }, update: rest, create: row });
+      thOk += 1;
+    } catch {
+      thFailed += 1;
+    }
+  }
+  imported.toolHints = thOk;
+  if (thFailed > 0) skipped.toolHints = thFailed;
 
   let qa = 0;
   let qaFailed = 0;

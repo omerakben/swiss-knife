@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { VoiceTextarea } from "@/components/tools/VoiceTextarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { StarterChips } from "@/components/StarterChips";
 import { GHERKIN_PREFILL_KEY } from "@/lib/gherkinPrefill";
+import { GHERKIN_TARGET, INBOX_FIELD, builtinStartersFor } from "@/lib/quickActions";
 
 type Issue = { severity: "ERROR" | "WARN"; line: number; message: string };
 type Result = {
@@ -15,17 +17,6 @@ type Result = {
   summary: { errors: number; warnings: number; scenarios: number };
   ok: boolean;
 };
-
-const EXAMPLE = `Feature: Point of Sale — cash sale
-  A walk-in customer buys in-stock items and pays cash.
-
-  @valid @smoke @ui
-  Scenario: a completed cash sale prints a receipt
-    Given an open Cash Drawer [drawer]
-    And a Cart [cart] holding one in-stock item
-    When the cashier tenders the exact cash amount
-    Then the sale is invoiced against [drawer]
-    And a receipt prints for [cart]`;
 
 export function GherkinLinter() {
   const [text, setText] = useState("");
@@ -83,21 +74,23 @@ export function GherkinLinter() {
           textareaClassName="font-mono text-sm"
           disabled={busy}
         />
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2">
           <Button onClick={lint} disabled={busy || !text.trim()}>
             {busy ? "Linting…" : "Lint"}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setText(EXAMPLE);
-              setResult(null);
-            }}
-            disabled={busy}
-          >
-            Load example
-          </Button>
         </div>
+        <StarterChips
+          target={GHERKIN_TARGET}
+          fallback={builtinStartersFor(GHERKIN_TARGET)}
+          current={{ [INBOX_FIELD]: text }}
+          onPick={(inputs) => {
+            setText(inputs[INBOX_FIELD] ?? "");
+            setResult(null);
+          }}
+          editFields={[{ name: INBOX_FIELD, label: "Feature text", type: "textarea" }]}
+          headline="Try an example — tap to fill:"
+          disabled={busy}
+        />
       </div>
 
       {result && s && (
