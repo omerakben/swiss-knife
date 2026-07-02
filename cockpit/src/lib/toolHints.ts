@@ -4,7 +4,7 @@
 // deterministic gate: PLACEHOLDER_DEFAULTS is the single source of truth for
 // which keys exist, so an unknown key 400s at the API and every default
 // renders synchronously on first paint (no DB round trip needed to know what
-// the box should say) — the 61+ getByPlaceholder e2e selectors stay
+// the box should say) — the many getByPlaceholder e2e selectors stay
 // deterministic even against an empty/fresh DB. See
 // docs/superpowers/specs/2026-07-01-placeholder-crud-design.md.
 
@@ -31,8 +31,8 @@ const STATIC_DEFAULTS: Record<string, string> = {
 };
 
 // Every Quick Action input that ships a code placeholder gets an auto-derived
-// key, so the ~40 Quick Action boxes don't need hand-maintained entries here —
-// this generator is itself the coverage test's other half.
+// key, so Quick Action boxes don't need hand-maintained entries here — this
+// generator is itself the coverage test's other half.
 const generated: Record<string, string> = {};
 for (const a of QUICK_ACTIONS) for (const inp of a.inputs) {
   if (inp.placeholder) generated[quickActionHintKey(a.id, inp.name)] = inp.placeholder;

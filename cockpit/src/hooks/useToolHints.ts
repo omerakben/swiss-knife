@@ -87,3 +87,12 @@ export function refreshToolHints(): void {
 export function useToolHintOverrides(): Record<string, string> {
   return useSyncExternalStore(subscribe, () => overrides, () => overrides);
 }
+
+// Test-only seams for the module-level fetch/generation guard above. Not part
+// of the public hook API — usePlaceholder/useToolHintOverrides are the real
+// surface. useSyncExternalStore can't be called outside a React render, so
+// unit tests exercise the store directly through these instead of mounting a
+// component (this vitest project runs in the "node" environment, no
+// jsdom/testing-library — see useToolHints.race.test.ts).
+export const __fetchHintsForTest = fetchHints;
+export const __getOverridesForTest = (): Record<string, string> => overrides;

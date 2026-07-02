@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logActivity } from "@/lib/activity";
-import { validateHint } from "@/lib/toolHints";
+import { planHintImport } from "@/lib/importHints";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,27 +95,21 @@ export async function POST(req: Request) {
   // ToolHint edits are matched by `key` (the stable business identity — see
   // PLACEHOLDER_DEFAULTS in lib/toolHints.ts), not `id`, so a cross-machine
   // import merges into an existing edit of the same hint instead of racing
-  // the unique @@unique(key) constraint if the same key already exists
-  // locally under a different id.
+  // the unique `key @unique` constraint if the same key already exists
+  // locally under a different id. Row shape/registry-gate decisions live in
+  // lib/importHints.ts (planHintImport) so they're unit-testable; this loop
+  // only performs the upsert and folds any upsert-time failures into the
+  // count planHintImport already started.
   const toolHintModel = m.toolHint as unknown as {
     upsert: (a: { where: Record<string, unknown>; update: Record<string, unknown>; create: Record<string, unknown> }) => Promise<unknown>;
   };
+  const hintPlan = planHintImport(data.toolHints);
   let thOk = 0;
-  let thFailed = 0;
-  for (const h of Array.isArray(data.toolHints) ? data.toolHints : []) {
-    const key = h && typeof h === "object" ? (h as Row).key : undefined;
-    const text = h && typeof h === "object" ? (h as Row).text : undefined;
-    // Route the same registry gate a live save goes through (lib/toolHints.ts)
-    // over an imported row too — otherwise a corrupted/foreign backup (unknown
-    // key, or a multi-MB "text") lands in the DB permanently, since nothing
-    // downstream re-validates a ToolHint row after import.
-    if (typeof key !== "string" || !key || !validateHint(key, text as string).ok) {
-      thFailed += 1;
-      continue;
-    }
-    const { id: _id, ...rest } = h as Row;
+  let thFailed = hintPlan.failed;
+  for (const { key, row } of hintPlan.valid) {
+    const { id: _id, ...rest } = row;
     try {
-      await toolHintModel.upsert({ where: { key }, update: rest, create: h as Row });
+      await toolHintModel.upsert({ where: { key }, update: rest, create: row });
       thOk += 1;
     } catch {
       thFailed += 1;
